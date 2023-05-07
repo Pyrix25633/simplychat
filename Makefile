@@ -1,0 +1,4 @@
+.RECIPEPREFIX=>
+
+default:
+> npm start
