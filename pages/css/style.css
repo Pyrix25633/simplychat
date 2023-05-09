@@ -1,0 +1,43 @@
+:root {
+    --color-backgorund: #222222;
+    --color-foreground: #DDDDDD;
+}
+
+* {
+    color: var(--color-foreground);
+    font-family: 'Quicksand', sans-serif;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 20px;
+}
+
+body {
+    background-color: var(--color-backgorund);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+button, input {
+    border-radius: 5px;
+    border: 2px solid var(--color-foreground);
+    background-color: var(--color-backgorund);
+}
+
+button:not(:first-child), input:not(:first-child) {
+    margin-top: 10px;
+}
+
+div.box {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    align-items: center;
+}
+
+div.container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}

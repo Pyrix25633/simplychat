@@ -1,34 +1,53 @@
-import express, {Express, Request, Response} from 'express';
-import {FieldInfo, MysqlError} from 'mysql';
-import {ConfirmRequest, ConfirmResponse, RegisterRequest, RegisterResponse, ValidateEmailResponse, ValidateTokenRequest, ValidateTokenResponse, ValidateUsernameResponse, isConfirmRequestValid, isRegisterRequestValid, isValidateEmailRequestValid, isValidateTokenRequestValid, isValidateUsernameRequestValid} from './api/user/userTypes';
-import {query} from './database';
+import express, { Express, Request, Response } from 'express';
+import { FieldInfo, MysqlError } from 'mysql';
+import { ConfirmRequest, ConfirmResponse, RegisterRequest, ValidateEmailResponse, ValidateTokenRequest, ValidateTokenResponse, ValidateUsernameResponse, isConfirmRequestValid, isRegisterRequestValid, isValidateEmailRequestValid, isValidateTokenRequestValid, isValidateUsernameRequestValid } from './lib/types/api/User';
+import { insertTempUser, query } from './lib/database';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
 import * as https from 'https';
 import * as fs from 'fs';
+import { sendEmail } from './lib/email';
+import Mail from 'nodemailer/lib/mailer';
 
 const main: Express = express();
 const port: number = 4443;
 
 main.use(bodyParser.urlencoded({extended: false}));
 main.use(bodyParser.json());
-main.use(cors());
-main.use(helmet());
+//main.use(cors());
+//main.use(helmet());
+main.use('/css', express.static('./pages/css'));
+main.use('/js', express.static('./pages/js'));
+main.use('/img', express.static('./pages/img'));
 
 //// api ////
 
 // user //
 
 main.post('/api/user/register', (req: Request, res: Response): void => {
-    let request: RegisterRequest = req.body;
+    const request: RegisterRequest = req.body;
     if(!isRegisterRequestValid(request)) {
-        res.status(400).send('Bad Request');
+        res.status(400).send('Bad Request'); //TODO
         return;
     }
-    let response: RegisterResponse;
-    // TODO
+    const verificationCode: number = 1000 + Math.random() * 9000;
+    const mailOptions: Mail.Options = {
+        to: request.email,
+        subject: 'Simply Chat verification code',
+        text: 'Your verification code is ' + verificationCode
+    };
+    sendEmail(mailOptions, (err: Error | null): void => {
+        if(err) res.status(500).send('Internal Server Error');
+    });
+    insertTempUser(request, verificationCode, Date.now(), (err: MysqlError | null): void => {
+        if(err) {
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+        res.status(201).send("Created");
+    });
 });
 
 main.get('/api/user/validate-username', (req: Request, res: Response): void => {
@@ -69,11 +88,21 @@ main.post('/api/user/validate-token', (req: Request, res: Response): void => {
     let response: ValidateTokenResponse; //TODO
 });
 
+//// pages ////
+
+main.get('/register', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/register.html'));
+});
+
+main.listen(port, () => {
+    console.log('Server listening on port ' + port);
+});
+
 const options = {
     key: fs.readFileSync(path.resolve(__dirname, './certs/privateKey.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, './certs/certificate.pem'))
 };
 
-https.createServer(options, main).listen(port, () => {
+/*https.createServer(options, main).listen(port, () => {
     console.log('Server listening on port ' + port);
-});
+});*/
