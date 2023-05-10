@@ -15,18 +15,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100vw;
     height: 100vh;
+    margin: 0;
 }
 
 button, input {
     border-radius: 5px;
     border: 2px solid var(--color-foreground);
     background-color: var(--color-backgorund);
-}
-
-button:not(:first-child), input:not(:first-child) {
-    margin-top: 10px;
 }
 
 div.box {
@@ -40,4 +36,12 @@ div.container {
     display: flex;
     flex-direction: row;
     align-items: center;
+}
+
+div.container:not(:first-child) {
+    margin-top: 10px;
+}
+
+div.container *:not(:first-child) {
+    margin-left: 10px;
 }

@@ -4,9 +4,9 @@ import nodemailer from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: 'yahoo',
     auth: {
-        user: 'simplychat25633@gmail.com',
+        user: 'simplychat25633@yahoo.com',
         pass: fs.readFileSync(path.resolve(__dirname, '../passwords/email.txt')).toString()
     }
 });

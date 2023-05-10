@@ -17,7 +17,7 @@ export type RegisterRequest = {
 
 export function isRegisterRequestValid(req: RegisterRequest): boolean {
     return req.username != undefined && typeof req.username == 'string'
-        && req.username.length > 4 && req.username.length <= 32
+        && req.username.length > 2 && req.username.length <= 32
         && req.email != undefined && typeof req.email == 'string'
         && req.passwordHash != undefined && typeof req.passwordHash == 'string'
         && req.passwordHash.length == 128;

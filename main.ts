@@ -14,10 +14,24 @@ import Mail from 'nodemailer/lib/mailer';
 const main: Express = express();
 const port: number = 4443;
 
-main.use(bodyParser.urlencoded({extended: false}));
+main.use(bodyParser.urlencoded({extended: true}));
 main.use(bodyParser.json());
-//main.use(cors());
-//main.use(helmet());
+main.use(cors());
+main.use(helmet());
+main.use(helmet.contentSecurityPolicy({
+    useDefaults: false,
+    directives: {
+        "default-src": ["'self'"],
+        "base-uri": "'self'",
+        "font-src": ["'self'", "https:"],
+        "frame-ancestors": ["'self'"],
+        "img-src": ["'self'"],
+        "object-src": ["'none'"],
+        "script-src": ["'self'", "https:"],
+        "script-src-attr": "'none'",
+        "style-src": ["'self'", "https:", "data:"],
+    }
+}));
 main.use('/css', express.static('./pages/css'));
 main.use('/js', express.static('./pages/js'));
 main.use('/img', express.static('./pages/img'));
@@ -29,24 +43,28 @@ main.use('/img', express.static('./pages/img'));
 main.post('/api/user/register', (req: Request, res: Response): void => {
     const request: RegisterRequest = req.body;
     if(!isRegisterRequestValid(request)) {
-        res.status(400).send('Bad Request'); //TODO
+        res.status(400).send('Bad Request');
         return;
     }
-    const verificationCode: number = 1000 + Math.random() * 9000;
+    const verificationCode: number = 100000 + Math.random() * 900000;
     const mailOptions: Mail.Options = {
         to: request.email,
         subject: 'Simply Chat verification code',
         text: 'Your verification code is ' + verificationCode
     };
     sendEmail(mailOptions, (err: Error | null): void => {
-        if(err) res.status(500).send('Internal Server Error');
-    });
-    insertTempUser(request, verificationCode, Date.now(), (err: MysqlError | null): void => {
         if(err) {
             res.status(500).send('Internal Server Error');
+            console.log(err);
             return;
         }
-        res.status(201).send("Created");
+        insertTempUser(request, verificationCode, Date.now(), (err: MysqlError | null): void => {
+            if(err) {
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+            res.status(201).send("Created");
+        });
     });
 });
 
@@ -94,15 +112,11 @@ main.get('/register', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/register.html'));
 });
 
-main.listen(port, () => {
-    console.log('Server listening on port ' + port);
-});
-
 const options = {
     key: fs.readFileSync(path.resolve(__dirname, './certs/privateKey.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, './certs/certificate.pem'))
 };
 
-/*https.createServer(options, main).listen(port, () => {
+https.createServer(options, main).listen(port, () => {
     console.log('Server listening on port ' + port);
-});*/
+});
