@@ -38,6 +38,18 @@ export function query(query: string, values: (string | number)[], callback: quer
 // user //
 
 export function insertTempUser(request: RegisterRequest, verificationCode: number, timestamp: number, callback: queryCallback): void {
-    query('INSERT INTO temp_users VALUES (?, ?, ${request.passwordHash}, ${verificationCode}, ${timestamp});',
-    [request.username, request.email, request.passwordHash, verificationCode, timestamp], callback);
+    query('INSERT INTO temp_users VALUES (?, ?, ?, ?, ?);',
+        [request.username, request.email, request.passwordHash, verificationCode, timestamp], callback);
+}
+
+export function selectTempUser(username: string, callback: queryCallback): void {
+    query('SELECT * FROM temp_users WHERE (username=?);', [username], callback);
+}
+
+export function deleteTempUser(username: string, callback: queryCallback): void {
+    query('DELETE FROM temp_users WHERE (username=?);', [username], callback);
+}
+
+export function createUser(username: string, email: string, callback: queryCallback): void { // TODO
+
 }

@@ -3,14 +3,19 @@ import * as fs from 'fs';
 import nodemailer from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
 
-const transporter = nodemailer.createTransport({
-    service: 'yahoo',
+const email: string = 'simplychat@zohomail.eu';
+
+const transporter: nodemailer.Transporter = nodemailer.createTransport({
+    host: 'smtp.zoho.eu',
+    port: 465,
+    secure: true,
     auth: {
-        user: 'simplychat25633@yahoo.com',
+        user: email,
         pass: fs.readFileSync(path.resolve(__dirname, '../passwords/email.txt')).toString()
     }
 });
 
 export function sendEmail(mailOptions: Mail.Options, callback: (err: Error | null) => void): void {
+    mailOptions.sender = email;
     transporter.sendMail(mailOptions, callback);
 }

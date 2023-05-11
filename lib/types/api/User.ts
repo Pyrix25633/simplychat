@@ -42,12 +42,13 @@ export type ValidateEmailResponse = ValidObject;
 // confirm
 
 export type ConfirmRequest = {
-    id: number,
+    username: string,
     verificationCode: number
 };
 
 export function isConfirmRequestValid(req: ConfirmRequest): boolean {
-    return req.id != undefined && typeof req.id == 'number'
+    return req.username != undefined && typeof req.username == 'string'
+    && req.username.length > 3 && req.username.length <= 32
     && req.verificationCode != undefined && typeof req.verificationCode == 'number';
 }
 

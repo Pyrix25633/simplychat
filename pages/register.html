@@ -13,21 +13,34 @@
         <script defer src="./js/register.js"></script>
     </head>
     <body>
-        <div class="box">
+        <div id="register-section">
+            <h3>Register with your data</h3>
+            <div class="box">
+                <div class="container">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username">
+                </div>
+                <div class="container">
+                    <label for="email">Email:</label>
+                    <input type="text" id="email">
+                </div>
+                <div class="container">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password">
+                </div>
+                <div class="container">
+                    <button id="register">Register</button>
+                </div>
+            </div>
+        </div>
+        <div id="confirm-section">
+            <h3>Confirm with the verification code</h3>
             <div class="container">
-                <label for="username">Username:</label>
-                <input type="text" id="username">
+                <label for="verification-code">Verification code:</label>
+                <input type="text" id="verification-code">
             </div>
             <div class="container">
-                <label for="email">Email:</label>
-                <input type="text" id="email">
-            </div>
-            <div class="container">
-                <label for="password">Password:</label>
-                <input type="password" id="password">
-            </div>
-            <div class="container">
-                <button id="register">Register</button>
+                <button id="confirm">Confirm</button>
             </div>
         </div>
     </body>

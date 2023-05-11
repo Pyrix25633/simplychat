@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { FieldInfo, MysqlError } from 'mysql';
 import { ConfirmRequest, ConfirmResponse, RegisterRequest, ValidateEmailResponse, ValidateTokenRequest, ValidateTokenResponse, ValidateUsernameResponse, isConfirmRequestValid, isRegisterRequestValid, isValidateEmailRequestValid, isValidateTokenRequestValid, isValidateUsernameRequestValid } from './lib/types/api/User';
-import { insertTempUser, query } from './lib/database';
+import { insertTempUser, query, selectTempUser } from './lib/database';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
@@ -46,7 +46,7 @@ main.post('/api/user/register', (req: Request, res: Response): void => {
         res.status(400).send('Bad Request');
         return;
     }
-    const verificationCode: number = 100000 + Math.random() * 900000;
+    const verificationCode: number = Math.floor(100000 + Math.random() * 900000);
     const mailOptions: Mail.Options = {
         to: request.email,
         subject: 'Simply Chat verification code',
@@ -58,9 +58,10 @@ main.post('/api/user/register', (req: Request, res: Response): void => {
             console.log(err);
             return;
         }
-        insertTempUser(request, verificationCode, Date.now(), (err: MysqlError | null): void => {
+        insertTempUser(request, verificationCode, Date.now() / 1000, (err: MysqlError | null): void => {
             if(err) {
                 res.status(500).send('Internal Server Error');
+                console.log(err);
                 return;
             }
             res.status(201).send("Created");
@@ -88,12 +89,25 @@ main.get('/api/user/validate-email', (req: Request, res: Response): void => {
     res.status(200).send(response);
 });
 
-main.get('/api/user/confirm', (req: Request, res: Response): void => {
+main.post('/api/user/confirm', (req: Request, res: Response): void => {
     let request: ConfirmRequest = req.body;
     if(!isConfirmRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
+    selectTempUser(request.username, (err: MysqlError | null, results: any): void => {
+        if(err) {
+            res.status(500).send('Internal Sever Error');
+            console.log(err);
+            return;
+        }
+        if(results.length == 0) {
+            res.status(404).send('Not Found');
+            return;
+        }
+        console.log(request);
+        console.log(results);
+    });
     let response: ConfirmResponse; //TODO
 });
 
