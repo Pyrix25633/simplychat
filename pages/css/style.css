@@ -1,6 +1,9 @@
 :root {
     --color-backgorund: #222222;
     --color-foreground: #DDDDDD;
+    --color-error: #FF6961;
+    --color-success: #77DD77;
+    --color-simplychat: #5B8899;
 }
 
 * {
@@ -19,10 +22,30 @@ body {
     margin: 0;
 }
 
+h3 {
+    font-size: 22px;
+}
+
 button, input {
     border-radius: 5px;
     border: 2px solid var(--color-foreground);
     background-color: var(--color-backgorund);
+    padding-bottom: 5px;
+}
+
+button {
+    background-color: var(--color-simplychat);
+}
+
+span.text {
+    font-size: 16px;
+}
+
+.error {
+    color: var(--color-error);
+}
+.success {
+    color: var(--color-success);
 }
 
 div.box {
@@ -36,12 +59,4 @@ div.container {
     display: flex;
     flex-direction: row;
     align-items: center;
-}
-
-div.container:not(:first-child) {
-    margin-top: 10px;
-}
-
-div.container *:not(:first-child) {
-    margin-left: 10px;
 }

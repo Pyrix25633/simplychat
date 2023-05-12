@@ -1,0 +1,11 @@
+label {
+    margin-right: 5px;
+}
+
+span.text {
+    margin-top: 2px;
+}
+
+div.container:not(:first-child) {
+    margin-top: 10px;
+}
