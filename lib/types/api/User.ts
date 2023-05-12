@@ -1,3 +1,7 @@
+type FeedbackObject = {
+    feedback: string | null
+};
+
 type ValidObject = {
     valid: boolean
 };
@@ -15,7 +19,7 @@ export type RegisterRequest = {
     passwordHash: string
 };
 
-export function isRegisterRequestValid(req: RegisterRequest): boolean {
+export function isRegisterRequestValid(req: RegisterRequest): boolean { // TODO
     return req.username != undefined && typeof req.username == 'string'
         && req.username.length > 2 && req.username.length <= 32
         && req.email != undefined && typeof req.email == 'string'
@@ -23,21 +27,21 @@ export function isRegisterRequestValid(req: RegisterRequest): boolean {
         && req.passwordHash.length == 128;
 }
 
-// validate-username
+// username-feedback
 
-export function isValidateUsernameRequestValid(req: any): boolean {
+export function isUsernameFeedbackRequestValid(req: any): boolean {
     return req != undefined && typeof req == 'string';
 }
 
-export type ValidateUsernameResponse = ValidObject;
+export type UsernameFeedbackResponse = FeedbackObject;
 
-// validate-email
+// email-feedback
 
-export function isValidateEmailRequestValid(req: any): boolean {
+export function isEmailFeedbackRequestValid(req: any): boolean {
     return req != undefined && typeof req == 'string';
 }
 
-export type ValidateEmailResponse = ValidObject;
+export type EmailFeedbackResponse = FeedbackObject;
 
 // confirm
 

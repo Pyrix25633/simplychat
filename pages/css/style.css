@@ -32,9 +32,20 @@ button, input {
     background-color: var(--color-backgorund);
     padding-bottom: 5px;
 }
-
 button {
     background-color: var(--color-simplychat);
+}
+input:focus {
+    border-color: var(--color-simplychat);
+    outline: none;
+}
+button:active {
+    border-color: var(--color-simplychat);
+    color: var(--color-simplychat);
+    background-color: var(--color-foreground);
+}
+button:disabled {
+    filter: brightness(70%);
 }
 
 span.text {

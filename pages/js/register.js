@@ -10,6 +10,7 @@ const registerButton = document.getElementById('register');
 let validUsername = false;
 let validEmail = false;
 let validPassword = false;
+registerButton.disabled = true;
 
 const confirmSectionDiv = document.getElementById('confirm-section');
 
@@ -26,15 +27,18 @@ registerButton.addEventListener('click', async () => {
             passwordHash: await hashPassword(passwordInput.value)
         }),
         contentType: 'application/json',
-        dataType: 'json',
-        success: (ret) => {
-            console.log(ret);
+        success: (res) => {
+            console.log(res);
         },
         error: (req, err) => {
             console.log(err);
         }
     });
 });
+
+if(usernameInput.value != '') usernameTyped();
+if(emailInput.value != '') emailTyped();
+//if(passwordInput.value != '') passwordTyped();
 
 let usernameTimer;
 usernameInput.addEventListener('keyup', () => {
@@ -45,42 +49,22 @@ usernameInput.addEventListener('keydown', () => {
     clearTimeout(usernameTimer);
 });
 function usernameTyped() {
-    usernameFeedbackSpan.classList.add('success');
-    let username = usernameInput.value;
-    if(username.length < 4) {
-        usernameFeedbackSpan.innerText = 'Username too short!';
-        usernameFeedbackSpan.classList.replace('success', 'error');
-        validUsername = false;
-        return;
-    }
-    if(username.length > 32) {
-        usernameFeedbackSpan.innerText = 'Username too long!';
-        usernameFeedbackSpan.classList.replace('success', 'error');
-        validUsername = false;
-        return;
-    }
-    for(let i = 0; i < username.length; i++) {
-        let c = username.codePointAt(i);
-        if(!((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == '-' || c == '_'))) {
-            usernameFeedbackSpan.innerText = 'Username contains forbidden character!';
-            validUsername = false;
-            usernameFeedbackSpan.classList.replace('success', 'error');
-            return;
-        }
-    }
+    usernameFeedbackSpan.classList.add('error');
     $.ajax({
-        url: '/api/user/username-used?username=' + username,
+        url: '/api/user/username-feedback?username=' + usernameInput.value,
         method: 'GET',
         dataType: 'json',
-        success: (ret) => {
-            validUsername = ret.used;
-            if(validUsername) {
-                usernameFeedbackSpan.innerText = 'Valid username';
-                usernameFeedbackSpan.classList.replace('error', 'success');
+        success: (res) => {
+            usernameFeedbackSpan.innerText = res.feedback;
+            if(res.feedback.includes('!')) {
+                usernameFeedbackSpan.classList.replace('success', 'error');
+                validUsername = false;
+                registerButton.disabled = true;
                 return;
             }
-            usernameFeedbackSpan.innerText = 'Username already taken!';
-            usernameFeedbackSpan.classList.replace('success', 'error');
+            usernameFeedbackSpan.classList.replace('error', 'success');
+            validUsername = true;
+            registerButton.disabled = !(validUsername && validEmail && validPassword);
         },
         error: (req, err) => {
             console.log(err);
@@ -99,27 +83,22 @@ emailInput.addEventListener('keydown', () => {
     clearTimeout(emailTimer);
 });
 function emailTyped() {
-    emailFeedbackSpan.classList.add('success');
-    let email = emailInput.value;
-    if(!email.match(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
-        emailFeedbackSpan.innerText = 'Invalid email!';
-        emailFeedbackSpan.classList.replace('success', 'error');
-        validEmail = false;
-        return;
-    }
+    emailFeedbackSpan.classList.add('error');
     $.ajax({
-        url: '/api/user/email-used?email=' + email,
+        url: '/api/user/email-feedback?email=' + emailInput.value,
         method: 'GET',
         dataType: 'json',
-        success: (ret) => {
-            validEmail = ret.used;
-            if(validEmail) {
-                emailFeedbackSpan.innerText = 'Valid email';
-                emailFeedbackSpan.classList.replace('error', 'success');
+        success: (res) => {
+            emailFeedbackSpan.innerText = res.feedback;
+            if(res.feedback.includes('!')) {
+                emailFeedbackSpan.classList.replace('success', 'error');
+                validEmail = false;
+                registerButton.disabled = true;
                 return;
             }
-            emailFeedbackSpan.innerText = 'Email already used!';
-            emailFeedbackSpan.classList.replace('success', 'error');
+            emailFeedbackSpan.classList.replace('error', 'success');
+            validEmail = true;
+            registerButton.disabled = !(validUsername && validEmail && validPassword);
         },
         error: (req, err) => {
             console.log(err);
@@ -127,6 +106,63 @@ function emailTyped() {
             emailFeedbackSpan.classList.replace('success', 'error');
         }
     });
+}
+
+let passwordTimer;
+passwordInput.addEventListener('keyup', () => {
+    clearTimeout(passwordTimer);
+    passwordTimer = setTimeout(passwordTyped, 1000);
+});
+passwordInput.addEventListener('keydown', () => {
+    clearTimeout(passwordTimer);
+});
+function passwordTyped() {
+    passwordFeedbackSpan.classList.add('error');
+    if(passwordInput.value.length < 6) {
+        passwordFeedbackSpan.innerText = 'Password too short!'
+        passwordFeedbackSpan.classList.replace('success', 'error');
+        validPassword = false;
+        registerButton.disabled = true;
+        return;
+    }
+    let numbers = 0, symbols = 0, uppercase = 0;
+    for(let i = 0; i < passwordInput.value.length; i++) {
+        let c = passwordInput.value.codePointAt(i);
+        if(c >= 48 && c <= 57) numbers++;
+        else if((c >= 33 && c <= 47) || (c >= 58 && c <= 64) || (c >= 91 && c <= 96) || (c >= 123 && c <= 126)) symbols++;
+        else if(c >= 65 && c <= 90) uppercase++;
+        else if(!(c >= 97 && c <= 122)) {
+            passwordFeedbackSpan.innerText = 'Password contains forbidden character!'
+            passwordFeedbackSpan.classList.replace('success', 'error');
+            validPassword = false;
+            registerButton.disabled = true;
+            return;
+        }
+    }
+    if(numbers < 2) {
+        passwordFeedbackSpan.innerText = 'Password should contain at least 2 numbers!'
+        passwordFeedbackSpan.classList.replace('success', 'error');
+        validPassword = false;
+        registerButton.disabled = true;
+    }
+    else if(symbols < 1) {
+        passwordFeedbackSpan.innerText = 'Password should contain at least 1 symbol!'
+        passwordFeedbackSpan.classList.replace('success', 'error');
+        validPassword = false;
+        registerButton.disabled = true;
+    }
+    else if(uppercase < 2) {
+        passwordFeedbackSpan.innerText = 'Password should contain at least 2 uppercase letters!'
+        passwordFeedbackSpan.classList.replace('success', 'error');
+        validPassword = false;
+        registerButton.disabled = true;
+    }
+    else {
+        passwordFeedbackSpan.innerText = 'Valid password'
+        passwordFeedbackSpan.classList.replace('error', 'success');
+        validPassword = true;
+        registerButton.disabled = !(validUsername && validEmail && validPassword);
+    }
 }
 
 async function hashPassword(password) {
@@ -145,8 +181,8 @@ $.ajax({
     }),
     contentType: 'application/json',
     dataType: 'json',
-    success: (ret) => {
-        console.log(ret);
+    success: (res) => {
+        console.log(res);
     },
     error: (req, err) => {
         console.log(err);
@@ -162,8 +198,8 @@ $.ajax({
     }),
     contentType: 'application/json',
     dataType: 'json',
-    success: (ret) => {
-        console.log(ret);
+    success: (res) => {
+        console.log(res);
     },
     error: (req, err) => {
         console.log(err);

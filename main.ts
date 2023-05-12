@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { FieldInfo, MysqlError } from 'mysql';
-import { ConfirmRequest, ConfirmResponse, RegisterRequest, ValidateEmailResponse, ValidateTokenRequest, ValidateTokenResponse, ValidateUsernameResponse, isConfirmRequestValid, isRegisterRequestValid, isValidateEmailRequestValid, isValidateTokenRequestValid, isValidateUsernameRequestValid } from './lib/types/api/User';
-import { insertTempUser, query, selectTempUser } from './lib/database';
+import { ConfirmRequest, ConfirmResponse, EmailFeedbackResponse, RegisterRequest, UsernameFeedbackResponse, ValidateTokenRequest, ValidateTokenResponse, isConfirmRequestValid, isEmailFeedbackRequestValid, isRegisterRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/User';
+import { insertTempUser, query, selectTempUser, selectTempUserFromEmail, selectUserFromEmail, selectUserFromUsername } from './lib/database';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
@@ -42,7 +42,7 @@ main.use('/img', express.static('./pages/img'));
 
 main.post('/api/user/register', (req: Request, res: Response): void => {
     const request: RegisterRequest = req.body;
-    if(!isRegisterRequestValid(request)) {
+    if(!isRegisterRequestValid(request)) { // TODO
         res.status(400).send('Bad Request');
         return;
     }
@@ -69,24 +69,82 @@ main.post('/api/user/register', (req: Request, res: Response): void => {
     });
 });
 
-main.get('/api/user/validate-username', (req: Request, res: Response): void => {
+main.get('/api/user/username-feedback', (req: Request, res: Response): void => {
     let request: any = req.query.username;
-    if(!isValidateUsernameRequestValid(request)) {
+    if(!isUsernameFeedbackRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
-    let response: ValidateUsernameResponse = {valid: request.length > 4 && request.length <= 32}; // TODO
-    res.status(200).send(response);
+    let response: UsernameFeedbackResponse = {feedback: null};
+    if(request.length < 4) response.feedback = 'Username too short!';
+    else if(request.length > 32) response.feedback = 'Username too long!';
+    else {
+        for(let i = 0; i < request.length; i++) {
+            let c = request.codePointAt(i);
+            if(!((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == 45 || c == 95 || c == 32))) {
+                response.feedback = 'Username contains forbidden character!';
+                break;
+            }
+        }
+    }
+    if(response.feedback != null) {
+        res.status(200).send(response);
+        return;
+    }
+    selectTempUser(request, (err: MysqlError | null, results: any): void => {
+        if(err) {
+            res.status(500).send('Internal Sever Error');
+            console.log(err);
+            return;
+        }
+        if(results.length == 0)
+            selectUserFromUsername(request, (err: MysqlError | null, results: any): void => {
+                if(err) {
+                    res.status(500).send('Internal Sever Error');
+                    console.log(err);
+                    return;
+                }
+                if(results.length == 0) // TODO
+                    res.status(200).send({feedback: 'Valid username'});
+                else
+                    res.status(200).send({feedback: 'Username already taken!'});
+            });
+        else
+            res.status(200).send({feedback: 'Username already taken!'});
+    });
 });
 
-main.get('/api/user/validate-email', (req: Request, res: Response): void => {
+main.get('/api/user/email-feedback', (req: Request, res: Response): void => {
     let request: any = req.query.email;
-    if(!isValidateEmailRequestValid(request)) {
+    if(!isEmailFeedbackRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
-    let response: ValidateEmailResponse = {valid: false}; // TODO
-    res.status(200).send(response);
+    if(!request.match(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
+        res.status(200).send({feedback: 'Invalid email!'});
+        return;
+    }
+    selectTempUserFromEmail(request, (err: MysqlError | null, results: any): void => {
+        if(err) {
+            res.status(500).send('Internal Sever Error');
+            console.log(err);
+            return;
+        }
+        if(results.length == 0)
+            selectUserFromEmail(request, (err: MysqlError | null, results: any): void => {
+                if(err) {
+                    res.status(500).send('Internal Sever Error');
+                    console.log(err);
+                    return;
+                }
+                if(results.length == 0)
+                    res.status(200).send({feedback: 'Valid email'});
+                else
+                    res.status(200).send({feedback: 'Email already used!'});
+            });
+        else
+            res.status(200).send({feedback: 'Email already used!'});
+    });
 });
 
 main.post('/api/user/confirm', (req: Request, res: Response): void => {

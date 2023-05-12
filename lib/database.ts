@@ -46,10 +46,22 @@ export function selectTempUser(username: string, callback: queryCallback): void 
     query('SELECT * FROM temp_users WHERE (username=?);', [username], callback);
 }
 
+export function selectTempUserFromEmail(email: string, callback: queryCallback): void {
+    query('SELECT * FROM temp_users WHERE (email=?);', [email], callback);
+}
+
 export function deleteTempUser(username: string, callback: queryCallback): void {
     query('DELETE FROM temp_users WHERE (username=?);', [username], callback);
 }
 
 export function createUser(username: string, email: string, callback: queryCallback): void { // TODO
 
+}
+
+export function selectUserFromUsername(username: string, callback: queryCallback) {
+    query('SELECT * FROM users WHERE (username=?)', [username], callback);
+}
+
+export function selectUserFromEmail(email: string, callback: queryCallback) {
+    query('SELECT * FROM users WHERE (email=?)', [email], callback);
 }
