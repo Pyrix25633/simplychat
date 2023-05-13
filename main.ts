@@ -46,26 +46,63 @@ main.post('/api/user/register', (req: Request, res: Response): void => {
         res.status(400).send('Bad Request');
         return;
     }
-    const verificationCode: number = Math.floor(100000 + Math.random() * 900000);
-    const mailOptions: Mail.Options = {
-        to: request.email,
-        subject: 'Simply Chat verification code',
-        text: 'Your verification code is ' + verificationCode
+    if(request.username.length < 4 || request.username.length > 32) {
+        res.status(400).send('Bad Request');
+        return;
     };
-    sendEmail(mailOptions, (err: Error | null): void => {
+    for(let i = 0; i < request.username.length; i++) {
+        let c = request.username.codePointAt(i);
+        if((c == undefined) || !((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == 45 || c == 95 || c == 32))) {
+            res.status(400).send('Bad Request');
+            return;
+        }
+    }
+    selectTempUser(request.username, (err: MysqlError | null, results: any): void => {
         if(err) {
-            res.status(500).send('Internal Server Error');
+            res.status(500).send('Internal Sever Error');
             console.log(err);
             return;
         }
-        insertTempUser(request, verificationCode, Date.now() / 1000, (err: MysqlError | null): void => {
-            if(err) {
-                res.status(500).send('Internal Server Error');
-                console.log(err);
-                return;
-            }
-            res.status(201).send("Created");
-        });
+        if(results.length == 0)
+            selectUserFromUsername(request.username, (err: MysqlError | null, results: any): void => {
+                if(err) {
+                    res.status(500).send('Internal Sever Error');
+                    console.log(err);
+                    return;
+                }
+                if(results.length == 0) {
+                    const verificationCode: number = Math.floor(100000 + Math.random() * 900000);
+                    const mailOptions: Mail.Options = {
+                        to: request.email,
+                        subject: 'Simply Chat verification code',
+                        text: 'Your verification code for username ' + request.username + ' is ' + verificationCode + '.',
+                        html: 'Your verification code for username ' + request.username + ' is ' + verificationCode +
+                            '.<br> Click <a href="https://simplychat.ddns.net:4443/confirm?username="' + request.username +
+                            '&verificationCode=' + verificationCode + '>here</a> to confirm your registration.' +
+                            '<br> If the link above does not work open this <a href="https://simplychat.ddns.net:4443/confirm">' +
+                            'page</a> and enter username and verification code.'
+                    };
+                    sendEmail(mailOptions, (err: Error | null): void => {
+                        if(err) {
+                            res.status(500).send('Internal Server Error');
+                            console.log(err);
+                            return;
+                        }
+                        insertTempUser(request, verificationCode, Date.now() / 1000, (err: MysqlError | null): void => {
+                            if(err) {
+                                res.status(500).send('Internal Server Error');
+                                console.log(err);
+                                return;
+                            }
+                            res.status(201).send("Created");
+                        });
+                    });
+                }
+                else
+                    res.status(400).send('Bad Request');
+            });
+        else
+            res.status(400).send('Bad Request');
     });
 });
 
@@ -104,7 +141,7 @@ main.get('/api/user/username-feedback', (req: Request, res: Response): void => {
                     console.log(err);
                     return;
                 }
-                if(results.length == 0) // TODO
+                if(results.length == 0)
                     res.status(200).send({feedback: 'Valid username'});
                 else
                     res.status(200).send({feedback: 'Username already taken!'});

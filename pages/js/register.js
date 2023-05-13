@@ -1,4 +1,3 @@
-const registerSectionDiv = document.getElementById('register-section');
 const usernameInput = document.getElementById('username');
 const usernameFeedbackSpan = document.getElementById('username-feedback');
 const emailInput = document.getElementById('email');
@@ -12,10 +11,6 @@ let validEmail = false;
 let validPassword = false;
 registerButton.disabled = true;
 
-const confirmSectionDiv = document.getElementById('confirm-section');
-
-confirmSectionDiv.style.display = 'none';
-
 registerButton.addEventListener('click', async () => {
     if(!(validUsername && validEmail && validPassword)) return;
     $.ajax({
@@ -28,7 +23,10 @@ registerButton.addEventListener('click', async () => {
         }),
         contentType: 'application/json',
         success: (res) => {
-            console.log(res);
+            localStorage.setItem('pendingConfirm', JSON.stringify({
+                username: usernameInput.value
+            }));
+            window.location.href = window.location.host + '/confirm';
         },
         error: (req, err) => {
             console.log(err);
@@ -38,7 +36,7 @@ registerButton.addEventListener('click', async () => {
 
 if(usernameInput.value != '') usernameTyped();
 if(emailInput.value != '') emailTyped();
-//if(passwordInput.value != '') passwordTyped();
+if(passwordInput.value != '') passwordTyped();
 
 let usernameTimer;
 usernameInput.addEventListener('keyup', () => {
@@ -171,37 +169,3 @@ async function hashPassword(password) {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
     return hashHex;
 }
-
-$.ajax({
-    url: '/api/user/confirm',
-    method: 'POST',
-    data: JSON.stringify({
-        username: 'test',
-        verificationCode: 45616
-    }),
-    contentType: 'application/json',
-    dataType: 'json',
-    success: (res) => {
-        console.log(res);
-    },
-    error: (req, err) => {
-        console.log(err);
-    }
-});
-
-$.ajax({
-    url: '/api/user/confirm',
-    method: 'POST',
-    data: JSON.stringify({
-        username: 'seff',
-        verificationCode: 45616
-    }),
-    contentType: 'application/json',
-    dataType: 'json',
-    success: (res) => {
-        console.log(res);
-    },
-    error: (req, err) => {
-        console.log(err);
-    }
-});
