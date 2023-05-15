@@ -7,7 +7,9 @@ CREATE TABLE users (
     username VARCHAR(32) NOT NULL,
     email VARCHAR(64) NULL,
     password_hash CHAR(128) NULL,
-    chat_ids JSON NULL,
+    token CHAR(128) NULL,
+    token_timestamp INT NULL,
+    chat_ids JSON NOT NULL,
     online BOOLEAN NOT NULL,
     last_online INT NOT NULL,
     status VARCHAR(64) NOT NULL,
@@ -22,14 +24,6 @@ CREATE TABLE temp_users (
     verification_code INT NOT NULL,
     timestamp INT NOT NULL,
     PRIMARY KEY (username)
-);
-
-CREATE TABLE tokens (
-    token CHAR(128) NOT NULL,
-    user_id INT NOT NULL,
-    timestamp INT NOT NULL,
-    PRIMARY KEY (token),
-    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE chats (

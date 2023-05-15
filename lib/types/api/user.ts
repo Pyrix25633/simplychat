@@ -41,8 +41,6 @@ export function isEmailFeedbackRequestValid(req: any): boolean {
     return req != undefined && typeof req == 'string';
 }
 
-export type EmailFeedbackResponse = FeedbackObject;
-
 // confirm
 
 export type ConfirmRequest = {
@@ -56,7 +54,13 @@ export function isConfirmRequestValid(req: ConfirmRequest): boolean {
     && req.verificationCode != undefined && typeof req.verificationCode == 'number';
 }
 
-export type ConfirmResponse = TokenIdObject;
+// username-confirm-feedback
+
+export function isUsernameConfirmFeedbackRequestValid(req: any): boolean {
+    return req != undefined && typeof req == 'string';
+}
+
+export type UsernameConfirmFeedbackResponse = FeedbackObject;
 
 // validate-token
 

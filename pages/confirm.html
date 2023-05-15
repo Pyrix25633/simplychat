@@ -4,17 +4,17 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Simply Chat - Register</title>
+        <title>Simply Chat - Confirm</title>
         <link rel="stylesheet" href="./css/style.css">
         <link rel="stylesheet" href="./css/register-confirm-login.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&family=Roboto+Mono&display=swap" rel="stylesheet">
-        <script defer src="./js/register.js"></script>
+        <script defer src="./js/confirm.js"></script>
     </head>
     <body>
-        <h3>Register with your data</h3>
+        <h3>Confirm with the Verification Code sent to your Email</h3>
         <div class="box">
             <div class="container">
                 <label for="username">Username:</label>
@@ -22,17 +22,12 @@
             </div>
             <span class="text" id="username-feedback">Input Username</span>
             <div class="container">
-                <label for="email">Email:</label>
-                <input type="email" id="email">
+                <label for="verification-code">Verification Code:</label>
+                <input type="text" id="verification-code">
             </div>
-            <span class="text" id="email-feedback">Input Email</span>
+            <span class="text" id="verification-code-feedback">Input Verification Code</span>
             <div class="container">
-                <label for="password">Password:</label>
-                <input type="password" id="password">
-            </div>
-            <span class="text" id="password-feedback">Input Password</span>
-            <div class="container">
-                <button id="register">Register</button>
+                <button id="confirm">Confirm</button>
             </div>
         </div>
     </body>

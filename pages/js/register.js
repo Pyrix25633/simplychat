@@ -26,7 +26,7 @@ registerButton.addEventListener('click', async () => {
             localStorage.setItem('pendingConfirm', JSON.stringify({
                 username: usernameInput.value
             }));
-            window.location.href = window.location.host + '/confirm';
+            window.location.href = '/confirm';
         },
         error: (req, err) => {
             console.log(err);
@@ -45,6 +45,10 @@ usernameInput.addEventListener('keyup', () => {
 });
 usernameInput.addEventListener('keydown', () => {
     clearTimeout(usernameTimer);
+});
+usernameInput.addEventListener('focusout', () => {
+    clearTimeout(usernameTimer);
+    usernameTyped();
 });
 function usernameTyped() {
     usernameFeedbackSpan.classList.add('error');
@@ -80,6 +84,10 @@ emailInput.addEventListener('keyup', () => {
 emailInput.addEventListener('keydown', () => {
     clearTimeout(emailTimer);
 });
+emailInput.addEventListener('focusout', () => {
+    clearTimeout(emailTimer);
+    emailTyped();
+});
 function emailTyped() {
     emailFeedbackSpan.classList.add('error');
     $.ajax({
@@ -113,6 +121,10 @@ passwordInput.addEventListener('keyup', () => {
 });
 passwordInput.addEventListener('keydown', () => {
     clearTimeout(passwordTimer);
+});
+passwordInput.addEventListener('focusout', () => {
+    clearTimeout(passwordTimer);
+    passwordTyped();
 });
 function passwordTyped() {
     passwordFeedbackSpan.classList.add('error');

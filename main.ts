@@ -1,7 +1,8 @@
 import express, { Express, Request, Response } from 'express';
-import { FieldInfo, MysqlError } from 'mysql';
-import { ConfirmRequest, ConfirmResponse, EmailFeedbackResponse, RegisterRequest, UsernameFeedbackResponse, ValidateTokenRequest, ValidateTokenResponse, isConfirmRequestValid, isEmailFeedbackRequestValid, isRegisterRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/User';
-import { insertTempUser, query, selectTempUser, selectTempUserFromEmail, selectUserFromEmail, selectUserFromUsername } from './lib/database';
+import { MysqlError } from 'mysql';
+import { ConfirmRequest, RegisterRequest, UsernameFeedbackResponse, ValidateTokenRequest, ValidateTokenResponse, isConfirmRequestValid, isEmailFeedbackRequestValid, isRegisterRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
+import { insertTempUser, selectTempUser, selectTempUserFromEmail, selectUserFromEmail, selectUserFromUsername } from './lib/database';
+import { SHA512Hash } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
@@ -10,6 +11,8 @@ import * as https from 'https';
 import * as fs from 'fs';
 import { sendEmail } from './lib/email';
 import Mail from 'nodemailer/lib/mailer';
+import { deleteTempUser } from './lib/database';
+import { createUser } from './lib/database';
 
 const main: Express = express();
 const port: number = 4443;
@@ -42,7 +45,7 @@ main.use('/img', express.static('./pages/img'));
 
 main.post('/api/user/register', (req: Request, res: Response): void => {
     const request: RegisterRequest = req.body;
-    if(!isRegisterRequestValid(request)) { // TODO
+    if(!isRegisterRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
@@ -71,31 +74,52 @@ main.post('/api/user/register', (req: Request, res: Response): void => {
                     return;
                 }
                 if(results.length == 0) {
-                    const verificationCode: number = Math.floor(100000 + Math.random() * 900000);
-                    const mailOptions: Mail.Options = {
-                        to: request.email,
-                        subject: 'Simply Chat verification code',
-                        text: 'Your verification code for username ' + request.username + ' is ' + verificationCode + '.',
-                        html: 'Your verification code for username ' + request.username + ' is ' + verificationCode +
-                            '.<br> Click <a href="https://simplychat.ddns.net:4443/confirm?username="' + request.username +
-                            '&verificationCode=' + verificationCode + '>here</a> to confirm your registration.' +
-                            '<br> If the link above does not work open this <a href="https://simplychat.ddns.net:4443/confirm">' +
-                            'page</a> and enter username and verification code.'
-                    };
-                    sendEmail(mailOptions, (err: Error | null): void => {
+                    selectTempUserFromEmail(request.email, (err: MysqlError | null, results: any): void => {
                         if(err) {
-                            res.status(500).send('Internal Server Error');
+                            res.status(500).send('Internal Sever Error');
                             console.log(err);
                             return;
                         }
-                        insertTempUser(request, verificationCode, Date.now() / 1000, (err: MysqlError | null): void => {
-                            if(err) {
-                                res.status(500).send('Internal Server Error');
-                                console.log(err);
-                                return;
-                            }
-                            res.status(201).send("Created");
-                        });
+                        if(results.length == 0)
+                            selectUserFromEmail(request.email, (err: MysqlError | null, results: any): void => {
+                                if(err) {
+                                    res.status(500).send('Internal Sever Error');
+                                    console.log(err);
+                                    return;
+                                }
+                                if(results.length == 0) {
+                                    const verificationCode: number = Math.floor(100000 + Math.random() * 900000);
+                                    const mailOptions: Mail.Options = {
+                                        to: request.email,
+                                        subject: 'Simply Chat verification code',
+                                        text: 'Your verification code for username ' + request.username + ' is ' + verificationCode + '.',
+                                        html: 'Your verification code for username ' + request.username + ' is ' + verificationCode +
+                                            '.<br> Click <a href="https://simplychat.ddns.net:4443/confirm?username=' + request.username +
+                                            '&verificationCode=' + verificationCode + '">here</a> to confirm your registration.' +
+                                            '<br> If the link above does not work open <a href="https://simplychat.ddns.net:4443/confirm">' +
+                                            'this page</a> and enter username and verification code.'
+                                    };
+                                    sendEmail(mailOptions, (err: Error | null): void => {
+                                        if(err) {
+                                            res.status(500).send('Internal Server Error');
+                                            console.log(err);
+                                            return;
+                                        }
+                                        insertTempUser(request, verificationCode, (err: MysqlError | null): void => {
+                                            if(err) {
+                                                res.status(500).send('Internal Server Error');
+                                                console.log(err);
+                                                return;
+                                            }
+                                            res.status(201).send("Created");
+                                        });
+                                    });
+                                }
+                                else
+                                    res.status(400).send('Bad Request');
+                            });
+                        else
+                            res.status(400).send('Bad Request');
                     });
                 }
                 else
@@ -158,7 +182,7 @@ main.get('/api/user/email-feedback', (req: Request, res: Response): void => {
         return;
     }
     if(!request.match(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
-        res.status(200).send({feedback: 'Invalid email!'});
+        res.status(200).send({feedback: 'Invalid Email!'});
         return;
     }
     selectTempUserFromEmail(request, (err: MysqlError | null, results: any): void => {
@@ -175,7 +199,7 @@ main.get('/api/user/email-feedback', (req: Request, res: Response): void => {
                     return;
                 }
                 if(results.length == 0)
-                    res.status(200).send({feedback: 'Valid email'});
+                    res.status(200).send({feedback: 'Valid Email'});
                 else
                     res.status(200).send({feedback: 'Email already used!'});
             });
@@ -200,10 +224,84 @@ main.post('/api/user/confirm', (req: Request, res: Response): void => {
             res.status(404).send('Not Found');
             return;
         }
-        console.log(request);
-        console.log(results);
+        let tempUser: {
+            username: string,
+            email: string,
+            password_hash: string,
+            verification_code: number
+        } = results[0];
+        if(tempUser.verification_code != request.verificationCode) {
+            res.status(401).send('Unauthorized');
+            return;
+        }
+        deleteTempUser(request.username, (err: MysqlError | null, results: any): void => {
+            if(err) {
+                res.status(500).send('Internal Sever Error');
+                console.log(err);
+                return;
+            }
+            const token: string = SHA512Hash(tempUser.username + tempUser.password_hash + Date.now() / 1000 + Math.floor(Math.random() * 100000));
+            createUser(tempUser.username, tempUser.email, tempUser.password_hash, token, (err: MysqlError | null, results: any): void => {
+                if(err) {
+                    res.status(500).send('Internal Sever Error');
+                    console.log(err);
+                    return;
+                }
+                selectUserFromUsername(tempUser.username, (err: MysqlError | null, results: any): void => {
+                    if(err || results.length == 0) {
+                        res.status(500).send('Internal Sever Error');
+                        console.log(err);
+                        return;
+                    }
+                    res.status(200).send({id: results[0].id, token: token});
+                });
+            });
+        });
     });
-    let response: ConfirmResponse; //TODO
+});
+
+main.get('/api/user/username-confirm-feedback', (req: Request, res: Response): void => {
+    let request: any = req.query.username;
+    if(!isUsernameConfirmFeedbackRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    let response: UsernameFeedbackResponse = {feedback: null};
+    if(request.length < 4 || request.length > 32) response.feedback = 'Invalid Username!';
+    else {
+        for(let i = 0; i < request.length; i++) {
+            let c = request.codePointAt(i);
+            if(!((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == 45 || c == 95 || c == 32))) {
+                response.feedback = 'Invalid Username!';
+                break;
+            }
+        }
+    }
+    if(response.feedback != null) {
+        res.status(200).send(response);
+        return;
+    }
+    selectTempUser(request, (err: MysqlError | null, results: any): void => {
+        if(err) {
+            res.status(500).send('Internal Sever Error');
+            console.log(err);
+            return;
+        }
+        if(results.length == 0)
+            selectUserFromUsername(request, (err: MysqlError | null, results: any): void => {
+                if(err) {
+                    res.status(500).send('Internal Sever Error');
+                    console.log(err);
+                    return;
+                }
+                if(results.length == 0)
+                    res.status(200).send({feedback: 'Username does not exitst!'});
+                else
+                    res.status(200).send({feedback: 'Username already confirmed!'});
+            });
+        else
+            res.status(200).send({feedback: 'Valid Username'});
+    });
 });
 
 main.post('/api/user/validate-token', (req: Request, res: Response): void => {
@@ -219,6 +317,10 @@ main.post('/api/user/validate-token', (req: Request, res: Response): void => {
 
 main.get('/register', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/register.html'));
+});
+
+main.get('/confirm', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/confirm.html'));
 });
 
 const options = {
