@@ -49,8 +49,12 @@ button:disabled {
     filter: brightness(70%);
 }
 
-span.text {
+span.text, span.text * {
     font-size: 16px;
+}
+
+a {
+    color: var(--color-simplychat);
 }
 
 .error {
@@ -58,6 +62,21 @@ span.text {
 }
 .success {
     color: var(--color-success);
+}
+
+div#navbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+}
+
+img#logo {
+    width: 8vw;
 }
 
 div.box {
@@ -71,4 +90,8 @@ div.container {
     display: flex;
     flex-direction: row;
     align-items: center;
+}
+
+div.margin-top {
+    margin-top: 15px;
 }

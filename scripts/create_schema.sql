@@ -8,7 +8,7 @@ CREATE TABLE users (
     email VARCHAR(64) NULL,
     password_hash CHAR(128) NULL,
     token CHAR(128) NULL,
-    token_timestamp INT NULL,
+    token_expiration INT NULL,
     chat_ids JSON NOT NULL,
     online BOOLEAN NOT NULL,
     last_online INT NOT NULL,

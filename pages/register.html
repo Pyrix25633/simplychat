@@ -7,6 +7,7 @@
         <title>Simply Chat - Register</title>
         <link rel="stylesheet" href="./css/style.css">
         <link rel="stylesheet" href="./css/register-confirm-login.css">
+        <link rel="icon" href="./img/icon.svg" type="image/png">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,6 +15,9 @@
         <script defer src="./js/register.js"></script>
     </head>
     <body>
+        <div id="navbar">
+            <img id="logo" src="./img/logo.png" alt="Simply Chat Logo">
+        </div>
         <h3>Register with your data</h3>
         <div class="box">
             <div class="container">
@@ -34,6 +38,10 @@
             <div class="container">
                 <button id="register">Register</button>
             </div>
+        </div>
+        <div class="box margin-top">
+            <span class="text">Already registered? Check your email and <a href="/confirm">confirm here!</a></span>
+            <span class="text">Already have an account? <a href="/login">Login here!</a></span>
         </div>
     </body>
 </html>

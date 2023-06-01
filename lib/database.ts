@@ -2,6 +2,7 @@ import path from 'path';
 import * as fs from 'fs';
 import mysql, {Connection, MysqlError, queryCallback} from 'mysql';
 import { RegisterRequest } from './types/api/user';
+import { getTimestamp, twoWeeksTimestamp } from './timestamp';
 
 process.on('uncaughtException', (exc: Error) => {
     connection.end((err?: MysqlError): void => {
@@ -39,7 +40,7 @@ export function query(query: string, values: (string | number | boolean)[], call
 
 export function insertTempUser(request: RegisterRequest, verificationCode: number, callback: queryCallback): void {
     query('INSERT INTO temp_users VALUES (?, ?, ?, ?, ?);',
-        [request.username, request.email, request.passwordHash, verificationCode, Date.now() / 1000], callback);
+        [request.username, request.email, request.passwordHash, verificationCode, getTimestamp()], callback);
 }
 
 export function selectTempUser(username: string, callback: queryCallback): void {
@@ -55,15 +56,20 @@ export function deleteTempUser(username: string, callback: queryCallback): void 
 }
 
 export function createUser(username: string, email: string, passwordHash: string, token: string, callback: queryCallback): void {
-    let timestamp: number = Math.floor(Date.now() / 1000);
-    query('INSERT INTO users (username, email, password_hash, token, token_timestamp, chat_ids, online, last_online, status, settings) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-        [username, email, passwordHash, token, timestamp, '[]', false, timestamp, 'New User!', '{}'], callback);
+    const timestamp: number = getTimestamp();
+    query('INSERT INTO users (username, email, password_hash, token, token_expiration, chat_ids, online, last_online, status, settings) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        [username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '[]', false, timestamp, 'New User!', '{}'], callback);
 }
 
-export function selectUserFromUsername(username: string, callback: queryCallback) {
-    query('SELECT id FROM users WHERE (username=?)', [username], callback);
+export function selectUserFromUsername(username: string, callback: queryCallback): void {
+    query('SELECT id, password_hash, token, token_expiration FROM users WHERE (username=?);', [username], callback);
 }
 
-export function selectUserFromEmail(email: string, callback: queryCallback) {
-    query('SELECT id FROM users WHERE (email=?)', [email], callback);
+export function selectUserFromEmail(email: string, callback: queryCallback): void {
+    query('SELECT id FROM users WHERE (email=?);', [email], callback);
+}
+
+export function updateUserToken(id: number, token: string): void {
+    query('UPDATE users SET token=?, token_expiration=? WHERE id=?;', [token, getTimestamp() + twoWeeksTimestamp, id],
+        (err: MysqlError | null, results: any): void => {console.log(err);});
 }

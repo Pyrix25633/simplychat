@@ -19,7 +19,7 @@ export type RegisterRequest = {
     passwordHash: string
 };
 
-export function isRegisterRequestValid(req: RegisterRequest): boolean { // TODO
+export function isRegisterRequestValid(req: RegisterRequest): boolean {
     return req.username != undefined && typeof req.username == 'string'
         && req.username.length > 2 && req.username.length <= 32
         && req.email != undefined && typeof req.email == 'string'
@@ -61,6 +61,26 @@ export function isUsernameConfirmFeedbackRequestValid(req: any): boolean {
 }
 
 export type UsernameConfirmFeedbackResponse = FeedbackObject;
+
+// login
+
+export type LoginRequest = {
+    username: string,
+    passwordHash: string
+};
+
+export function isLoginRequestValid(req: LoginRequest): boolean {
+    return req.username != undefined && typeof req.username == 'string'
+        && req.username.length > 3 && req.username.length <= 32
+        && req.passwordHash != undefined && typeof req.passwordHash == 'string'
+        && req.passwordHash.length == 128;
+}
+
+// username-login-feedback
+
+export function isUsernameLoginFeedbackValid(req: any): boolean {
+    return req != undefined && typeof req == 'string';
+}
 
 // validate-token
 

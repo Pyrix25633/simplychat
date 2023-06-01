@@ -34,9 +34,12 @@ registerButton.addEventListener('click', async () => {
     });
 });
 
-if(usernameInput.value != '') usernameTyped();
-if(emailInput.value != '') emailTyped();
-if(passwordInput.value != '') passwordTyped();
+let automaticInsertionInterval = setInterval(() => {
+    if(usernameInput.value != '') usernameTyped();
+    if(emailInput.value != '') emailTyped();
+    if(passwordInput.value != '') passwordTyped();
+    clearInterval(automaticInsertionInterval);
+}, 250);
 
 let usernameTimer;
 usernameInput.addEventListener('keyup', () => {
@@ -128,8 +131,15 @@ passwordInput.addEventListener('focusout', () => {
 });
 function passwordTyped() {
     passwordFeedbackSpan.classList.add('error');
-    if(passwordInput.value.length < 6) {
+    if(passwordInput.value.length < 4) {
         passwordFeedbackSpan.innerText = 'Password too short!'
+        passwordFeedbackSpan.classList.replace('success', 'error');
+        validPassword = false;
+        registerButton.disabled = true;
+        return;
+    }
+    if(passwordInput.value.length > 32) {
+        passwordFeedbackSpan.innerText = 'Password too long!'
         passwordFeedbackSpan.classList.replace('success', 'error');
         validPassword = false;
         registerButton.disabled = true;

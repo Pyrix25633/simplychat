@@ -9,15 +9,19 @@ let validVerificationCode = false;
 confirmButton.disabled = true;
 
 let pendingConfirm = JSON.parse(localStorage.getItem('pendingConfirm'));
-let urlPendingConfirm = new URLSearchParams(window.location.search).get('username');
+let urlParams = new URLSearchParams(window.location.search);
+let urlPendingConfirm = {username: urlParams.get('username'), verificationCode: urlParams.get('verificationCode')};
 if(pendingConfirm != null) {
-    if(urlPendingConfirm != null)
-        usernameInput.value = urlPendingConfirm;
+    if(urlPendingConfirm.username != null || urlPendingConfirm.verificationCode != null) {
+        usernameInput.value = urlPendingConfirm.username;
+        verificationCodeInput.value = urlPendingConfirm.verificationCode;
+    }
     else
         usernameInput.value = pendingConfirm.username;
 }
-else if(urlPendingConfirm != null) {
-    usernameInput.value = urlPendingConfirm;
+else if(urlPendingConfirm.username != null || urlPendingConfirm.verificationCode != null) {
+    usernameInput.value = urlPendingConfirm.username;
+    verificationCodeInput.value = urlPendingConfirm.verificationCode;
 }
 
 confirmButton.addEventListener('click', async () => {
@@ -34,6 +38,7 @@ confirmButton.addEventListener('click', async () => {
             if(pendingConfirm != null && pendingConfirm.username == urlPendingConfirm)
                 localStorage.setItem('pendingConfirm', null);
             localStorage.setItem('cachedLogin', JSON.stringify(res));
+            window.location.href = '/';
         },
         statusCode: {
             400: () => {
@@ -58,8 +63,11 @@ confirmButton.addEventListener('click', async () => {
     });
 });
 
-if(usernameInput.value != '') usernameTyped();
-if(verificationCodeInput.value != '') verificationCodeTyped();
+let automaticInsertionInterval = setInterval(() => {
+    if(usernameInput.value != '') usernameTyped();
+    if(verificationCodeInput.value != '') verificationCodeTyped();
+    clearInterval(automaticInsertionInterval);
+}, 250);
 
 let usernameTimer;
 usernameInput.addEventListener('keyup', () => {

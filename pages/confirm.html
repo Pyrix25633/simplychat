@@ -7,6 +7,7 @@
         <title>Simply Chat - Confirm</title>
         <link rel="stylesheet" href="./css/style.css">
         <link rel="stylesheet" href="./css/register-confirm-login.css">
+        <link rel="icon" href="./img/icon.svg" type="image/png">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,6 +15,9 @@
         <script defer src="./js/confirm.js"></script>
     </head>
     <body>
+        <div id="navbar">
+            <img id="logo" src="./img/logo.png" alt="Simply Chat Logo">
+        </div>
         <h3>Confirm with the Verification Code sent to your Email</h3>
         <div class="box">
             <div class="container">
@@ -29,6 +33,10 @@
             <div class="container">
                 <button id="confirm">Confirm</button>
             </div>
+        </div>
+        <div class="box margin-top">
+            <span class="text">Already confirmed? <a href="/login">Login here!</a></span>
+            <span class="text">Not registered yet? <a href="/register">Register here!</a></span>
         </div>
     </body>
 </html>
