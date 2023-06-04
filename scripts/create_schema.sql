@@ -14,6 +14,7 @@ CREATE TABLE users (
     last_online INT NOT NULL,
     status VARCHAR(64) NOT NULL,
     settings JSON NULL,
+    pfp_type VARCHAR(5) NOT NULL,
     PRIMARY KEY (id)
 );
 

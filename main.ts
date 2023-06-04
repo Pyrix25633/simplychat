@@ -14,6 +14,7 @@ import Mail from 'nodemailer/lib/mailer';
 import { deleteTempUser } from './lib/database';
 import { createUser } from './lib/database';
 import { getTimestamp, oneDayTimestamp } from './lib/timestamp';
+import { generateRandompfp } from './lib/randompfp';
 
 const main: Express = express();
 const port: number = 4443;
@@ -249,6 +250,7 @@ main.post('/api/user/confirm', (req: Request, res: Response): void => {
                     console.log(err);
                     return;
                 }
+                generateRandompfp(tempUser.username);
                 selectUserFromUsername(tempUser.username, (err: MysqlError | null, results: any): void => {
                     if(err || results.length == 0) {
                         res.status(500).send('Internal Server Error');
