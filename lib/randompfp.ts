@@ -9,7 +9,7 @@ function generateRandomColor(): string {
     return color;
 }
 
-export function generateRandompfp(username: string): void {
+export function generateRandompfp(id: number): void {
     let svg: string = '<svg xmlns="http://www.w3.org/2000/svg" height="9" width="9">';
     const color: string = generateRandomColor();
     for(let x = 1; x < 5; x++) {
@@ -17,10 +17,10 @@ export function generateRandompfp(username: string): void {
             if(Math.random() < 0.5) {
                 svg += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + color + '" />';
                 if(x != 4)
-                    svg += '<rect x="' + (8 - x) + '" y="' + y + '" width="1" height="1" fill="' + color + '" />';
+                    svg += '<rect x="' + (8 - x) + '" y="' + y + '" width="1"  height="1" fill="' + color + '" />';
             }
         }
     }
     svg += '</svg>';
-    fs.writeFileSync('./pfps/' + username + '.svg', svg);
+    fs.writeFileSync('./pfps/' + id + '.svg', svg);
 }

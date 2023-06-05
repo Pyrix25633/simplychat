@@ -1,0 +1,17 @@
+h3 {
+    margin: 0;
+}
+
+img#pfp {
+    height: 100px;
+    border-radius: 50%;
+    background-color: #ffffff10;
+}
+
+div.container:not(:first-child) {
+    margin-top: 10px;
+}
+
+div.box h3:not(:first-child), div.box span:not(:first-child) {
+    margin-left: 10px;
+}

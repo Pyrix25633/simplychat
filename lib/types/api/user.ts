@@ -2,10 +2,6 @@ type FeedbackObject = {
     feedback: string | null
 };
 
-type ValidObject = {
-    valid: boolean
-};
-
 type TokenIdObject = {
     token: string,
     id: number
@@ -92,4 +88,12 @@ export function isValidateTokenRequestValid(req: any): boolean {
         && req.id != undefined && typeof req.id == 'number';
 }
 
-export type ValidateTokenResponse = ValidObject;
+// get-settings
+
+export type GetSettingsRequest = TokenIdObject;
+
+export function isGetSettingsRequestValid(req: any): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number';
+}

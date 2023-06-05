@@ -47,10 +47,6 @@ export function selectTempUser(username: string, callback: queryCallback): void 
     query('SELECT * FROM temp_users WHERE (username=?);', [username], callback);
 }
 
-export function selectTempUserFromEmail(email: string, callback: queryCallback): void {
-    query('SELECT username FROM temp_users WHERE (email=?);', [email], callback);
-}
-
 export function deleteTempUser(username: string, callback: queryCallback): void {
     query('DELETE FROM temp_users WHERE (username=?);', [username], callback);
 }
@@ -61,12 +57,31 @@ export function createUser(username: string, email: string, passwordHash: string
         [username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '[]', false, timestamp, 'New User!', '{}', 'svg'], callback);
 }
 
+export function selectUser(id: number, callback: queryCallback): void {
+    query('SELECT * FROM users WHERE (id=?);', [id], callback);
+}
+
 export function selectUserFromUsername(username: string, callback: queryCallback): void {
     query('SELECT id, password_hash, token, token_expiration FROM users WHERE (username=?);', [username], callback);
 }
 
-export function selectUserFromEmail(email: string, callback: queryCallback): void {
-    query('SELECT id FROM users WHERE (email=?);', [email], callback);
+export function selectUserToken(id: number, callback: queryCallback): void {
+    query('SELECT token, token_expiration FROM users WHERE (id=?)', [id], callback);
+}
+
+export function selectFromUsername(username: string, callback: queryCallback): void {
+    query('(SELECT username FROM users WHERE (username=?)) UNION (SELECT username FROM temp_users WHERE (username=?));',
+        [username, username], callback);
+}
+
+export function selectFromUsernameOrEmail(username: string, email: string, callback: queryCallback): void {
+    query('(SELECT username FROM users WHERE (username=?) OR (email=?)) UNION (SELECT username FROM temp_users WHERE (username=?) OR (email=?));',
+        [username, email, username, email], callback);
+}
+
+export function selectFromEmail(email: string, callback: queryCallback): void {
+    query('(SELECT username FROM users WHERE (email=?)) UNION (SELECT username FROM temp_users WHERE (email=?));',
+        [email, email], callback);
 }
 
 export function updateUserToken(id: number, token: string): void {

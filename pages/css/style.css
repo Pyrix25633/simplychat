@@ -15,10 +15,6 @@
 
 body {
     background-color: var(--color-backgorund);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
     height: 100vh;
     margin: 0;
 }
@@ -68,15 +64,16 @@ div#navbar {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: center;
-    position: absolute;
+    position: sticky;
     top: 0;
     left: 0;
     width: 100vw;
+    padding-left: 15px;
+    padding-top: 5px;
 }
 
 img#logo {
-    width: 8vw;
+    width: 60px;
 }
 
 div.box {
@@ -86,10 +83,14 @@ div.box {
     align-items: center;
 }
 
+div.box.main {
+    width: 100%;
+}
+
 div.container {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    justify-content: center;
 }
 
 div.margin-top {

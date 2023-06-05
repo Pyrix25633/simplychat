@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { ConfirmRequest, LoginRequest, RegisterRequest, UsernameFeedbackResponse, ValidateTokenRequest, ValidateTokenResponse, isConfirmRequestValid, isEmailFeedbackRequestValid, isLoginRequestValid, isRegisterRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
-import { insertTempUser, selectTempUser, selectTempUserFromEmail, selectUserFromEmail, selectUserFromUsername, updateUserToken } from './lib/database';
+import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
+import { insertTempUser, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUserToken } from './lib/database';
 import { createToken } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
@@ -40,6 +40,7 @@ main.use(helmet.contentSecurityPolicy({
 main.use('/css', express.static('./pages/css'));
 main.use('/js', express.static('./pages/js'));
 main.use('/img', express.static('./pages/img'));
+main.use('/pfps', express.static('./pfps'));
 
 //// api ////
 
@@ -62,71 +63,40 @@ main.post('/api/user/register', (req: Request, res: Response): void => {
             return;
         }
     }
-    selectTempUser(request.username, (err: MysqlError | null, results: any): void => {
+    selectFromUsernameOrEmail(request.username, request.email, (err: MysqlError | null, results: any): void => {
         if(err) {
             res.status(500).send('Internal Server Error');
             console.log(err);
             return;
         }
-        if(results.length == 0)
-            selectUserFromUsername(request.username, (err: MysqlError | null, results: any): void => {
+        if(results.length == 0) {
+            const verificationCode: number = Math.floor(100000 + Math.random() * 900000);
+            const mailOptions: Mail.Options = {
+                to: request.email,
+                subject: 'Simply Chat verification code',
+                text: 'Your verification code for username ' + request.username + ' is ' + verificationCode + '.',
+                html: 'Your verification code for username ' + request.username + ' is ' + verificationCode +
+                    '.<br> Click <a href="https://simplychat.ddns.net:4443/confirm?username=' + request.username +
+                    '&verificationCode=' + verificationCode + '">here</a> to confirm your registration.' +
+                    '<br> If the link above does not work open <a href="https://simplychat.ddns.net:4443/confirm">' +
+                    'this page</a> and enter username and verification code.'
+            };
+            sendEmail(mailOptions, (err: Error | null): void => {
                 if(err) {
                     res.status(500).send('Internal Server Error');
                     console.log(err);
                     return;
                 }
-                if(results.length == 0) {
-                    selectTempUserFromEmail(request.email, (err: MysqlError | null, results: any): void => {
-                        if(err) {
-                            res.status(500).send('Internal Server Error');
-                            console.log(err);
-                            return;
-                        }
-                        if(results.length == 0)
-                            selectUserFromEmail(request.email, (err: MysqlError | null, results: any): void => {
-                                if(err) {
-                                    res.status(500).send('Internal Server Error');
-                                    console.log(err);
-                                    return;
-                                }
-                                if(results.length == 0) {
-                                    const verificationCode: number = Math.floor(100000 + Math.random() * 900000);
-                                    const mailOptions: Mail.Options = {
-                                        to: request.email,
-                                        subject: 'Simply Chat verification code',
-                                        text: 'Your verification code for username ' + request.username + ' is ' + verificationCode + '.',
-                                        html: 'Your verification code for username ' + request.username + ' is ' + verificationCode +
-                                            '.<br> Click <a href="https://simplychat.ddns.net:4443/confirm?username=' + request.username +
-                                            '&verificationCode=' + verificationCode + '">here</a> to confirm your registration.' +
-                                            '<br> If the link above does not work open <a href="https://simplychat.ddns.net:4443/confirm">' +
-                                            'this page</a> and enter username and verification code.'
-                                    };
-                                    sendEmail(mailOptions, (err: Error | null): void => {
-                                        if(err) {
-                                            res.status(500).send('Internal Server Error');
-                                            console.log(err);
-                                            return;
-                                        }
-                                        insertTempUser(request, verificationCode, (err: MysqlError | null): void => {
-                                            if(err) {
-                                                res.status(500).send('Internal Server Error');
-                                                console.log(err);
-                                                return;
-                                            }
-                                            res.status(201).send("Created");
-                                        });
-                                    });
-                                }
-                                else
-                                    res.status(400).send('Bad Request');
-                            });
-                        else
-                            res.status(400).send('Bad Request');
-                    });
-                }
-                else
-                    res.status(400).send('Bad Request');
+                insertTempUser(request, verificationCode, (err: MysqlError | null): void => {
+                    if(err) {
+                        res.status(500).send('Internal Server Error');
+                        console.log(err);
+                        return;
+                    }
+                    res.status(201).send("Created");
+                });
             });
+        }
         else
             res.status(400).send('Bad Request');
     });
@@ -154,24 +124,14 @@ main.get('/api/user/username-feedback', (req: Request, res: Response): void => {
         res.status(200).send(response);
         return;
     }
-    selectTempUser(request, (err: MysqlError | null, results: any): void => {
+    selectFromUsername(request, (err: MysqlError | null, results: any): void => {
         if(err) {
             res.status(500).send('Internal Server Error');
             console.log(err);
             return;
         }
         if(results.length == 0)
-            selectUserFromUsername(request, (err: MysqlError | null, results: any): void => {
-                if(err) {
-                    res.status(500).send('Internal Server Error');
-                    console.log(err);
-                    return;
-                }
-                if(results.length == 0)
-                    res.status(200).send({feedback: 'Valid username'});
-                else
-                    res.status(200).send({feedback: 'Username already taken!'});
-            });
+            res.status(200).send({feedback: 'Valid username'});
         else
             res.status(200).send({feedback: 'Username already taken!'});
     });
@@ -187,24 +147,14 @@ main.get('/api/user/email-feedback', (req: Request, res: Response): void => {
         res.status(200).send({feedback: 'Invalid Email!'});
         return;
     }
-    selectTempUserFromEmail(request, (err: MysqlError | null, results: any): void => {
+    selectFromEmail(request, (err: MysqlError | null, results: any): void => {
         if(err) {
             res.status(500).send('Internal Server Error');
             console.log(err);
             return;
         }
         if(results.length == 0)
-            selectUserFromEmail(request, (err: MysqlError | null, results: any): void => {
-                if(err) {
-                    res.status(500).send('Internal Server Error');
-                    console.log(err);
-                    return;
-                }
-                if(results.length == 0)
-                    res.status(200).send({feedback: 'Valid Email'});
-                else
-                    res.status(200).send({feedback: 'Email already used!'});
-            });
+            res.status(200).send({feedback: 'Valid Email'});
         else
             res.status(200).send({feedback: 'Email already used!'});
     });
@@ -250,7 +200,7 @@ main.post('/api/user/confirm', (req: Request, res: Response): void => {
                     console.log(err);
                     return;
                 }
-                generateRandompfp(tempUser.username);
+                generateRandompfp(tempUser.id);
                 selectUserFromUsername(tempUser.username, (err: MysqlError | null, results: any): void => {
                     if(err || results.length == 0) {
                         res.status(500).send('Internal Server Error');
@@ -365,7 +315,55 @@ main.post('/api/user/validate-token', (req: Request, res: Response): void => {
         res.status(400).send('Bad Request');
         return;
     }
-    let response: ValidateTokenResponse; //TODO
+    selectUserToken(request.id, (err: MysqlError | null, results: any): void => {
+        if(err) {
+            res.status(500).send('Internal Server Error');
+            console.log(err);
+            return;
+        }
+        if(results.length == 0) {
+            res.status(404).send('Not Found');
+            return;
+        }
+        const user = results[0];
+        res.status(200).send({valid: user.token == request.token && user.token_expiration > getTimestamp()});
+    });
+});
+
+function validateToken(id: number, token: string, res: Response, callback: (user: any) => void): void {
+    selectUser(id, (err: MysqlError | null, results: any): void => {
+        if(err) {
+            res.status(500).send('Internal Server Error');
+            console.log(err);
+            return;
+        }
+        if(results.length == 0) {
+            res.status(404).send('Not Found');
+            return;
+        }
+        const user = results[0];
+        if(user.token == token && user.token_expiration > getTimestamp())
+            callback(user);
+        else
+            res.status(401).send('Unauthorized');
+    });
+}
+
+main.post('/api/user/get-settings', (req: Request, res: Response): void => {
+    const request: GetSettingsRequest = req.body;
+    if(!isGetSettingsRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateToken(request.id, request.token, res, (user: any): void => {
+        res.status(200).send({
+            username: user.username,
+            email: user.email,
+            status: user.status,
+            settings: user.settings,
+            pfpType: user.pfp_type
+        });
+    });
 });
 
 //// pages ////
@@ -380,6 +378,10 @@ main.get('/confirm', (req: Request, res: Response): void => {
 
 main.get('/login', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/login.html'));
+});
+
+main.get('/settings', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/settings.html'));
 });
 
 main.get('/', (req: Request, res: Response): void => {
