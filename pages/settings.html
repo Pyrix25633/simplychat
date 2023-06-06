@@ -19,9 +19,35 @@
             <img id="logo" src="./img/logo.png" alt="Simply Chat Logo">
         </div>
         <div class="box main">
-            <img  id="pfp" src="" alt="Profile Picture">
-            <div class="container"><h3>Username:</h3><h3 id="username"></h3></div>
-            <div class="container"><span class="text">Email:</span><span class="text" id="email"></span></div>
+            <img id="pfp" src="" alt="Profile Picture">
+            <div class="container">
+                <span class="text">Id:</span>
+                <span class="text" id="id"></span>
+            </div>
+            <div class="container">
+                <label for="username">Username:</label>
+                <input type="text" id="username">
+            </div>
+            <span class="text" id="username-feedback">You can change your Username</span>
+            <div class="container">
+                <label for="email">Email:</label>
+                <input type="email" id="email">
+            </div>
+            <span class="text" id="email-feedback">You can change your Email</span>
+            <div class="container">
+                <label for="password">Password:</label>
+                <input type="password" id="password">
+            </div>
+            <span class="text" id="password-feedback">You can change your Password</span>
+            <div class="container">
+                <label for="status">Status:</label>
+                <input type="text" id="status">
+            </div>
+            <span class="text" id="status-feedback">You can change your Status</span>
+        </div>
+        <div id="footer">
+            <button id="cancel">Cancel</button>
+            <button id="save">Save</button>
         </div>
     </body>
 </html>

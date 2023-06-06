@@ -1,5 +1,6 @@
 :root {
-    --color-backgorund: #222222;
+    --color-background: #222222;
+    --color-lighter: #FFFFFF10;
     --color-foreground: #DDDDDD;
     --color-error: #FF6961;
     --color-success: #77DD77;
@@ -14,7 +15,7 @@
 }
 
 body {
-    background-color: var(--color-backgorund);
+    background-color: var(--color-background);
     height: 100vh;
     margin: 0;
 }
@@ -26,7 +27,7 @@ h3 {
 button, input {
     border-radius: 5px;
     border: 2px solid var(--color-foreground);
-    background-color: var(--color-backgorund);
+    background-color: var(--color-background);
     padding-bottom: 2px;
 }
 button {
@@ -67,9 +68,27 @@ div#navbar {
     position: sticky;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: calc(100vw - 15px);
     padding-left: 15px;
     padding-top: 5px;
+    background-color: var(--color-lighter);
+    margin-bottom: 15px;
+}
+
+div#footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    padding-bottom: 10px;
+    margin-top: 15px;
+}
+
+div#footer *:not(:first-child) {
+    margin-left: 50px;
 }
 
 img#logo {
