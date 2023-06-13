@@ -1,4 +1,9 @@
+const compactModeCssLink = document.getElementById('compactModeCss');
+
 const pfpImage = document.getElementById('pfp');
+const changePfpImage = document.getElementById('change-pfp');
+const newPfpInput = document.getElementById('new-pfp');
+const pfpFeedbackSpan = document.getElementById('pfp-feedback');
 const idSpan = document.getElementById('id');
 const usernameInput = document.getElementById('username');
 const usernameFeedbackSpan = document.getElementById('username-feedback');
@@ -7,14 +12,16 @@ const emailFeedbackSpan = document.getElementById('email-feedback');
 const passwordInput = document.getElementById('password');
 const passwordFeedbackSpan = document.getElementById('password-feedback');
 const statusInput = document.getElementById('status');
+const compactModeDiv = document.getElementById('compact-mode');
 const cancelButton = document.getElementById('cancel');
 const saveButton = document.getElementById('save');
 
 let settings;
-let validUsername = false;
-let validEmail = false;
-let validPassword = false;
-let validStatus = false;
+let validPfp = true;
+let validUsername = true;
+let validEmail = true;
+let validPassword = true;
+let validStatus = true;
 saveButton.disabled = true;
 
 const cachedLogin = JSON.parse(localStorage.getItem('cachedLogin'));
@@ -51,12 +58,76 @@ else {
     });
 }
 
+changePfpImage.addEventListener('click', () => {
+    var evt = document.createEvent("MouseEvents");
+    evt.initEvent("click", true, false);
+    newPfpInput.dispatchEvent(evt);
+});
+
+newPfpInput.addEventListener('change', (event) => {
+    const pfpType = newPfpInput.value.split('.').pop();
+    pfpFeedbackSpan.classList.add('error');
+    function invalidType() {
+        validPfp = false;
+        saveButton.disabled = true;
+        pfpFeedbackSpan.innerText = 'Profile Picture type must be SVG, PNG, JPG, JPEG or GIF!';
+        pfpFeedbackSpan.classList.replace('success', 'error');
+    }
+    if(pfpType != 'svg' && pfpType != 'png' && pfpType != 'jpg' && pfpType != 'jpeg' && pfpType != 'gif') {
+        invalidType();
+        return;
+    }
+    const image = new Image();
+    image.onload = () => {
+        if(image.width == image.height) {
+            if(image.width >= 512 && image.width <= 2048) {
+                validPfp = true;
+                saveButton.disabled = true;
+                pfpFeedbackSpan.innerText = 'Valid Profile Picture';
+                pfpFeedbackSpan.classList.replace('error', 'success');
+                pfpImage.src = image.src;
+            }
+            else {
+                validPfp = false;
+                saveButton.disabled = true;
+                pfpFeedbackSpan.innerText = 'Profile Picture resolution must be between 512x512 and 2048x2048!';
+                pfpFeedbackSpan.classList.replace('success', 'error');
+            }
+        } else {
+            validPfp = false;
+            saveButton.disabled = true;
+            pfpFeedbackSpan.innerText = 'Profile Picture type must be a square!';
+            pfpFeedbackSpan.classList.replace('success', 'error');
+        }
+    };
+    image.onerror = invalidType;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        image.src = e.target.result;
+    };
+    reader.readAsDataURL(newPfpInput.files[0]);
+});
+
+for(let e of document.getElementsByClassName('slider')) {
+    e.addEventListener('click', () => {
+        if(e.classList.contains('on'))
+            e.classList.replace('on', 'off');
+        else
+            e.classList.replace('off', 'on');
+    });
+}
+
 cancelButton.addEventListener('click', () => {
     window.location.href = '/settings';
 });
 
 saveButton.addEventListener('click', () => {
 
+});
+
+compactModeDiv.addEventListener('click', () => {
+    settings.settings.compactMode = compactModeDiv.classList.contains('on');
+    compactModeCssLink.href = './css/compact-mode-' + (settings.settings.compactMode ? 'on': 'off') + '.css';
 });
 
 function getSettings() {
@@ -71,12 +142,15 @@ function getSettings() {
 }
 
 function showSettings(res) {
+    res.settings = JSON.parse(res.settings);
     settings = res;
     pfpImage.src = './pfps/' + cachedLogin.id + '.' + res.pfpType;
     idSpan.innerText = cachedLogin.id;
     usernameInput.value = res.username;
     emailInput.value = res.email;
     statusInput.value = res.status;
+    compactModeDiv.classList.add(res.settings.compactMode ? 'on': 'off');
+    compactModeCssLink.href = './css/compact-mode-' + (res.settings.compactMode ? 'on': 'off') + '.css';
 }
 
 let usernameTimer;

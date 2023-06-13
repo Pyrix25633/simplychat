@@ -1,0 +1,33 @@
+button, input {
+    padding-bottom: 4px;
+}
+
+div#navbar {
+    padding-left: 20px;
+    margin-bottom: 20px;
+    width: calc(100vw - 20px);
+}
+
+div#footer {
+    padding-bottom: 15px;
+    margin-top: 20px;
+}
+div#footer *:not(:first-child) {
+    margin-left: 50px;
+}
+
+label {
+    margin-right: 10px;
+}
+
+span.text {
+    margin-top: 3px;
+}
+
+div.container:not(:first-child) {
+    margin-top: 12px;
+}
+
+div.box h3:not(:first-child), div.box span:not(:first-child) {
+    margin-left: 12px;
+}

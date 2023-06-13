@@ -2,26 +2,49 @@ img#pfp {
     height: 100px;
     border-radius: 50%;
     background-color: var(--color-lighter);
-    margin: 10px 0;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+img#change-pfp {
+    position: absolute;
+    bottom: 5px;
+    right: 0;
+    height: 30px;
+    background-color: var(--color-simplychat);
+    border-radius: 50%;
+}
+
+input#new-pfp {
+    display: none;
 }
 
 label {
-    margin-right: 5px;
     line-height: 31px;
 }
 
-span.text {
-    margin-top: 2px;
+div.relative {
+    position: relative;
 }
 
-div.container:not(:first-child) {
-    margin-top: 10px;
+div.slider {
+    display: flex;
+    border: 2px solid var(--color-foreground);
+    height: min-content;
+    padding: 3px;
+    border-radius: 15px;
 }
-
-div.container:not(:first-child) {
-    margin-top: 10px;
+div.slider.off {
+    padding-right: 15px;
+    background-color: var(--color-background);
 }
-
-div.box h3:not(:first-child), div.box span:not(:first-child) {
-    margin-left: 10px;
+div.slider.on {
+    padding-left: 15px;
+    background-color: var(--color-simplychat);
+}
+div.slider div.slider-circle {
+    background-color: var(--color-foreground);
+    border-radius: 50%;
+    height: 15px;
+    width: 15px;
 }

@@ -30,7 +30,7 @@ main.use(helmet.contentSecurityPolicy({
         "base-uri": "'self'",
         "font-src": ["'self'", "https:"],
         "frame-ancestors": ["'self'"],
-        "img-src": ["'self'"],
+        "img-src": ["'self'", "data:"],
         "object-src": ["'none'"],
         "script-src": ["'self'", "https:"],
         "script-src-attr": "'none'",

@@ -28,7 +28,6 @@ button, input {
     border-radius: 5px;
     border: 2px solid var(--color-foreground);
     background-color: var(--color-background);
-    padding-bottom: 2px;
 }
 button {
     background-color: var(--color-simplychat);
@@ -68,11 +67,7 @@ div#navbar {
     position: sticky;
     top: 0;
     left: 0;
-    width: calc(100vw - 15px);
-    padding-left: 15px;
-    padding-top: 5px;
     background-color: var(--color-lighter);
-    margin-bottom: 15px;
 }
 
 div#footer {
@@ -83,12 +78,6 @@ div#footer {
     bottom: 0;
     left: 0;
     width: 100vw;
-    padding-bottom: 10px;
-    margin-top: 15px;
-}
-
-div#footer *:not(:first-child) {
-    margin-left: 50px;
 }
 
 img#logo {
@@ -101,7 +90,6 @@ div.box {
     width: fit-content;
     align-items: center;
 }
-
 div.box.main {
     width: 100%;
 }
@@ -110,6 +98,7 @@ div.container {
     display: flex;
     flex-direction: row;
     justify-content: center;
+    align-items: center;
 }
 
 div.margin-top {
