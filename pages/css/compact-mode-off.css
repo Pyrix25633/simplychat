@@ -2,7 +2,7 @@ button, input {
     padding-bottom: 4px;
 }
 
-div#navbar {
+nav#navbar {
     padding-left: 20px;
     margin-bottom: 20px;
     width: calc(100vw - 20px);

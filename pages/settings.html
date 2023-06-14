@@ -7,18 +7,17 @@
         <title>Simply Chat - Settings</title>
         <link rel="stylesheet" href="./css/style.css">
         <link rel="stylesheet" href="./css/settings.css">
-        <link rel="stylesheet" href="" id="compactModeCss">
+        <link rel="stylesheet" href="" id="compact-mode-css">
+        <link rel="stylesheet" href="" id="sharp-mode-css">
         <link rel="icon" href="./img/icon.svg" type="image/png">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&family=Roboto+Mono&display=swap" rel="stylesheet">
+        <link href="" rel="stylesheet" id="font-css">
         <script defer src="./js/settings.js"></script>
     </head>
     <body>
-        <div id="navbar">
+        <nav id="navbar">
             <img id="logo" src="./img/logo.png" alt="Simply Chat Logo">
-        </div>
+        </nav>
         <div class="box main">
             <div class="box relative">
                 <img id="pfp" src="" alt="Profile Picture">
@@ -34,6 +33,7 @@
                 <label for="username">Username:</label>
                 <input type="text" id="username">
             </div>
+            <span class="text" id="username-feedback">You can change your Username</span>
             <div class="container">
                 <label for="email">Email:</label>
                 <input type="email" id="email">
@@ -56,6 +56,27 @@
                 </div>
             </div>
             <span class="text">Enables a view with smaller spaces</span>
+            <div class="container">
+                <label for="condensed-font">Condensed Font:</label>
+                <div class="slider" id="condensed-font">
+                    <div class="slider-circle"></div>
+                </div>
+            </div>
+            <span class="text">Enables a narrower font</span>
+            <div class="container">
+                <label for="aurebesh-font">Aurebesh Font:</label>
+                <div class="slider" id="aurebesh-font">
+                    <div class="slider-circle"></div>
+                </div>
+            </div>
+            <span class="text">Enables the Star Wars font</span>
+            <div class="container">
+                <label for="sharp-mode">Sharp Mode:</label>
+                <div class="slider" id="sharp-mode">
+                    <div class="slider-circle"></div>
+                </div>
+            </div>
+            <span class="text">Disables rounded borders</span>
         </div>
         <div id="footer">
             <button id="cancel">Cancel</button>

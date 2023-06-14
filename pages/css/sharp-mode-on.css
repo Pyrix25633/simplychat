@@ -1,0 +1,18 @@
+button, input {
+    border-radius: 0;
+}
+
+img#pfp {
+    border-radius: 0;
+}
+
+img#change-pfp {
+    border-radius: 0;
+}
+
+div.slider {
+    border-radius: 0;
+}
+div.slider div.slider-circle {
+    border-radius: 0;
+}

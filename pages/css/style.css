@@ -1,6 +1,6 @@
 :root {
     --color-background: #222222;
-    --color-lighter: #FFFFFF10;
+    --color-lighter: #333333;
     --color-foreground: #DDDDDD;
     --color-error: #FF6961;
     --color-success: #77DD77;
@@ -9,8 +9,6 @@
 
 * {
     color: var(--color-foreground);
-    font-family: 'Quicksand', sans-serif;
-    font-family: 'Roboto Mono', monospace;
     font-size: 20px;
 }
 
@@ -25,7 +23,6 @@ h3 {
 }
 
 button, input {
-    border-radius: 5px;
     border: 2px solid var(--color-foreground);
     background-color: var(--color-background);
 }
@@ -60,7 +57,7 @@ a {
     color: var(--color-success);
 }
 
-div#navbar {
+nav#navbar {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -68,6 +65,7 @@ div#navbar {
     top: 0;
     left: 0;
     background-color: var(--color-lighter);
+    z-index: 100;
 }
 
 div#footer {

@@ -40,6 +40,7 @@ main.use(helmet.contentSecurityPolicy({
 main.use('/css', express.static('./pages/css'));
 main.use('/js', express.static('./pages/js'));
 main.use('/img', express.static('./pages/img'));
+main.use('/font', express.static('./pages/font'));
 main.use('/pfps', express.static('./pfps'));
 
 //// api ////

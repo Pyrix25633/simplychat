@@ -54,7 +54,7 @@ export function deleteTempUser(username: string, callback: queryCallback): void 
 export function createUser(username: string, email: string, passwordHash: string, token: string, callback: queryCallback): void {
     const timestamp: number = getTimestamp();
     query('INSERT INTO users (username, email, password_hash, token, token_expiration, chat_ids, online, last_online, status, settings, pfp_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-        [username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '[]', false, timestamp, 'New User!', '{}', 'svg'], callback);
+        [username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '[]', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'], callback);
 }
 
 export function selectUser(id: number, callback: queryCallback): void {

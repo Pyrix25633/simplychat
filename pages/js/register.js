@@ -178,7 +178,7 @@ function passwordTyped() {
         registerButton.disabled = true;
     }
     else {
-        passwordFeedbackSpan.innerText = 'Valid password'
+        passwordFeedbackSpan.innerText = 'Valid Password'
         passwordFeedbackSpan.classList.replace('error', 'success');
         validPassword = true;
         registerButton.disabled = !(validUsername && validEmail && validPassword);

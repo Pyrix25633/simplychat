@@ -1,0 +1,31 @@
+@font-face {
+    font-family: 'Aurebesh';
+    src: url(../font/aurebesh.otf);
+}
+@font-face {
+    font-family: 'Aurebesh';
+    font-weight: bold;
+    src: url(../font/aurebesh-bold.ttf);
+}
+@font-face {
+    font-family: 'Aurebesh';
+    font-style: italic;
+    src: url(../font/aurebesh-italic.ttf);
+}
+
+* {
+    font-family: 'Aurebesh', sans-serif;
+    font-size: 17px;
+    line-height: 18px;
+}
+
+input, button {
+    padding-top: 2px;
+    padding-bottom: 0px;
+    justify-items: center;
+}
+
+span.text {
+    font-size: 12px;
+    line-height: 13px;
+}

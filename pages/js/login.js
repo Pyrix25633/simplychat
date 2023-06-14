@@ -27,7 +27,7 @@ loginButton.addEventListener('click', async () => {
                 console.log('Error 400: Bad Request');
             },
             401: () => {
-                passwordFeedbackSpan.innerText = "Wrong password!";
+                passwordFeedbackSpan.innerText = "Wrong Password!";
                 passwordFeedbackSpan.classList.replace('success', 'error');
                 validPassword = false;
                 loginButton.disabled = true;

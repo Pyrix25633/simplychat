@@ -1,4 +1,6 @@
-const compactModeCssLink = document.getElementById('compactModeCss');
+const compactModeCssLink = document.getElementById('compact-mode-css');
+const sharpModeCssLink = document.getElementById('sharp-mode-css');
+const fontCssLink = document.getElementById('font-css');
 
 const pfpImage = document.getElementById('pfp');
 const changePfpImage = document.getElementById('change-pfp');
@@ -12,12 +14,15 @@ const emailFeedbackSpan = document.getElementById('email-feedback');
 const passwordInput = document.getElementById('password');
 const passwordFeedbackSpan = document.getElementById('password-feedback');
 const statusInput = document.getElementById('status');
+const statusFeedbackSpan = document.getElementById('status-feedback');
 const compactModeDiv = document.getElementById('compact-mode');
+const aurebeshFontDiv = document.getElementById('aurebesh-font');
+const condensedFontDiv = document.getElementById('condensed-font');
+const sharpModeDiv = document.getElementById('sharp-mode');
 const cancelButton = document.getElementById('cancel');
 const saveButton = document.getElementById('save');
 
 let settings;
-let validPfp = true;
 let validUsername = true;
 let validEmail = true;
 let validPassword = true;
@@ -64,12 +69,10 @@ changePfpImage.addEventListener('click', () => {
     newPfpInput.dispatchEvent(evt);
 });
 
-newPfpInput.addEventListener('change', (event) => {
+newPfpInput.addEventListener('change', () => {
     const pfpType = newPfpInput.value.split('.').pop();
     pfpFeedbackSpan.classList.add('error');
     function invalidType() {
-        validPfp = false;
-        saveButton.disabled = true;
         pfpFeedbackSpan.innerText = 'Profile Picture type must be SVG, PNG, JPG, JPEG or GIF!';
         pfpFeedbackSpan.classList.replace('success', 'error');
     }
@@ -81,21 +84,15 @@ newPfpInput.addEventListener('change', (event) => {
     image.onload = () => {
         if(image.width == image.height) {
             if(image.width >= 512 && image.width <= 2048) {
-                validPfp = true;
-                saveButton.disabled = true;
                 pfpFeedbackSpan.innerText = 'Valid Profile Picture';
                 pfpFeedbackSpan.classList.replace('error', 'success');
                 pfpImage.src = image.src;
             }
             else {
-                validPfp = false;
-                saveButton.disabled = true;
                 pfpFeedbackSpan.innerText = 'Profile Picture resolution must be between 512x512 and 2048x2048!';
                 pfpFeedbackSpan.classList.replace('success', 'error');
             }
         } else {
-            validPfp = false;
-            saveButton.disabled = true;
             pfpFeedbackSpan.innerText = 'Profile Picture type must be a square!';
             pfpFeedbackSpan.classList.replace('success', 'error');
         }
@@ -129,6 +126,22 @@ compactModeDiv.addEventListener('click', () => {
     settings.settings.compactMode = compactModeDiv.classList.contains('on');
     compactModeCssLink.href = './css/compact-mode-' + (settings.settings.compactMode ? 'on': 'off') + '.css';
 });
+condensedFontDiv.addEventListener('click', () => {
+    settings.settings.condensedFont = condensedFontDiv.classList.contains('on');
+    setFont();
+});
+aurebeshFontDiv.addEventListener('click', () => {
+    settings.settings.aurebeshFont = aurebeshFontDiv.classList.contains('on');
+    setFont();
+});
+sharpModeDiv.addEventListener('click', () => {
+    settings.settings.sharpMode = sharpModeDiv.classList.contains('on');
+    sharpModeCssLink.href = './css/sharp-mode-' + (settings.settings.sharpMode ? 'on': 'off') + '.css';
+});
+
+function setFont() {
+    fontCssLink.href = './css/' + (settings.settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed-' + (settings.settings.condensedFont ? 'on': 'off') + '.css';
+}
 
 function getSettings() {
     $.ajax({
@@ -151,6 +164,12 @@ function showSettings(res) {
     statusInput.value = res.status;
     compactModeDiv.classList.add(res.settings.compactMode ? 'on': 'off');
     compactModeCssLink.href = './css/compact-mode-' + (res.settings.compactMode ? 'on': 'off') + '.css';
+    (res.settings.condensedFont ? 'Roboto+Mono' : 'Roboto+Condensed') + '&display=swap';
+    condensedFontDiv.classList.add(res.settings.condensedFont ? 'on': 'off');
+    aurebeshFontDiv.classList.add(res.settings.aurebeshFont ? 'on': 'off');
+    setFont();
+    sharpModeDiv.classList.add(res.settings.sharpMode ? 'on': 'off');
+    sharpModeCssLink.href = './css/sharp-mode-' + (res.settings.sharpMode ? 'on': 'off') + '.css';
 }
 
 let usernameTimer;
@@ -181,12 +200,12 @@ function usernameTyped() {
             if(res.feedback.includes('!')) {
                 usernameFeedbackSpan.classList.replace('success', 'error');
                 validUsername = false;
-                registerButton.disabled = true;
+                saveButton.disabled = true;
                 return;
             }
             usernameFeedbackSpan.classList.replace('error', 'success');
             validUsername = true;
-            registerButton.disabled = !(validUsername && validEmail && validPassword);
+            saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
         },
         error: (req, err) => {
             console.log(err);
@@ -224,12 +243,12 @@ function emailTyped() {
             if(res.feedback.includes('!')) {
                 emailFeedbackSpan.classList.replace('success', 'error');
                 validEmail = false;
-                registerButton.disabled = true;
+                saveButton.disabled = true;
                 return;
             }
             emailFeedbackSpan.classList.replace('error', 'success');
             validEmail = true;
-            registerButton.disabled = !(validUsername && validEmail && validPassword);
+            saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
         },
         error: (req, err) => {
             console.log(err);
@@ -257,14 +276,14 @@ function passwordTyped() {
         passwordFeedbackSpan.innerText = 'Password too short!'
         passwordFeedbackSpan.classList.replace('success', 'error');
         validPassword = false;
-        registerButton.disabled = true;
+        saveButton.disabled = true;
         return;
     }
     if(passwordInput.value.length > 32) {
         passwordFeedbackSpan.innerText = 'Password too long!'
         passwordFeedbackSpan.classList.replace('success', 'error');
         validPassword = false;
-        registerButton.disabled = true;
+        saveButton.disabled = true;
         return;
     }
     let numbers = 0, symbols = 0, uppercase = 0;
@@ -277,7 +296,7 @@ function passwordTyped() {
             passwordFeedbackSpan.innerText = 'Password contains forbidden character!'
             passwordFeedbackSpan.classList.replace('success', 'error');
             validPassword = false;
-            registerButton.disabled = true;
+            saveButton.disabled = true;
             return;
         }
     }
@@ -285,25 +304,61 @@ function passwordTyped() {
         passwordFeedbackSpan.innerText = 'Password should contain at least 2 numbers!'
         passwordFeedbackSpan.classList.replace('success', 'error');
         validPassword = false;
-        registerButton.disabled = true;
+        saveButton.disabled = true;
     }
     else if(symbols < 1) {
         passwordFeedbackSpan.innerText = 'Password should contain at least 1 symbol!'
         passwordFeedbackSpan.classList.replace('success', 'error');
         validPassword = false;
-        registerButton.disabled = true;
+        saveButton.disabled = true;
     }
     else if(uppercase < 2) {
         passwordFeedbackSpan.innerText = 'Password should contain at least 2 uppercase letters!'
         passwordFeedbackSpan.classList.replace('success', 'error');
         validPassword = false;
-        registerButton.disabled = true;
+        saveButton.disabled = true;
     }
     else {
-        passwordFeedbackSpan.innerText = 'Valid password'
+        passwordFeedbackSpan.innerText = 'Valid Password'
         passwordFeedbackSpan.classList.replace('error', 'success');
         validPassword = true;
-        registerButton.disabled = !(validUsername && validEmail && validPassword);
+        saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+    }
+}
+
+let statusTimer;
+statusInput.addEventListener('keyup', () => {
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(statusTyped, 1000);
+});
+statusInput.addEventListener('keydown', () => {
+    clearTimeout(statusTimer);
+});
+statusInput.addEventListener('focusout', () => {
+    clearTimeout(statusTimer);
+    statusTyped();
+});
+function statusTyped() {
+    statusFeedbackSpan.classList.add('error');
+    if(statusInput.value.length < 4) {
+        statusFeedbackSpan.innerText = 'Status too short!'
+        statusFeedbackSpan.classList.replace('success', 'error');
+        validStatus = false;
+        saveButton.disabled = true;
+        return;
+    }
+    if(statusInput.value.length > 2048) {
+        statusFeedbackSpan.innerText = 'Status too long!'
+        statusFeedbackSpan.classList.replace('success', 'error');
+        validStatus = false;
+        saveButton.disabled = true;
+        return;
+    }
+    else {
+        statusFeedbackSpan.innerText = 'Valid Status'
+        statusFeedbackSpan.classList.replace('error', 'success');
+        validPassword = true;
+        saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
     }
 }
 

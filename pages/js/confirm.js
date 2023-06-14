@@ -45,7 +45,7 @@ confirmButton.addEventListener('click', async () => {
                 console.log('Error 400: Bad Request');
             },
             401: () => {
-                verificationCodeFeedbackSpan.innerText = "Wrong verification code!";
+                verificationCodeFeedbackSpan.innerText = "Wrong Verification Code!";
                 verificationCodeFeedbackSpan.classList.replace('success', 'error');
                 validVerificationCode = false;
                 confirmButton.disabled = true;
