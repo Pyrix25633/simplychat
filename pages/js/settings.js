@@ -63,6 +63,35 @@ else {
     });
 }
 
+function getSettings() {
+    $.ajax({
+        url: '/api/user/get-settings',
+        method: 'POST',
+        data: JSON.stringify(cachedLogin),
+        contentType: 'application/json',
+        success: showSettings,
+        statusCode: statusCodeActions
+    });
+}
+
+function showSettings(res) {
+    res.settings = JSON.parse(res.settings);
+    settings = res;
+    pfpImage.src = './pfps/' + cachedLogin.id + '.' + res.pfpType;
+    idSpan.innerText = cachedLogin.id;
+    usernameInput.value = res.username;
+    emailInput.value = res.email;
+    statusInput.value = res.status;
+    compactModeDiv.classList.add(res.settings.compactMode ? 'on': 'off');
+    compactModeCssLink.href = './css/compact-mode-' + (res.settings.compactMode ? 'on': 'off') + '.css';
+    (res.settings.condensedFont ? 'Roboto+Mono' : 'Roboto+Condensed') + '&display=swap';
+    condensedFontDiv.classList.add(res.settings.condensedFont ? 'on': 'off');
+    aurebeshFontDiv.classList.add(res.settings.aurebeshFont ? 'on': 'off');
+    setFont();
+    sharpModeDiv.classList.add(res.settings.sharpMode ? 'on': 'off');
+    sharpModeCssLink.href = './css/sharp-mode-' + (res.settings.sharpMode ? 'on': 'off') + '.css';
+}
+
 changePfpImage.addEventListener('click', () => {
     var evt = document.createEvent("MouseEvents");
     evt.initEvent("click", true, false);
@@ -104,73 +133,6 @@ newPfpInput.addEventListener('change', () => {
     };
     reader.readAsDataURL(newPfpInput.files[0]);
 });
-
-for(let e of document.getElementsByClassName('slider')) {
-    e.addEventListener('click', () => {
-        if(e.classList.contains('on'))
-            e.classList.replace('on', 'off');
-        else
-            e.classList.replace('off', 'on');
-    });
-}
-
-cancelButton.addEventListener('click', () => {
-    window.location.href = '/settings';
-});
-
-saveButton.addEventListener('click', () => {
-
-});
-
-compactModeDiv.addEventListener('click', () => {
-    settings.settings.compactMode = compactModeDiv.classList.contains('on');
-    compactModeCssLink.href = './css/compact-mode-' + (settings.settings.compactMode ? 'on': 'off') + '.css';
-});
-condensedFontDiv.addEventListener('click', () => {
-    settings.settings.condensedFont = condensedFontDiv.classList.contains('on');
-    setFont();
-});
-aurebeshFontDiv.addEventListener('click', () => {
-    settings.settings.aurebeshFont = aurebeshFontDiv.classList.contains('on');
-    setFont();
-});
-sharpModeDiv.addEventListener('click', () => {
-    settings.settings.sharpMode = sharpModeDiv.classList.contains('on');
-    sharpModeCssLink.href = './css/sharp-mode-' + (settings.settings.sharpMode ? 'on': 'off') + '.css';
-});
-
-function setFont() {
-    fontCssLink.href = './css/' + (settings.settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed-' + (settings.settings.condensedFont ? 'on': 'off') + '.css';
-}
-
-function getSettings() {
-    $.ajax({
-        url: '/api/user/get-settings',
-        method: 'POST',
-        data: JSON.stringify(cachedLogin),
-        contentType: 'application/json',
-        success: showSettings,
-        statusCode: statusCodeActions
-    });
-}
-
-function showSettings(res) {
-    res.settings = JSON.parse(res.settings);
-    settings = res;
-    pfpImage.src = './pfps/' + cachedLogin.id + '.' + res.pfpType;
-    idSpan.innerText = cachedLogin.id;
-    usernameInput.value = res.username;
-    emailInput.value = res.email;
-    statusInput.value = res.status;
-    compactModeDiv.classList.add(res.settings.compactMode ? 'on': 'off');
-    compactModeCssLink.href = './css/compact-mode-' + (res.settings.compactMode ? 'on': 'off') + '.css';
-    (res.settings.condensedFont ? 'Roboto+Mono' : 'Roboto+Condensed') + '&display=swap';
-    condensedFontDiv.classList.add(res.settings.condensedFont ? 'on': 'off');
-    aurebeshFontDiv.classList.add(res.settings.aurebeshFont ? 'on': 'off');
-    setFont();
-    sharpModeDiv.classList.add(res.settings.sharpMode ? 'on': 'off');
-    sharpModeCssLink.href = './css/sharp-mode-' + (res.settings.sharpMode ? 'on': 'off') + '.css';
-}
 
 let usernameTimer;
 usernameInput.addEventListener('keyup', () => {
@@ -271,6 +233,11 @@ passwordInput.addEventListener('focusout', () => {
     passwordTyped();
 });
 function passwordTyped() {
+    if(passwordInput.value == '') {
+        passwordFeedbackSpan.classList.remove('error', 'success');
+        passwordFeedbackSpan.innerText = 'You can change your Password';
+        return;
+    }
     passwordFeedbackSpan.classList.add('error');
     if(passwordInput.value.length < 4) {
         passwordFeedbackSpan.innerText = 'Password too short!'
@@ -339,6 +306,11 @@ statusInput.addEventListener('focusout', () => {
     statusTyped();
 });
 function statusTyped() {
+    if(statusInput.value == settings.status) {
+        statusFeedbackSpan.classList.remove('error', 'success');
+        statusFeedbackSpan.innerText = 'You can change your Status';
+        return;
+    }
     statusFeedbackSpan.classList.add('error');
     if(statusInput.value.length < 4) {
         statusFeedbackSpan.innerText = 'Status too short!'
@@ -362,9 +334,47 @@ function statusTyped() {
     }
 }
 
+for(let e of document.getElementsByClassName('slider')) {
+    e.addEventListener('click', () => {
+        if(e.classList.contains('on'))
+            e.classList.replace('on', 'off');
+        else
+            e.classList.replace('off', 'on');
+    });
+}
+
+function setFont() {
+    fontCssLink.href = './css/' + (settings.settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed-' + (settings.settings.condensedFont ? 'on': 'off') + '.css';
+}
+
+compactModeDiv.addEventListener('click', () => {
+    settings.settings.compactMode = compactModeDiv.classList.contains('on');
+    compactModeCssLink.href = './css/compact-mode-' + (settings.settings.compactMode ? 'on': 'off') + '.css';
+});
+condensedFontDiv.addEventListener('click', () => {
+    settings.settings.condensedFont = condensedFontDiv.classList.contains('on');
+    setFont();
+});
+aurebeshFontDiv.addEventListener('click', () => {
+    settings.settings.aurebeshFont = aurebeshFontDiv.classList.contains('on');
+    setFont();
+});
+sharpModeDiv.addEventListener('click', () => {
+    settings.settings.sharpMode = sharpModeDiv.classList.contains('on');
+    sharpModeCssLink.href = './css/sharp-mode-' + (settings.settings.sharpMode ? 'on': 'off') + '.css';
+});
+
 async function hashPassword(password) {
     const hashBuffer = await window.crypto.subtle.digest("SHA-512", new TextEncoder().encode(password));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
     return hashHex;
 }
+
+cancelButton.addEventListener('click', () => {
+    window.location.href = '/settings';
+});
+
+saveButton.addEventListener('click', () => {
+
+});

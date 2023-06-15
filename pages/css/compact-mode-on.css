@@ -3,7 +3,7 @@ button, input {
 }
 
 nav#navbar {
-    padding-left: 10px;
+    padding: 5px 0 5px 10px;
     margin-bottom: 10px;
     width: calc(100vw - 10px);
 }

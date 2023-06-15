@@ -45,6 +45,16 @@ button:disabled {
 span.text, span.text * {
     font-size: 16px;
 }
+span.title {
+    font-size: 25px;
+    line-height: 30px;
+}
+span.title:not(:last-child) {
+    margin-right: 10px;
+}
+span.simplychat-color {
+    color: var(--color-simplychat);
+}
 
 a {
     color: var(--color-simplychat);
@@ -78,8 +88,8 @@ div#footer {
     width: 100vw;
 }
 
-img#logo {
-    width: 60px;
+img#icon {
+    width: 30px;
 }
 
 div.box {

@@ -5,8 +5,11 @@ body {
     align-items: center;
 }
 
-div#navbar {
+nav#navbar {
     position: absolute !important;
+    background-color: #00000000;
+    justify-content: center;
+    margin-top: 20px;
 }
 
 label {

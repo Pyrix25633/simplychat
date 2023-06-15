@@ -367,6 +367,23 @@ main.post('/api/user/get-settings', (req: Request, res: Response): void => {
     });
 });
 
+main.post('/api/user/set-settings', (req: Request, res: Response): void => {
+    const request: GetSettingsRequest = req.body;
+    if(!isGetSettingsRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateToken(request.id, request.token, res, (user: any): void => {
+        res.status(200).send({
+            username: user.username,
+            email: user.email,
+            status: user.status,
+            settings: user.settings,
+            pfpType: user.pfp_type
+        });
+    });
+});
+
 //// pages ////
 
 main.get('/register', (req: Request, res: Response): void => {

@@ -5,12 +5,12 @@
 @font-face {
     font-family: 'Aurebesh';
     font-weight: bold;
-    src: url(../font/aurebesh-bold.ttf);
+    src: url(../font/aurebesh-bold.otf);
 }
 @font-face {
     font-family: 'Aurebesh';
     font-style: italic;
-    src: url(../font/aurebesh-italic.ttf);
+    src: url(../font/aurebesh-italic.otf);
 }
 
 * {
