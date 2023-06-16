@@ -116,6 +116,9 @@ newPfpInput.addEventListener('change', () => {
                 pfpFeedbackSpan.innerText = 'Valid Profile Picture';
                 pfpFeedbackSpan.classList.replace('error', 'success');
                 pfpImage.src = image.src;
+                saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+                settings.pfpType = pfpType;
+                settings.pfp = pfpImage.src;
             }
             else {
                 pfpFeedbackSpan.innerText = 'Profile Picture resolution must be between 512x512 and 2048x2048!';
@@ -312,14 +315,14 @@ function statusTyped() {
         return;
     }
     statusFeedbackSpan.classList.add('error');
-    if(statusInput.value.length < 4) {
+    if(statusInput.value.length < 3) {
         statusFeedbackSpan.innerText = 'Status too short!'
         statusFeedbackSpan.classList.replace('success', 'error');
         validStatus = false;
         saveButton.disabled = true;
         return;
     }
-    if(statusInput.value.length > 2048) {
+    if(statusInput.value.length > 64) {
         statusFeedbackSpan.innerText = 'Status too long!'
         statusFeedbackSpan.classList.replace('success', 'error');
         validStatus = false;
@@ -350,18 +353,23 @@ function setFont() {
 compactModeDiv.addEventListener('click', () => {
     settings.settings.compactMode = compactModeDiv.classList.contains('on');
     compactModeCssLink.href = './css/compact-mode-' + (settings.settings.compactMode ? 'on': 'off') + '.css';
+    saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+
 });
 condensedFontDiv.addEventListener('click', () => {
     settings.settings.condensedFont = condensedFontDiv.classList.contains('on');
     setFont();
+    saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
 });
 aurebeshFontDiv.addEventListener('click', () => {
     settings.settings.aurebeshFont = aurebeshFontDiv.classList.contains('on');
     setFont();
+    saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
 });
 sharpModeDiv.addEventListener('click', () => {
     settings.settings.sharpMode = sharpModeDiv.classList.contains('on');
     sharpModeCssLink.href = './css/sharp-mode-' + (settings.settings.sharpMode ? 'on': 'off') + '.css';
+    saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
 });
 
 async function hashPassword(password) {
@@ -375,6 +383,42 @@ cancelButton.addEventListener('click', () => {
     window.location.href = '/settings';
 });
 
-saveButton.addEventListener('click', () => {
+function waitAndRefresh() {
+    setInterval(() => {
+        window.location.href = '/settings';
+    }, 250);
+}
 
+saveButton.addEventListener('click', async () => {
+    $.ajax({
+        url: '/api/user/set-settings',
+        method: 'POST',
+        data: JSON.stringify({
+            token: cachedLogin.token,
+            id: cachedLogin.id,
+            username: usernameInput.value,
+            email: emailInput.value,
+            passwordHash: (passwordInput.value.length != 0) ? await hashPassword(passwordInput.value) : '',
+            status: statusInput.value,
+            settings: settings.settings
+        }),
+        contentType: 'application/json',
+        success: waitAndRefresh,
+        error: waitAndRefresh
+    });
+    if(settings.pfp != undefined) {
+        $.ajax({
+            url: '/api/user/set-pfp',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                pfp: settings.pfp,
+                pfpType: settings.pfpType
+            }),
+            contentType: 'application/json',
+            success: waitAndRefresh,
+            error: waitAndRefresh
+        });
+    }
 });

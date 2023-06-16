@@ -86,5 +86,16 @@ export function selectFromEmail(email: string, callback: queryCallback): void {
 
 export function updateUserToken(id: number, token: string): void {
     query('UPDATE users SET token=?, token_expiration=? WHERE id=?;', [token, getTimestamp() + twoWeeksTimestamp, id],
-        (err: MysqlError | null, results: any): void => {console.log(err);});
+        (err: MysqlError | null, results: any): void => {if(err) console.log(err);});
+}
+
+export function updateUserPfpType(id: number, pfpType: string): void {
+    query('UPDATE users SET pfp_type=? WHERE id=?;', [pfpType, id],
+        (err: MysqlError | null, results: any): void => {if(err) console.log(err);});
+}
+
+export function updateUser(id: number, username: string, email: string, passwordHash: string, status: string, settings: {}): void {
+    query('UPDATE users SET username=?, email=?, password_hash=?, status=?, settings=? WHERE id=?;',
+        [username, email, passwordHash, status, JSON.stringify(settings), id],
+        (err: MysqlError | null, results: any): void => {if(err) console.log(err);});
 }

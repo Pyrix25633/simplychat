@@ -97,3 +97,55 @@ export function isGetSettingsRequestValid(req: any): boolean {
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number';
 }
+
+// set-settigns
+
+export type SetSettingsRequest = {
+    id: number,
+    token: string,
+    username: string,
+    email: string,
+    passwordHash: string,
+    status: string,
+    settings: {
+        compactMode: boolean,
+        condensedFont: boolean,
+        aurebeshFont: boolean,
+        sharpMode: boolean
+    }
+};
+
+export function isSetSettingsRequestValid(req: any): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.username != undefined && typeof req.username == 'string'
+        && req.username.length > 2 && req.username.length <= 32
+        && req.email != undefined && typeof req.email == 'string'
+        && req.passwordHash != undefined && typeof req.passwordHash == 'string'
+        && (req.passwordHash.length == 128 || req.passwordHash == 0)
+        && req.status != undefined && typeof req.status == 'string'
+        && req.status.length > 2 && req.status.length <= 64
+        && req.settings.compactMode != undefined && typeof req.settings.compactMode == 'boolean'
+        && req.settings.condensedFont != undefined && typeof req.settings.condensedFont == 'boolean'
+        && req.settings.aurebeshFont != undefined && typeof req.settings.aurebeshFont == 'boolean'
+        && req.settings.sharpMode != undefined && typeof req.settings.sharpMode == 'boolean';
+}
+
+// set-pfp
+
+export type SetPfpRequest = {
+    token: string,
+    id: number,
+    pfp: string,
+    pfpType: string
+};
+
+export function isSetPfpRequestValid(req: any): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.pfp != undefined && typeof req.pfp == 'string'
+        && req.pfpType != undefined && typeof req.pfpType == 'string'
+        && req.pfpType.length < 6;
+}

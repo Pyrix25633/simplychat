@@ -17,10 +17,6 @@ input#new-pfp {
     display: none;
 }
 
-label {
-    line-height: 31px;
-}
-
 div.relative {
     position: relative;
 }

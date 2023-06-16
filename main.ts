@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
-import { insertTempUser, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUserToken } from './lib/database';
+import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, SetPfpRequest, SetSettingsRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
+import { insertTempUser, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
 import { createToken } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
@@ -20,7 +20,7 @@ const main: Express = express();
 const port: number = 4443;
 
 main.use(bodyParser.urlencoded({extended: true}));
-main.use(bodyParser.json());
+main.use(bodyParser.json({limit: '6mb'}));
 main.use(cors());
 main.use(helmet());
 main.use(helmet.contentSecurityPolicy({
@@ -53,16 +53,16 @@ main.post('/api/user/register', (req: Request, res: Response): void => {
         res.status(400).send('Bad Request');
         return;
     }
-    if(request.username.length < 4 || request.username.length > 32) {
-        res.status(400).send('Bad Request');
-        return;
-    };
     for(let i = 0; i < request.username.length; i++) {
         const c = request.username.codePointAt(i);
         if((c == undefined) || !((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == 45 || c == 95 || c == 32))) {
             res.status(400).send('Bad Request');
             return;
         }
+    }
+    if(!request.email.match(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
+        res.status(400).send('Bad Request');
+        return;
     }
     selectFromUsernameOrEmail(request.username, request.email, (err: MysqlError | null, results: any): void => {
         if(err) {
@@ -368,18 +368,100 @@ main.post('/api/user/get-settings', (req: Request, res: Response): void => {
 });
 
 main.post('/api/user/set-settings', (req: Request, res: Response): void => {
-    const request: GetSettingsRequest = req.body;
-    if(!isGetSettingsRequestValid(request)) {
+    const request: SetSettingsRequest = req.body;
+    if(!isSetSettingsRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
     validateToken(request.id, request.token, res, (user: any): void => {
-        res.status(200).send({
-            username: user.username,
-            email: user.email,
-            status: user.status,
-            settings: user.settings,
-            pfpType: user.pfp_type
+        for(let i = 0; i < request.username.length; i++) {
+            const c = request.username.codePointAt(i);
+            if((c == undefined) || !((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == 45 || c == 95 || c == 32))) {
+                res.status(400).send('Bad Request');
+                return;
+            }
+        }
+        if(!request.email.match(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)) {
+            res.status(400).send('Bad Request');
+            return;
+        }
+        if(user.username != request.username) {
+            selectFromUsername(request.username, (err: MysqlError | null, results: any): void => {
+                if(err) {
+                    res.status(500).send('Internal Server Error');
+                    console.log(err);
+                    return;
+                }
+                if(results.length == 0) {
+                    checkEmail();
+                }
+                else
+                    res.status(400).send('Bad Request');
+            });
+        }
+        else {
+            checkEmail();
+        }
+        function checkEmail() {
+            if(user.email != request.email) {
+                selectFromEmail(request.email, (err: MysqlError | null, results: any): void => {
+                    if(err) {
+                        res.status(500).send('Internal Server Error');
+                        console.log(err);
+                        return;
+                    }
+                    if(results.length == 0) {
+                        setSettings();
+                    }
+                    else
+                        res.status(400).send('Bad Request');
+                });
+            }
+            else {
+                setSettings();
+            }
+        }
+        function setSettings() {
+            const passwordHash = (request.passwordHash.length != 0) ? request.passwordHash : user.password_hash;
+            updateUser(user.id, request.username, request.email, passwordHash, request.status, request.settings);
+            if(user.password_hash != passwordHash)
+                updateUserToken(user.id, createToken(request.username, request.passwordHash));
+            res.status(200).send('OK');
+        }
+    });
+});
+
+main.post('/api/user/set-pfp', (req: Request, res: Response): void => {
+    const request: SetPfpRequest = req.body;
+    if(!isSetPfpRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateToken(request.id, request.token, res, (user: any): void => {
+        if(request.pfpType != 'svg' && request.pfpType != 'png' && request.pfpType != 'jpg' &&
+            request.pfpType != 'jpeg' && request.pfpType != 'gif') {
+            res.status(400).send('Bad Request');
+            return;
+        }
+        const base64: string | undefined = request.pfp.split(';base64,').pop();
+        if(request.pfp.substring(0, 11) != 'data:image/' || base64 == undefined) {
+            res.status(400).send('Bad Request');
+            return;
+        }
+        fs.writeFile('./pfps/' + user.id + '.' + request.pfpType, base64, {encoding: 'base64'}, function(err) {
+            if(err) {
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+            updateUserPfpType(user.id, request.pfpType);
+            if(user.pfp_type != request.pfpType) {
+                fs.unlink('./pfps/' + user.id + '.' + user.pfp_type, (err) => {
+                    if(err) res.status(500).send('Internal Server Error');
+                    else res.status(200).send('OK');
+                });
+            }
+            else
+                res.status(200).send('OK');
         });
     });
 });
