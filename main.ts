@@ -195,21 +195,14 @@ main.post('/api/user/confirm', (req: Request, res: Response): void => {
                 return;
             }
             const token: string = createToken(tempUser.username, tempUser.password_hash);
-            createUser(tempUser.username, tempUser.email, tempUser.password_hash, token, (err: MysqlError | null, results: any): void => {
-                if(err) {
+            createUser(tempUser.username, tempUser.email, tempUser.password_hash, token, (err: MysqlError | null, id: number | null): void => {
+                if(err || id == null) {
                     res.status(500).send('Internal Server Error');
                     console.log(err);
                     return;
                 }
-                generateRandompfp(tempUser.id);
-                selectUserFromUsername(tempUser.username, (err: MysqlError | null, results: any): void => {
-                    if(err || results.length == 0) {
-                        res.status(500).send('Internal Server Error');
-                        console.log(err);
-                        return;
-                    }
-                    res.status(200).send({id: results[0].id, token: token});
-                });
+                generateRandompfp(id);
+                res.status(200).send({id: id, token: token});
             });
         });
     });

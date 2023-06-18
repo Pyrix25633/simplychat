@@ -51,10 +51,25 @@ export function deleteTempUser(username: string, callback: queryCallback): void 
     query('DELETE FROM temp_users WHERE (username=?);', [username], callback);
 }
 
-export function createUser(username: string, email: string, passwordHash: string, token: string, callback: queryCallback): void {
-    const timestamp: number = getTimestamp();
-    query('INSERT INTO users (username, email, password_hash, token, token_expiration, chat_ids, online, last_online, status, settings, pfp_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-        [username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '[]', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'], callback);
+export function createUser(username: string, email: string, passwordHash: string, token: string, callback: (err: MysqlError | null, id: number | null) => void): void {
+    query('SELECT next_id FROM ids WHERE table_name="users";', [], (err: MysqlError | null, results: any): void => {
+        if(err) {
+            callback(err, null);
+            return;
+        }
+        const id = results[0].next_id;
+        const timestamp: number = getTimestamp();
+        query('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+            [id, username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '[]', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'],
+            (err: MysqlError | null): void => {
+                if(err) {
+                    callback(err, null);
+                    return;
+                }
+                callback(null, id);
+                query('UPDATE ids SET next_id=? WHERE table_name="users"', [id + 1], (err: MysqlError | null): void => {if(err) console.log(err);});
+            });
+    });
 }
 
 export function selectUser(id: number, callback: queryCallback): void {
