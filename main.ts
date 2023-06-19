@@ -465,6 +465,10 @@ main.get('/register', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/register.html'));
 });
 
+main.get('/terms-and-conditions', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/terms-and-conditions.html'));
+});
+
 main.get('/confirm', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/confirm.html'));
 });

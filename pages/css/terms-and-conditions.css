@@ -1,0 +1,29 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+nav#navbar {
+    position: absolute !important;
+    background-color: #00000000;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+ol, span {
+    max-width: 80vw;
+}
+li, span {
+    text-align: justify;
+}
+span.spaced {
+    margin-top: 20px;
+}
+
+@media screen and (max-width: 500px) {
+    nav#navbar {
+        position: relative !important;
+    }
+}

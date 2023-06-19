@@ -114,3 +114,35 @@ export function updateUser(id: number, username: string, email: string, password
         [username, email, passwordHash, status, JSON.stringify(settings), id],
         (err: MysqlError | null, results: any): void => {if(err) console.log(err);});
 }
+
+export function createChat(userId: number, name: string, description: string, token: string, callback: (err: MysqlError | null, id: number | null) => void) {
+    query('SELECT next_id FROM ids WHERE table_name="chats";', [], (err: MysqlError | null, results: any): void => {
+        if(err) {
+            callback(err, null);
+            return;
+        }
+        const id = results[0].next_id;
+        const timestamp: number = getTimestamp();
+        query('INSERT INTO chats VALUES (?, ?, ?, ?, ?);',
+            [id, name, '[{"id":' + userId + ', "permissionLevel": 0}]', description, token],
+            (err: MysqlError | null): void => {
+                if(err) {
+                    callback(err, null);
+                    return;
+                }
+                callback(null, id);
+                query('UPDATE users SET chat_ids=(SELECT JSON_ARRAY_APPEND((SELECT chat_id FROM users WHERE id=?), \'$\', ?)) WHERE id=?',
+                    [userId, id, userId], (err: MysqlError | null): void => {if(err) console.log(err);});
+                query('CREATE TABLE chat' + id + ' (' +
+                    'id INT NOT NULL,' +
+                    'timestamp TIMESTAMP NOT NULL,' +
+                    'user_id INT NOT NULL,' +
+                    'message VARCHAR(2048) NOT NULL,' +
+                    'modified BOOLEAN NOT NULL,' +
+                    'PRIMARY KEY (id),' +
+                    'FOREIGN KEY (user_id) REFERENCES users(id)' +
+                ');', [], (err: MysqlError | null): void => {if(err) console.log(err);});
+                query('UPDATE ids SET next_id=? WHERE table_name="chats"', [id + 1], (err: MysqlError | null): void => {if(err) console.log(err);});
+            });
+    });
+}

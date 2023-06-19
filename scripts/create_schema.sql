@@ -40,7 +40,8 @@ CREATE TABLE chats (
     id INT NOT NULL,
     name VARCHAR(64) NOT NULL,
     users JSON NOT NULL,
-    description VARCHAR(64) NOT NULL,
+    description VARCHAR(128) NOT NULL,
+    token CHAR(128) NOT NULL,
     PRIMARY KEY (id)
 );
 
