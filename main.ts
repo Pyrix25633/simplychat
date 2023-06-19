@@ -1,8 +1,8 @@
 import express, { Express, Request, Response } from 'express';
 import { MysqlError } from 'mysql';
 import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, SetPfpRequest, SetSettingsRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
-import { insertTempUser, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
-import { createToken } from './lib/hash';
+import { createChat, insertTempUser, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
+import { createUserToken, createChatToken } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
@@ -14,7 +14,8 @@ import Mail from 'nodemailer/lib/mailer';
 import { deleteTempUser } from './lib/database';
 import { createUser } from './lib/database';
 import { getTimestamp, oneDayTimestamp } from './lib/timestamp';
-import { generateRandompfp } from './lib/randompfp';
+import { generateRandomChatLogo, generateRandomPfp } from './lib/random-image';
+import { CreateRequest, isCreateRequestValid } from './lib/types/api/chat';
 
 const main: Express = express();
 const port: number = 4443;
@@ -94,7 +95,7 @@ main.post('/api/user/register', (req: Request, res: Response): void => {
                         console.log(err);
                         return;
                     }
-                    res.status(201).send("Created");
+                    res.status(201).send('Created');
                 });
             });
         }
@@ -194,14 +195,14 @@ main.post('/api/user/confirm', (req: Request, res: Response): void => {
                 console.log(err);
                 return;
             }
-            const token: string = createToken(tempUser.username, tempUser.password_hash);
+            const token: string = createUserToken(tempUser.username, tempUser.password_hash);
             createUser(tempUser.username, tempUser.email, tempUser.password_hash, token, (err: MysqlError | null, id: number | null): void => {
                 if(err || id == null) {
                     res.status(500).send('Internal Server Error');
                     console.log(err);
                     return;
                 }
-                generateRandompfp(id);
+                generateRandomPfp(id);
                 res.status(200).send({id: id, token: token});
             });
         });
@@ -275,7 +276,7 @@ main.post('/api/user/login', (req: Request, res: Response): void => {
             return;
         }
         if(user.token_expiration - oneDayTimestamp < getTimestamp()) {
-            const token = createToken(user.username, user.password_hash);
+            const token = createUserToken(user.username, user.password_hash);
             res.status(200).send({id: user.id, token: token});
             updateUserToken(user.id, token);
             return;
@@ -418,7 +419,7 @@ main.post('/api/user/set-settings', (req: Request, res: Response): void => {
             const passwordHash = (request.passwordHash.length != 0) ? request.passwordHash : user.password_hash;
             updateUser(user.id, request.username, request.email, passwordHash, request.status, request.settings);
             if(user.password_hash != passwordHash)
-                updateUserToken(user.id, createToken(request.username, request.passwordHash));
+                updateUserToken(user.id, createUserToken(request.username, request.passwordHash));
             res.status(200).send('OK');
         }
     });
@@ -459,6 +460,26 @@ main.post('/api/user/set-pfp', (req: Request, res: Response): void => {
     });
 });
 
+// chat //
+
+main.post('/api/chat/create', (req: Request, res: Response): void => {
+    const request: CreateRequest = req.body;
+    if(!isCreateRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateToken(request.id, request.token, res, (user: any): void => {
+        createChat(user.id, request.name, request.description, createChatToken(request.name, user.id), (err: MysqlError | null, id: number | null): void => {
+            if(err || id == null) {
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+            generateRandomChatLogo(id);
+            res.status(201).send('Created');
+        });
+    });
+});
+
 //// pages ////
 
 main.get('/register', (req: Request, res: Response): void => {
@@ -479,6 +500,10 @@ main.get('/login', (req: Request, res: Response): void => {
 
 main.get('/settings', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/settings.html'));
+});
+
+main.get('/create-chat', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/create-chat.html'));
 });
 
 main.get('/', (req: Request, res: Response): void => {

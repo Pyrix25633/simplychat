@@ -84,7 +84,6 @@ function showSettings(res) {
     statusInput.value = res.status;
     compactModeDiv.classList.add(res.settings.compactMode ? 'on': 'off');
     compactModeCssLink.href = './css/compact-mode-' + (res.settings.compactMode ? 'on': 'off') + '.css';
-    (res.settings.condensedFont ? 'Roboto+Mono' : 'Roboto+Condensed') + '&display=swap';
     condensedFontDiv.classList.add(res.settings.condensedFont ? 'on': 'off');
     aurebeshFontDiv.classList.add(res.settings.aurebeshFont ? 'on': 'off');
     setFont();
@@ -390,6 +389,7 @@ function waitAndRefresh() {
 }
 
 saveButton.addEventListener('click', async () => {
+    if(!(validUsername && validEmail && validPassword && validStatus)) return;
     $.ajax({
         url: '/api/user/set-settings',
         method: 'POST',

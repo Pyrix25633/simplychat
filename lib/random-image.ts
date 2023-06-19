@@ -9,7 +9,7 @@ function generateRandomColor(): string {
     return color;
 }
 
-export function generateRandompfp(id: number): void {
+export function generateRandomPfp(id: number): void {
     let svg: string = '<svg xmlns="http://www.w3.org/2000/svg" height="9" width="9">';
     const color: string = generateRandomColor();
     for(let x = 1; x < 5; x++) {
@@ -23,4 +23,20 @@ export function generateRandompfp(id: number): void {
     }
     svg += '</svg>';
     fs.writeFileSync('./pfps/' + id + '.svg', svg);
+}
+
+export function generateRandomChatLogo(id: number): void {
+    let svg: string = '<svg xmlns="http://www.w3.org/2000/svg" height="9" width="9">';
+    const color: string = generateRandomColor();
+    for(let y = 1; y < 5; y++) {
+        for(let x = 1; x < 8; x++) {
+            if(Math.random() < 0.5) {
+                svg += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + color + '" />';
+                if(y != 4)
+                    svg += '<rect x="' + x + '" y="' + (8 - y) + '" width="1"  height="1" fill="' + color + '" />';
+            }
+        }
+    }
+    svg += '</svg>';
+    fs.writeFileSync('./chatLogos/' + id + '.svg', svg);
 }

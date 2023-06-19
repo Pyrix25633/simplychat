@@ -18,7 +18,7 @@ CREATE TABLE users (
     password_hash CHAR(128) NULL,
     token CHAR(128) NULL,
     token_expiration INT NULL,
-    chat_ids JSON NOT NULL,
+    chats JSON NOT NULL,
     online BOOLEAN NOT NULL,
     last_online INT NOT NULL,
     status VARCHAR(64) NOT NULL,
@@ -42,6 +42,7 @@ CREATE TABLE chats (
     users JSON NOT NULL,
     description VARCHAR(128) NOT NULL,
     token CHAR(128) NOT NULL,
+    chat_logo_type VARCHAR(5) NOT NULL,
     PRIMARY KEY (id)
 );
 

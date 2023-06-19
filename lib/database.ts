@@ -34,6 +34,10 @@ export function query(query: string, values: (string | number | boolean)[], call
     connection.query(query, values, callback);
 }
 
+function logError(err: MysqlError | null, results: any): void {
+    if(err) console.log(err);
+}
+
 //// api ////
 
 // user //
@@ -101,18 +105,18 @@ export function selectFromEmail(email: string, callback: queryCallback): void {
 
 export function updateUserToken(id: number, token: string): void {
     query('UPDATE users SET token=?, token_expiration=? WHERE id=?;', [token, getTimestamp() + twoWeeksTimestamp, id],
-        (err: MysqlError | null, results: any): void => {if(err) console.log(err);});
+        logError);
 }
 
 export function updateUserPfpType(id: number, pfpType: string): void {
     query('UPDATE users SET pfp_type=? WHERE id=?;', [pfpType, id],
-        (err: MysqlError | null, results: any): void => {if(err) console.log(err);});
+        logError);
 }
 
 export function updateUser(id: number, username: string, email: string, passwordHash: string, status: string, settings: {}): void {
     query('UPDATE users SET username=?, email=?, password_hash=?, status=?, settings=? WHERE id=?;',
         [username, email, passwordHash, status, JSON.stringify(settings), id],
-        (err: MysqlError | null, results: any): void => {if(err) console.log(err);});
+        logError);
 }
 
 export function createChat(userId: number, name: string, description: string, token: string, callback: (err: MysqlError | null, id: number | null) => void) {
@@ -122,17 +126,16 @@ export function createChat(userId: number, name: string, description: string, to
             return;
         }
         const id = results[0].next_id;
-        const timestamp: number = getTimestamp();
-        query('INSERT INTO chats VALUES (?, ?, ?, ?, ?);',
-            [id, name, '[{"id":' + userId + ', "permissionLevel": 0}]', description, token],
+        query('INSERT INTO chats VALUES (?, ?, ?, ?, ?, ?);',
+            [id, name, '[{"id":' + userId + ', "permissionLevel": 0}]', description, token, 'svg'],
             (err: MysqlError | null): void => {
                 if(err) {
                     callback(err, null);
                     return;
                 }
                 callback(null, id);
-                query('UPDATE users SET chat_ids=(SELECT JSON_ARRAY_APPEND((SELECT chat_id FROM users WHERE id=?), \'$\', ?)) WHERE id=?',
-                    [userId, id, userId], (err: MysqlError | null): void => {if(err) console.log(err);});
+                query('UPDATE users SET chats=(SELECT JSON_ARRAY_APPEND(temp.chats, \'$\', ?) FROM (SELECT chats FROM users WHERE id=?) AS temp) WHERE id=?;',
+                    ['{"id":' + id + ', "lastReadMessage":-1}', userId, userId], logError);
                 query('CREATE TABLE chat' + id + ' (' +
                     'id INT NOT NULL,' +
                     'timestamp TIMESTAMP NOT NULL,' +
@@ -141,8 +144,9 @@ export function createChat(userId: number, name: string, description: string, to
                     'modified BOOLEAN NOT NULL,' +
                     'PRIMARY KEY (id),' +
                     'FOREIGN KEY (user_id) REFERENCES users(id)' +
-                ');', [], (err: MysqlError | null): void => {if(err) console.log(err);});
-                query('UPDATE ids SET next_id=? WHERE table_name="chats"', [id + 1], (err: MysqlError | null): void => {if(err) console.log(err);});
+                ');', [], logError);
+                query('INSERT INTO ids VALUES (?, ?)', ['chat' + id, 0], logError);
+                query('UPDATE ids SET next_id=? WHERE table_name="chats";', [id + 1], logError);
             });
     });
 }

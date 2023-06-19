@@ -6,15 +6,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Simply Chat - Create Chat</title>
         <link rel="stylesheet" href="./css/style.css">
-        <link rel="stylesheet" href="./css/settings.css">
+        <link rel="stylesheet" href="./css/create-chat.css">
         <link rel="stylesheet" href="" id="compact-mode-css">
         <link rel="stylesheet" href="" id="sharp-mode-css">
+        <link href="" rel="stylesheet" id="font-css">
         <link rel="icon" href="./img/icon.svg" type="image/png">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&family=Roboto+Mono&display=swap" rel="stylesheet">
-        <script defer src="./js/register.js"></script>
+        <script defer src="./js/create-chat.js"></script>
     </head>
     <body>
         <nav id="navbar">
@@ -24,30 +22,21 @@
                 <img id="icon" src="./img/icon.svg" alt="Simply Chat Icon">
             </div>
         </nav>
-        <h3>Register with your data</h3>
+        <h3>Create Chat</h3>
         <div class="box">
             <div class="container">
-                <label for="username">Username:</label>
-                <input type="text" id="username">
+                <label for="name">Name:</label>
+                <input type="text" id="name">
             </div>
-            <span class="text" id="username-feedback">Input Username</span>
+            <span class="text" id="name-feedback">Input Name</span>
             <div class="container">
-                <label for="email">Email:</label>
-                <input type="email" id="email">
+                <label for="description">Descritpion:</label>
+                <input type="text" id="description">
             </div>
-            <span class="text" id="email-feedback">Input Email</span>
+            <span class="text" id="description-feedback">Input Description</span>
             <div class="container">
-                <label for="password">Password:</label>
-                <input type="password" id="password">
+                <button id="create">Create</button>
             </div>
-            <span class="text" id="password-feedback">Input Password</span>
-            <div class="container">
-                <button id="register">Register</button>
-            </div>
-        </div>
-        <div class="box margin-top">
-            <span class="text">Already registered? Check your email and <a href="/confirm">confirm here!</a></span>
-            <span class="text">Already have an account? <a href="/login">Login here!</a></span>
         </div>
     </body>
 </html>

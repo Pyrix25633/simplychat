@@ -82,7 +82,7 @@ export function isUsernameLoginFeedbackValid(req: any): boolean {
 
 export type ValidateTokenRequest = TokenIdObject;
 
-export function isValidateTokenRequestValid(req: any): boolean {
+export function isValidateTokenRequestValid(req: ValidateTokenRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number';
@@ -92,7 +92,7 @@ export function isValidateTokenRequestValid(req: any): boolean {
 
 export type GetSettingsRequest = TokenIdObject;
 
-export function isGetSettingsRequestValid(req: any): boolean {
+export function isGetSettingsRequestValid(req: GetSettingsRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number';
@@ -115,7 +115,7 @@ export type SetSettingsRequest = {
     }
 };
 
-export function isSetSettingsRequestValid(req: any): boolean {
+export function isSetSettingsRequestValid(req: SetSettingsRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number'
@@ -123,7 +123,7 @@ export function isSetSettingsRequestValid(req: any): boolean {
         && req.username.length > 2 && req.username.length <= 32
         && req.email != undefined && typeof req.email == 'string'
         && req.passwordHash != undefined && typeof req.passwordHash == 'string'
-        && (req.passwordHash.length == 128 || req.passwordHash == 0)
+        && (req.passwordHash.length == 128 || req.passwordHash.length == 0)
         && req.status != undefined && typeof req.status == 'string'
         && req.status.length > 2 && req.status.length <= 64
         && req.settings.compactMode != undefined && typeof req.settings.compactMode == 'boolean'
@@ -141,7 +141,7 @@ export type SetPfpRequest = {
     pfpType: string
 };
 
-export function isSetPfpRequestValid(req: any): boolean {
+export function isSetPfpRequestValid(req: SetPfpRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number'

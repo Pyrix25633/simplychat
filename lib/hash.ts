@@ -7,6 +7,10 @@ function SHA512Hash(data: string): string {
     return hash.digest('hex');
 }
 
-export function createToken(username: string, passwordHash: string): string {
+export function createUserToken(username: string, passwordHash: string): string {
     return SHA512Hash(username + passwordHash + getTimestamp() + Math.floor(Math.random() * 100000));
+}
+
+export function createChatToken(name: string, userId: string): string {
+    return SHA512Hash(name + userId + getTimestamp() + Math.floor(Math.random() * 100000));
 }
