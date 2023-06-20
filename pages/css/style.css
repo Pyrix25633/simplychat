@@ -33,6 +33,7 @@ input {
 button, input {
     border: 2px solid var(--color-foreground);
     background-color: var(--color-background);
+    padding-bottom: 1px;
 }
 button {
     background-color: var(--color-simplychat);

@@ -75,7 +75,6 @@ function getSettings() {
 }
 
 function showSettings(res) {
-    res.settings = JSON.parse(res.settings);
     settings = res;
     pfpImage.src = './pfps/' + cachedLogin.id + '.' + res.pfpType;
     idSpan.innerText = cachedLogin.id;

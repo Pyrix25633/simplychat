@@ -1,0 +1,40 @@
+img.chat-logo {
+    height: 50px;
+    background-color: var(--color-lighter);
+}
+
+div.chat {
+    border: var(--color-foreground) 1px solid;
+}
+
+div#chats {
+    height: 100vh;
+    border-right: var(--color-foreground) 2px solid;
+}
+
+div.marquee {
+    width: 200px;
+    overflow: hidden;
+    white-space: nowrap;
+    box-sizing: border-box;
+    align-items: start;
+}
+div.marquee span {
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee 10s linear infinite;
+}
+@keyframes marquee {
+    0%   { transform: translate(0, 0); }
+    100% { transform: translate(-100%, 0); }
+}
+
+span.chat-name {
+    font-size: 30px;
+    line-height: 32px;
+}
+span.chat-description {
+    font-size: 15px;
+    line-height: 20px;
+    margin-bottom: 2px;
+}

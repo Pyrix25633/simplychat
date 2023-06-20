@@ -1,11 +1,8 @@
+import { TokenIdObject } from './global';
+
 type FeedbackObject = {
     feedback: string | null
 };
-
-type TokenIdObject = {
-    token: string,
-    id: number
-}
 
 // register
 

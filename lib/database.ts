@@ -134,7 +134,7 @@ export function createChat(userId: number, name: string, description: string, to
                     return;
                 }
                 callback(null, id);
-                query('UPDATE users SET chats=(SELECT JSON_ARRAY_APPEND(temp.chats, \'$\', ?) FROM (SELECT chats FROM users WHERE id=?) AS temp) WHERE id=?;',
+                query('UPDATE users SET chats=(SELECT JSON_ARRAY_APPEND(temp.chats, \'$\', CAST(? AS JSON)) FROM (SELECT chats FROM users WHERE id=?) AS temp) WHERE id=?;',
                     ['{"id":' + id + ', "lastReadMessage":-1}', userId, userId], logError);
                 query('CREATE TABLE chat' + id + ' (' +
                     'id INT NOT NULL,' +
@@ -149,4 +149,8 @@ export function createChat(userId: number, name: string, description: string, to
                 query('UPDATE ids SET next_id=? WHERE table_name="chats";', [id + 1], logError);
             });
     });
+}
+
+export function selectChat(id: number, callback: queryCallback): void {
+    query('SELECT * FROM chats WHERE id=?;', [id], callback);
 }

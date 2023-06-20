@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { MysqlError } from 'mysql';
 import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, SetPfpRequest, SetSettingsRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
-import { createChat, insertTempUser, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
+import { createChat, insertTempUser, selectChat, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
 import { createUserToken, createChatToken } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
@@ -15,7 +15,7 @@ import { deleteTempUser } from './lib/database';
 import { createUser } from './lib/database';
 import { getTimestamp, oneDayTimestamp } from './lib/timestamp';
 import { generateRandomChatLogo, generateRandomPfp } from './lib/random-image';
-import { CreateRequest, isCreateRequestValid } from './lib/types/api/chat';
+import { ChatInfoRequest, CreateRequest, ListRequest, isChatInfoRequestValid, isCreateRequestValid, isListRequestValid } from './lib/types/api/chat';
 
 const main: Express = express();
 const port: number = 4443;
@@ -43,6 +43,7 @@ main.use('/js', express.static('./pages/js'));
 main.use('/img', express.static('./pages/img'));
 main.use('/font', express.static('./pages/font'));
 main.use('/pfps', express.static('./pfps'));
+main.use('/chatLogos', express.static('./chatLogos'));
 
 //// api ////
 
@@ -355,7 +356,7 @@ main.post('/api/user/get-settings', (req: Request, res: Response): void => {
             username: user.username,
             email: user.email,
             status: user.status,
-            settings: user.settings,
+            settings: JSON.parse(user.settings),
             pfpType: user.pfp_type
         });
     });
@@ -477,6 +478,46 @@ main.post('/api/chat/create', (req: Request, res: Response): void => {
             generateRandomChatLogo(id);
             res.status(201).send('Created');
         });
+    });
+});
+
+main.post('/api/chat/list', (req: Request, res: Response): void => {
+    const request: ListRequest = req.body;
+    if(!isListRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateToken(request.id, request.token, res, (user: any): void => {
+        res.status(200).send({chats: JSON.parse(user.chats)});
+    });
+});
+
+main.post('/api/chat/info', (req: Request, res: Response): void => {
+    const request: ChatInfoRequest = req.body;
+    if(!isChatInfoRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateToken(request.id, request.token, res, (user: any): void => {
+        const chats = JSON.parse(user.chats);
+        for(let chat of chats) {
+            if(chat.id == request.chatId) {
+                selectChat(request.chatId, (err: MysqlError | null, results: any): void => {
+                    if(err || results.length == 0) {
+                        res.status(500).send('Internal Server Error');
+                        return;
+                    }
+                    const selected = results[0];
+                    res.status(200).send({
+                        name: selected.name,
+                        description: selected.description,
+                        chatLogoType: selected.chat_logo_type
+                    });
+                });
+                return;
+            }
+        }
+        res.status(403).send('Forbidden');
     });
 });
 

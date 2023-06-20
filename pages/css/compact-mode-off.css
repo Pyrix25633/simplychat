@@ -1,7 +1,3 @@
-button, input {
-    padding-bottom: 4px;
-}
-
 nav#navbar {
     padding: 10px 0 10px 20px;
     margin-bottom: 20px;
@@ -28,6 +24,13 @@ div.container:not(:first-child) {
     margin-top: 12px;
 }
 
-div.box h3:not(:first-child), div.box span:not(:first-child) {
-    margin-left: 12px;
+img.chat-logo {
+    margin-right: 5px;
+}
+
+div.chat, div#chats {
+    padding: 5px;
+}
+div.chat:not(:first-child) {
+    margin-top: 5px;
 }
