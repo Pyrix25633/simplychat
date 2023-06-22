@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { MysqlError } from 'mysql';
 import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, SetPfpRequest, SetSettingsRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
-import { createChat, insertTempUser, selectChat, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
+import { createChat, insertTempUser, selectChat, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectLastMessages, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
 import { createUserToken, createChatToken } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
@@ -15,7 +15,7 @@ import { deleteTempUser } from './lib/database';
 import { createUser } from './lib/database';
 import { getTimestamp, oneDayTimestamp } from './lib/timestamp';
 import { generateRandomChatLogo, generateRandomPfp } from './lib/random-image';
-import { ChatInfoRequest, CreateRequest, ListRequest, isChatInfoRequestValid, isCreateRequestValid, isListRequestValid } from './lib/types/api/chat';
+import { ChatInfoRequest, CreateRequest, GetLastMessagesRequest, ListRequest, isChatInfoRequestValid, isCreateRequestValid, isGetLastMessagesRequestValid, isListRequestValid } from './lib/types/api/chat';
 
 const main: Express = express();
 const port: number = 4443;
@@ -500,24 +500,49 @@ main.post('/api/chat/info', (req: Request, res: Response): void => {
     }
     validateToken(request.id, request.token, res, (user: any): void => {
         const chats = JSON.parse(user.chats);
-        for(let chat of chats) {
-            if(chat.id == request.chatId) {
-                selectChat(request.chatId, (err: MysqlError | null, results: any): void => {
-                    if(err || results.length == 0) {
-                        res.status(500).send('Internal Server Error');
-                        return;
-                    }
-                    const selected = results[0];
-                    res.status(200).send({
-                        name: selected.name,
-                        description: selected.description,
-                        chatLogoType: selected.chat_logo_type
-                    });
+        if(user.chats[request.chatId] != undefined) {
+            selectChat(request.chatId, (err: MysqlError | null, results: any): void => {
+                if(err || results.length == 0) {
+                    res.status(500).send('Internal Server Error');
+                    return;
+                }
+                const selected = results[0];
+                res.status(200).send({
+                    name: selected.name,
+                    description: selected.description,
+                    chatLogoType: selected.chat_logo_type
                 });
-                return;
-            }
+            });
         }
-        res.status(403).send('Forbidden');
+        else
+            res.status(403).send('Forbidden');
+    });
+});
+
+main.post('/api/chat/get-last-messages', (req: Request, res: Response): void => {
+    const request: GetLastMessagesRequest = req.body;
+    if(!isGetLastMessagesRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateToken(request.id, request.token, res, (user: any): void => {
+        const chats = JSON.parse(user.chats);
+        if(user.chats[request.chatId] != undefined) {
+            selectLastMessages(request.chatId, request.numberOfMessages, (err: MysqlError | null, results: any): void => {
+                if(err || results.length == 0) {
+                    res.status(500).send('Internal Server Error');
+                    return;
+                }
+                const selected = results[0];
+                res.status(200).send({
+                    name: selected.name,
+                    description: selected.description,
+                    chatLogoType: selected.chat_logo_type
+                });
+            });
+        }
+        else
+            res.status(403).send('Forbidden');
     });
 });
 

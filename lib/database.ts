@@ -127,18 +127,18 @@ export function createChat(userId: number, name: string, description: string, to
         }
         const id = results[0].next_id;
         query('INSERT INTO chats VALUES (?, ?, ?, ?, ?, ?);',
-            [id, name, '[{"id":' + userId + ', "permissionLevel": 0}]', description, token, 'svg'],
+            [id, name, '{"' + userId + '": {"permissionLevel": 0}}', description, token, 'svg'],
             (err: MysqlError | null): void => {
                 if(err) {
                     callback(err, null);
                     return;
                 }
                 callback(null, id);
-                query('UPDATE users SET chats=(SELECT JSON_ARRAY_APPEND(temp.chats, \'$\', CAST(? AS JSON)) FROM (SELECT chats FROM users WHERE id=?) AS temp) WHERE id=?;',
-                    ['{"id":' + id + ', "lastReadMessage":-1}', userId, userId], logError);
+                query('UPDATE users SET chats=(SELECT JSON_SET(temp.chats, \'$."?"\', CAST(? AS JSON)) FROM (SELECT chats FROM users WHERE id=?) AS temp) WHERE id=?;',
+                    [id, '{"lastReadMessageId":-1}', userId, userId], logError);
                 query('CREATE TABLE chat' + id + ' (' +
                     'id INT NOT NULL,' +
-                    'timestamp TIMESTAMP NOT NULL,' +
+                    'timestamp INT NOT NULL,' +
                     'user_id INT NOT NULL,' +
                     'message VARCHAR(2048) NOT NULL,' +
                     'modified BOOLEAN NOT NULL,' +
@@ -153,4 +153,8 @@ export function createChat(userId: number, name: string, description: string, to
 
 export function selectChat(id: number, callback: queryCallback): void {
     query('SELECT * FROM chats WHERE id=?;', [id], callback);
+}
+
+export function selectLastMessages(id: number, numberOfMessages: number, callback: queryCallback): void {
+    query('SELECT * FROM (SELECT * FROM chat' + id + ' LIMIT ? ORDER BY id DESC) ORDER BY id ASC;', [numberOfMessages], callback);
 }

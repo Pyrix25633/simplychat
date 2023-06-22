@@ -48,7 +48,7 @@ CREATE TABLE chats (
 
 CREATE TABLE chat<id> (
     id INT NOT NULL,
-    timestamp TIMESTAMP NOT NULL,
+    timestamp INT NOT NULL,
     user_id INT NOT NULL,
     message VARCHAR(2048) NOT NULL,
     modified BOOLEAN NOT NULL,

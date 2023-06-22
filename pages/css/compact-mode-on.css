@@ -31,6 +31,9 @@ img.chat-logo {
 div.chat, div#chats {
     padding: 2px;
 }
+div#chats {
+    height: calc(100vh - 4px);
+}
 div.chat:not(:first-child) {
     margin-top: 2px;
 }

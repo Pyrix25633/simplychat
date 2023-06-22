@@ -8,8 +8,14 @@ div.chat {
 }
 
 div#chats {
-    height: 100vh;
     border-right: var(--color-foreground) 2px solid;
+}
+
+div#messages {
+    height: 80vh;
+    width: 70vw;
+    border-bottom: var(--color-foreground) 2px solid;
+    width: max-content;
 }
 
 div.marquee {
@@ -25,8 +31,10 @@ div.marquee span {
     animation: marquee 10s linear infinite;
 }
 @keyframes marquee {
-    0%   { transform: translate(0, 0); }
-    100% { transform: translate(-100%, 0); }
+    0% {transform: translate(0, 0);}
+    40% {transform: translate(-200px, 0);}
+    60% {transform: translate(-200px, 0);}
+    100% {transform: translate(-100%, 0);}
 }
 
 span.chat-name {

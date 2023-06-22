@@ -43,3 +43,21 @@ export function isChatInfoRequestValid(req: ChatInfoRequest): boolean {
         && req.id != undefined && typeof req.id == 'number'
         && req.chatId != undefined && typeof req.chatId == 'number';
 }
+
+// get-last-messages
+
+export type GetLastMessagesRequest = {
+    token: string,
+    id: number,
+    chatId: number,
+    numberOfMessages: number
+};
+
+export function isGetLastMessagesRequestValid(req: GetLastMessagesRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number'
+        && req.numberOfMessages != undefined && typeof req.numberOfMessages == 'number'
+        && req.numberOfMessages > 0 && req.numberOfMessages < 25;
+}

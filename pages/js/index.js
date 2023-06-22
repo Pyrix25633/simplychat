@@ -1,6 +1,7 @@
 import { loadSettings, cachedLogin, statusCodeActions } from "./load-settings.js";
 
 const chatsDiv = document.getElementById('chats');
+const chats = [];
 
 loadSettings(() => {
     $.ajax({
@@ -16,18 +17,18 @@ loadSettings(() => {
 });
 
 function loadChatsInfo(chats) {
-    for(let chat of chats) {
+    for(let chatId of Object.keys(chats)) {
         $.ajax({
             url: '/api/chat/info',
             method: 'POST',
             data: JSON.stringify({
                 token: cachedLogin.token,
                 id: cachedLogin.id,
-                chatId: chat.id
+                chatId: parseInt(chatId)
             }),
             contentType: 'application/json',
             success: (res) => {
-                setChatInfo(chat.id, res);
+                setChatInfo(chatId, res);
             },
             statusCode: statusCodeActions
         });
@@ -41,6 +42,7 @@ function setChatInfo(id, res) {
     nameDescriptionDiv.classList.add('box', 'marquee');
     const chatLogoImg = document.createElement('img');
     chatLogoImg.classList.add('chat-logo');
+    console.log(id, res);
     chatLogoImg.src = './chatLogos/' + id + '.' + res.chatLogoType;
     const chatNameSpan = document.createElement('span');
     chatNameSpan.classList.add('chat-name');
