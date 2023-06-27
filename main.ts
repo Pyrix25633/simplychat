@@ -1,6 +1,6 @@
 import express, { Express, Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, SetPfpRequest, SetSettingsRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
+import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, SetPfpRequest, SetSettingsRequest, UserInfoRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isUserInfoRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
 import { createChat, insertTempUser, selectChat, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectLastMessages, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
 import { createUserToken, createChatToken } from './lib/hash';
 import bodyParser from 'body-parser';
@@ -345,6 +345,28 @@ function validateToken(id: number, token: string, res: Response, callback: (user
     });
 }
 
+main.post('/api/user/info', (req: Request, res: Response): void => {
+    const request: UserInfoRequest = req.body;
+    if(!isUserInfoRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateToken(request.id, request.token, res, (user: any): void => {
+        selectUser(request.userId, (err: MysqlError | null, results: any): void => {
+            if(err) {
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+            const selected = results[0];
+            res.status(200).send({
+                username: selected.username,
+                status: selected.status,
+                pfpType: selected.pfp_type
+            });
+        });
+    });
+});
+
 main.post('/api/user/get-settings', (req: Request, res: Response): void => {
     const request: GetSettingsRequest = req.body;
     if(!isGetSettingsRequestValid(request)) {
@@ -510,7 +532,8 @@ main.post('/api/chat/info', (req: Request, res: Response): void => {
                 res.status(200).send({
                     name: selected.name,
                     description: selected.description,
-                    chatLogoType: selected.chat_logo_type
+                    chatLogoType: selected.chat_logo_type,
+                    users: JSON.parse(selected.users)
                 });
             });
         }
@@ -529,16 +552,22 @@ main.post('/api/chat/get-last-messages', (req: Request, res: Response): void => 
         const chats = JSON.parse(user.chats);
         if(user.chats[request.chatId] != undefined) {
             selectLastMessages(request.chatId, request.numberOfMessages, (err: MysqlError | null, results: any): void => {
-                if(err || results.length == 0) {
+                if(err) {
                     res.status(500).send('Internal Server Error');
+                    console.log(err);
                     return;
                 }
-                const selected = results[0];
-                res.status(200).send({
-                    name: selected.name,
-                    description: selected.description,
-                    chatLogoType: selected.chat_logo_type
-                });
+                const lastMessages: {lastMessages: any[]} = {lastMessages: []};
+                for(let message of results) {
+                    lastMessages.lastMessages.push({
+                        id: message.id,
+                        timestamp: message.timestamp,
+                        userId: message.user_id,
+                        message: message.message,
+                        modified: message.modified
+                    });
+                }
+                res.status(200).send(lastMessages);
             });
         }
         else

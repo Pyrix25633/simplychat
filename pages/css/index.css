@@ -1,21 +1,59 @@
-img.chat-logo {
+:root {
+    --color-permission-level-0: #FF4A40;
+    --color-permission-level-1: #FECF15;
+    --color-permission-level-2: #DDDDDD;
+    --color-permission-level-3: #b913fb;
+}
+
+div#loading {
+    position: fixed;
+    display: flex;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    align-items: center;
+    justify-content: center;
+}
+
+img.chat-logo, img.pfp {
     height: 50px;
     background-color: var(--color-lighter);
 }
+img#chat-logo {
+    height: 70px;
+    background-color: var(--color-lighter);
+}
 
-div.chat {
+div.chat, div.user {
     border: var(--color-foreground) 1px solid;
 }
 
 div#chats {
     border-right: var(--color-foreground) 2px solid;
+    height: var(--sidebars-height);
+}
+div#users {
+    border-left: var(--color-foreground) 2px solid;
+    height: var(--sidebars-height);
+}
+
+div#main {
+    height: 100vh;
+    justify-content: start;
 }
 
 div#messages {
-    height: 80vh;
-    width: 70vw;
+    height: auto;
+    width: 100%;
     border-bottom: var(--color-foreground) 2px solid;
-    width: max-content;
+}
+
+div#chat-topbar {
+    width: var(--chat-topbar-width);
+    border-bottom: var(--color-foreground) 2px solid;
 }
 
 div.marquee {
@@ -36,13 +74,56 @@ div.marquee span {
     60% {transform: translate(-200px, 0);}
     100% {transform: translate(-100%, 0);}
 }
+div.marquee-big {
+    width: var(--marquee-big-width);
+    overflow: hidden;
+    white-space: nowrap;
+    box-sizing: border-box;
+    align-items: start;
+}
+div.marquee-big span {
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee-big 10s linear infinite;
+}
+@keyframes marquee-big {
+    0% {transform: translate(0, 0);}
+    40% {transform: translate(calc(var(--marquee-big-width) * -1), 0);}
+    60% {transform: translate(calc(var(--marquee-big-width) * -1), 0);}
+    100% {transform: translate(-100%, 0);}
+}
 
-span.chat-name {
+span.chat-name, span.username {
     font-size: 30px;
     line-height: 32px;
 }
-span.chat-description {
+span.chat-description, span.status {
     font-size: 15px;
     line-height: 20px;
     margin-bottom: 2px;
+}
+span#chat-name {
+    font-size: 35px;
+    line-height: 37px;
+}
+span#chat-description {
+    font-size: 20px;
+    line-height: 25px;
+    margin-bottom: 3px;
+}
+
+div.selected {
+    background-color: var(--color-simplychat-transparent);
+}
+span.permission-level-0 {
+    color: var(--color-permission-level-0);
+}
+span.permission-level-1 {
+    color: var(--color-permission-level-1);
+}
+span.permission-level-2 {
+    color: var(--color-permission-level-2);
+}
+span.permission-level-3 {
+    color: var(--color-permission-level-3);
 }

@@ -17,8 +17,34 @@
     </head>
     <body>
         <div class="container">
-            <div class="box" id="chats"></div>
-            <div class="box" id="messages">Test</div>
+            <div class="box" id="chats">
+                <div class="container chat">
+                    <img src="./img/unknown.svg" class="pfp">
+                    <div class="box marquee">
+                        <span class="name">0 Chats</span>
+                        <span class="description">Create a Chat!</span>
+                    </div>
+                </div>
+            </div>
+            <div class="box" id="main">
+                <div class="container" id="chat-topbar">
+                    <img src="./img/unknown.svg" id="chat-logo">
+                    <div class="box marquee-big">
+                        <span id="chat-name">0 Chats</span>
+                        <span id="chat-description">Create a Chat!</span>
+                    </div>
+                </div>
+                <div class="box" id="messages">Test</div>
+            </div>
+            <div class="box" id="users">
+                <div class="container user">
+                    <img src="./img/unknown.svg" class="pfp">
+                    <div class="box marquee">
+                        <span class="username">0 Users</span>
+                        <span class="status">Create a Chat!</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </body>
 </html>

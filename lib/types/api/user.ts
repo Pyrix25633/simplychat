@@ -85,6 +85,21 @@ export function isValidateTokenRequestValid(req: ValidateTokenRequest): boolean 
         && req.id != undefined && typeof req.id == 'number';
 }
 
+// info
+
+export type UserInfoRequest = {
+    token: string,
+    id: number,
+    userId: number
+};
+
+export function isUserInfoRequestValid(req: UserInfoRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.userId != undefined && typeof req.userId == 'number';
+}
+
 // get-settings
 
 export type GetSettingsRequest = TokenIdObject;

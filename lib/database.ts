@@ -64,7 +64,7 @@ export function createUser(username: string, email: string, passwordHash: string
         const id = results[0].next_id;
         const timestamp: number = getTimestamp();
         query('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            [id, username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '[]', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'],
+            [id, username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '{}', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'],
             (err: MysqlError | null): void => {
                 if(err) {
                     callback(err, null);
@@ -156,5 +156,5 @@ export function selectChat(id: number, callback: queryCallback): void {
 }
 
 export function selectLastMessages(id: number, numberOfMessages: number, callback: queryCallback): void {
-    query('SELECT * FROM (SELECT * FROM chat' + id + ' LIMIT ? ORDER BY id DESC) ORDER BY id ASC;', [numberOfMessages], callback);
+    query('SELECT * FROM (SELECT * FROM chat' + id + ' ORDER BY id DESC LIMIT ?) AS temp ORDER BY id ASC;', [numberOfMessages], callback);
 }

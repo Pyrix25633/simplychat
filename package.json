@@ -1,7 +1,7 @@
 {
-  "name": "opentasks-server",
+  "name": "simplychat",
   "version": "1.0.0",
-  "description": "An Open-source Task Manager",
+  "description": "An Open-source Instant Messaging Website",
   "main": "main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Pyrix25633/opendrive-server.git"
+    "url": "git+https://github.com/Pyrix25633/simplychat.git"
   },
   "keywords": [
     "tasks"

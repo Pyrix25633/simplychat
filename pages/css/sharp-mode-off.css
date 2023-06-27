@@ -2,7 +2,7 @@ button, input {
     border-radius: 5px;
 }
 
-img#pfp, img.chat-logo {
+img#pfp, img.chat-logo, img.pfp, img#chat-logo {
     border-radius: 50%;
 }
 
@@ -17,6 +17,6 @@ div.slider div.slider-circle {
     border-radius: 50%;
 }
 
-div.chat {
+div.chat, div.user {
     border-radius: 10px;
 }
