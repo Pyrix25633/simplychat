@@ -8,9 +8,13 @@ function SHA512Hash(data: string): string {
 }
 
 export function createUserToken(username: string, passwordHash: string): string {
-    return SHA512Hash(username + passwordHash + getTimestamp() + Math.floor(Math.random() * 100000));
+    return SHA512Hash(username + passwordHash + getTimestamp() + Math.floor(Math.random() * 1000000));
+}
+
+export function createTfaToken(username: string, id: number): string {
+    return SHA512Hash(username + id + getTimestamp() + Math.floor(Math.random() * 1000000));
 }
 
 export function createChatToken(name: string, userId: string): string {
-    return SHA512Hash(name + userId + getTimestamp() + Math.floor(Math.random() * 100000));
+    return SHA512Hash(name + userId + getTimestamp() + Math.floor(Math.random() * 1000000));
 }

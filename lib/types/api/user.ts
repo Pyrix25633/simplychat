@@ -1,4 +1,14 @@
+import { Response } from 'express';
 import { TokenIdObject } from './global';
+
+export function exitIfDeletedUser(user: any, res: Response): boolean {
+    if(user.email == null || user.password_hash == null || user.token == null
+        || user.token_expiration == null || user.settings == null) {
+        res.status(403).send('Forbidden');
+        return true;
+    }
+    return false;
+}
 
 type FeedbackObject = {
     feedback: string | null
@@ -73,6 +83,22 @@ export function isLoginRequestValid(req: LoginRequest): boolean {
 
 export function isUsernameLoginFeedbackValid(req: any): boolean {
     return req != undefined && typeof req == 'string';
+}
+
+// tfauthenticate
+
+export type TfauthenticateRequest = {
+    id: number,
+    tfaToken: string,
+    tfaCode: string
+};
+
+export function isTfautheticateRequestValid(req: TfauthenticateRequest): boolean {
+    return req.id != undefined && typeof req.id == 'number'
+        && req.tfaToken != undefined && typeof req.tfaToken == 'string'
+        && req.tfaToken.length == 128
+        && req.tfaCode != undefined && typeof req.tfaCode == 'string'
+        && req.tfaCode.length == 6;
 }
 
 // validate-token

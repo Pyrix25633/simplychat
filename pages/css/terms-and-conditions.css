@@ -7,22 +7,21 @@ body {
 
 nav#navbar {
     position: absolute !important;
-    background-color: #00000000;
     justify-content: center;
-    margin-top: 20px;
 }
 
 ol, span {
-    max-width: 80vw;
+    max-width: 70vw;
 }
 li, span {
     text-align: justify;
+    line-height: 28px;
 }
 span.spaced {
     margin-top: 20px;
 }
 
-@media screen and (max-width: 500px) {
+@media screen and ((max-width: 800px) or (max-height: 500px)) {
     nav#navbar {
         position: relative !important;
     }

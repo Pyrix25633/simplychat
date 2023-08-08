@@ -22,6 +22,7 @@ body {
 h3 {
     font-size: 22px;
     text-align: center;
+    letter-spacing: -1px;
 }
 
 label {
@@ -58,6 +59,7 @@ span.text, span.text * {
 span.title {
     font-size: 25px;
     line-height: 30px;
+    letter-spacing: -1px;
 }
 span.title:not(:last-child) {
     margin-right: 10px;

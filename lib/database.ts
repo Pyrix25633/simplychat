@@ -63,8 +63,8 @@ export function createUser(username: string, email: string, passwordHash: string
         }
         const id = results[0].next_id;
         const timestamp: number = getTimestamp();
-        query('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            [id, username, email, passwordHash, token, timestamp + twoWeeksTimestamp, '{}', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'],
+        query('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+            [id, username, email, passwordHash, token, timestamp + twoWeeksTimestamp, null, '{}', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'],
             (err: MysqlError | null): void => {
                 if(err) {
                     callback(err, null);

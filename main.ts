@@ -1,8 +1,8 @@
 import express, { Express, Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, SetPfpRequest, SetSettingsRequest, UserInfoRequest, UsernameFeedbackResponse, ValidateTokenRequest, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isUserInfoRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
+import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegisterRequest, SetPfpRequest, SetSettingsRequest, TfauthenticateRequest, UserInfoRequest, UsernameFeedbackResponse, ValidateTokenRequest, exitIfDeletedUser, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegisterRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isTfautheticateRequestValid, isUserInfoRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
 import { createChat, insertTempUser, selectChat, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectLastMessages, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
-import { createUserToken, createChatToken } from './lib/hash';
+import { createUserToken, createChatToken, createTfaToken } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
@@ -11,14 +11,18 @@ import * as https from 'https';
 import * as fs from 'fs';
 import { sendEmail } from './lib/email';
 import Mail from 'nodemailer/lib/mailer';
+import imageSize from 'image-size';
+import * as tfa from 'speakeasy';
 import { deleteTempUser } from './lib/database';
 import { createUser } from './lib/database';
 import { getTimestamp, oneDayTimestamp } from './lib/timestamp';
 import { generateRandomChatLogo, generateRandomPfp } from './lib/random-image';
 import { ChatInfoRequest, CreateRequest, GetLastMessagesRequest, ListRequest, isChatInfoRequestValid, isCreateRequestValid, isGetLastMessagesRequestValid, isListRequestValid } from './lib/types/api/chat';
+import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 
 const main: Express = express();
 const port: number = 4443;
+const pendingTfa: Map<number, string> = new Map<number, string>();
 
 main.use(bodyParser.urlencoded({extended: true}));
 main.use(bodyParser.json({limit: '6mb'}));
@@ -254,6 +258,16 @@ main.get('/api/user/username-confirm-feedback', (req: Request, res: Response): v
     });
 });
 
+function updateUserTokenIfExpiringSoon(user: any, res: Response): boolean {
+    if(user.token_expiration - oneDayTimestamp < getTimestamp()) {
+        const token = createUserToken(user.username, user.password_hash);
+        res.status(200).send({id: user.id, token: token, pendingTfa: false});
+        updateUserToken(user.id, token);
+        return true;
+    }
+    return false;
+}
+
 main.post('/api/user/login', (req: Request, res: Response): void => {
     const request: LoginRequest = req.body;
     if(!isLoginRequestValid(request)) {
@@ -271,18 +285,19 @@ main.post('/api/user/login', (req: Request, res: Response): void => {
             return;
         }
         const user = results[0];
+        if(exitIfDeletedUser(user, res)) return;
         if(user.password_hash != request.passwordHash) {
             console.log(request, user);
             res.status(401).send('Unauthorized');
             return;
         }
-        if(user.token_expiration - oneDayTimestamp < getTimestamp()) {
-            const token = createUserToken(user.username, user.password_hash);
-            res.status(200).send({id: user.id, token: token});
-            updateUserToken(user.id, token);
-            return;
+        if(user.tfa_key != null) {
+            const tfaToken = createTfaToken(user.username, user.id);
+            pendingTfa.set(user.id, tfaToken);
+            res.status(200).send({pendingTfa: true, tfaToken: tfaToken});
         }
-        res.status(200).send({id: user.id, token: user.token});
+        if(updateUserTokenIfExpiringSoon(user, res)) return;
+        res.status(200).send({id: user.id, token: user.token, pendingTfa: false});
     });
 });
 
@@ -305,6 +320,38 @@ main.get('/api/user/username-login-feedback', (req: Request, res: Response): voi
     });
 });
 
+main.get('/api/user/tfauthenticate', (req: Request, res: Response): void => {
+    const request: TfauthenticateRequest = req.body;
+    if(!isTfautheticateRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    if(pendingTfa.get(request.id) != request.tfaToken) {
+        res.status(403).send('Forbidden');
+        return;
+    }
+    selectUser(request.id, (err: MysqlError | null, results: any): void => {
+        if(err) {
+            res.status(500).send('Internal Server Error');
+            console.log(err);
+            return;
+        }
+        if(results.length == 0) {
+            res.status(404).send('Not Found');
+            return;
+        }
+        const user = results[0];
+        if(exitIfDeletedUser(user, res)) return;
+        if(!tfa.totp.verify({secret: user.tfa_key, encoding: 'base32', token: request.tfaCode, window: 2})) {
+            res.status(401).send('Unauthorized');
+            return;
+        }
+        pendingTfa.delete(user.id);
+        if(updateUserTokenIfExpiringSoon(user, res)) return;
+        res.status(200).send({id: user.id, token: user.token});
+    });
+});
+
 main.post('/api/user/validate-token', (req: Request, res: Response): void => {
     const request: ValidateTokenRequest = req.body;
     if(!isValidateTokenRequestValid(request)) {
@@ -322,6 +369,7 @@ main.post('/api/user/validate-token', (req: Request, res: Response): void => {
             return;
         }
         const user = results[0];
+        if(exitIfDeletedUser(user, res)) return;
         res.status(200).send({valid: user.token == request.token && user.token_expiration > getTimestamp()});
     });
 });
@@ -338,6 +386,7 @@ function validateToken(id: number, token: string, res: Response, callback: (user
             return;
         }
         const user = results[0];
+        if(exitIfDeletedUser(user, res)) return;
         if(user.token == token && user.token_expiration > getTimestamp())
             callback(user);
         else
@@ -462,6 +511,11 @@ main.post('/api/user/set-pfp', (req: Request, res: Response): void => {
         }
         const base64: string | undefined = request.pfp.split(';base64,').pop();
         if(request.pfp.substring(0, 11) != 'data:image/' || base64 == undefined) {
+            res.status(400).send('Bad Request');
+            return;
+        }
+        const dimensions: ISizeCalculationResult = imageSize(Buffer.from(base64, 'base64'));
+        if(dimensions.width != dimensions.height || dimensions.width == undefined || dimensions.width < 512 || dimensions.width > 2048) {
             res.status(400).send('Bad Request');
             return;
         }
