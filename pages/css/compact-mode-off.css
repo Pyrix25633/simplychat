@@ -10,7 +10,7 @@ nav#navbar {
 }
 
 div#footer {
-    padding-bottom: 15px;
+    padding-bottom: 20px;
     margin-top: 20px;
 }
 div#footer *:not(:first-child) {
@@ -27,6 +27,14 @@ span.text {
 
 div.container:not(:first-child) {
     margin-top: 12px;
+}
+div.container span:not(:first-child) {
+    margin-left: 7px;
+}
+
+div.panel {
+    padding: 40px;
+    margin-top: 25px;
 }
 
 img.chat-logo, img.pfp, img#chat-logo {

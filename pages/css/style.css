@@ -3,6 +3,7 @@
     --color-lighter: #333333;
     --color-foreground: #DDDDDD;
     --color-error: #FF6961;
+    --color-warning: #f99046;
     --color-success: #77DD77;
     --color-simplychat: #5B8899;
     --color-simplychat-transparent: #5B889970;
@@ -44,6 +45,16 @@ input:focus {
     border-color: var(--color-simplychat);
     outline: none;
 }
+input:-webkit-autofill {
+    background-color: transparent !important;
+    -webkit-box-shadow: 0 0 0 50px var(--color-background) inset;
+}
+input.medium {
+    width: 90px;
+}
+input.small {
+    width: 40px;
+}
 button:active {
     border-color: var(--color-simplychat);
     color: var(--color-simplychat);
@@ -73,10 +84,17 @@ a {
 }
 
 .error {
-    color: var(--color-error);
+    color: var(--color-error) !important;
+}
+.warning, .warning * {
+    color: var(--color-warning);
+    border-color: var(--color-warning);
+}
+button.warning {
+    background-color: var(--color-background);
 }
 .success {
-    color: var(--color-success);
+    color: var(--color-success) !important;
 }
 
 nav#navbar {
@@ -121,7 +139,22 @@ div.container {
     justify-content: center;
     align-items: center;
 }
+div.container.no-margin {
+    margin: 0 !important;
+}
 
 div.margin-top {
     margin-top: 15px;
+}
+
+div.panel {
+    background-color: var(--color-lighter);
+    margin-right: 10px;
+    margin-left: 10px;
+}
+div.panel > h3 {
+    margin-top: 0;
+}
+div.section h3 {
+    margin-bottom: 0px;
 }

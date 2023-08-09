@@ -18,6 +18,7 @@ CREATE TABLE users (
     password_hash CHAR(128) NULL,
     token CHAR(128) NULL,
     token_expiration INT NULL,
+    token_duration INT NULL,
     tfa_key CHAR(52) NULL,
     chats JSON NOT NULL,
     online BOOLEAN NOT NULL,

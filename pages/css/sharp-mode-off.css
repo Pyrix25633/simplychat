@@ -2,12 +2,15 @@ button, input {
     border-radius: 5px;
 }
 
-img#pfp, img.chat-logo, img.pfp, img#chat-logo {
+img.rounded {
+    border-radius: 10%;
+}
+img#pfp, img#change-pfp, img.chat-logo, img.pfp, img#chat-logo {
     border-radius: 50%;
 }
 
-img#change-pfp {
-    border-radius: 50%;
+div.panel {
+    border-radius: 30px;
 }
 
 div.slider {

@@ -6,27 +6,42 @@ const pfpImage = document.getElementById('pfp');
 const changePfpImage = document.getElementById('change-pfp');
 const newPfpInput = document.getElementById('new-pfp');
 const pfpFeedbackSpan = document.getElementById('pfp-feedback');
+
 const idSpan = document.getElementById('id');
 const usernameInput = document.getElementById('username');
 const usernameFeedbackSpan = document.getElementById('username-feedback');
 const emailInput = document.getElementById('email');
 const emailFeedbackSpan = document.getElementById('email-feedback');
-const passwordInput = document.getElementById('password');
-const passwordFeedbackSpan = document.getElementById('password-feedback');
 const statusInput = document.getElementById('status');
 const statusFeedbackSpan = document.getElementById('status-feedback');
+
+const passwordInput = document.getElementById('password');
+const passwordFeedbackSpan = document.getElementById('password-feedback');
+const regenerateTokenButton = document.getElementById('regenerate-token');
+const tokenExpirationSpan = document.getElementById('token-expiration');
+const tokenDurationInput = document.getElementById('token-duration');
+const tokenDurationFeedbackSpan = document.getElementById('token-duration-feedback');
+const tfaDiv = document.getElementById('tfa');
+const tfaEnableDiv = document.getElementById('tfa-enable');
+tfaEnableDiv.style.display = 'none';
+
 const compactModeDiv = document.getElementById('compact-mode');
 const aurebeshFontDiv = document.getElementById('aurebesh-font');
 const condensedFontDiv = document.getElementById('condensed-font');
 const sharpModeDiv = document.getElementById('sharp-mode');
+
 const cancelButton = document.getElementById('cancel');
 const saveButton = document.getElementById('save');
+
+const oneDayTimestamp = 60 * 60 * 24;
 
 let settings;
 let validUsername = true;
 let validEmail = true;
-let validPassword = true;
 let validStatus = true;
+let validPassword = true;
+let validTokenDuration = true;
+let validTfaCode = true;
 saveButton.disabled = true;
 
 const cachedLogin = JSON.parse(localStorage.getItem('cachedLogin'));
@@ -81,6 +96,12 @@ function showSettings(res) {
     usernameInput.value = res.username;
     emailInput.value = res.email;
     statusInput.value = res.status;
+    const tokenExpiration = new Date(res.tokenExpiration * 1000);
+    const tokenExpirationOffset = tokenExpiration.getTimezoneOffset();
+    tokenExpirationSpan.innerText = new Date(tokenExpiration.getTime() - (tokenExpirationOffset*60*1000))
+        .toISOString().split('.')[0].replace('T', ' ').replaceAll('-', '/');
+    tokenDurationInput.value = res.tokenDuration / oneDayTimestamp;
+    tfaDiv.classList.add(res.settings.tfaActive ? 'on': 'off');
     compactModeDiv.classList.add(res.settings.compactMode ? 'on': 'off');
     compactModeCssLink.href = './css/compact-mode-' + (res.settings.compactMode ? 'on': 'off') + '.css';
     condensedFontDiv.classList.add(res.settings.condensedFont ? 'on': 'off');
@@ -114,7 +135,7 @@ newPfpInput.addEventListener('change', () => {
                 pfpFeedbackSpan.innerText = 'Valid Profile Picture';
                 pfpFeedbackSpan.classList.replace('error', 'success');
                 pfpImage.src = image.src;
-                saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+                saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
                 settings.pfpType = pfpType;
                 settings.pfp = pfpImage.src;
             }
@@ -168,7 +189,7 @@ function usernameTyped() {
             }
             usernameFeedbackSpan.classList.replace('error', 'success');
             validUsername = true;
-            saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+            saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
         },
         error: (req, err) => {
             console.log(err);
@@ -211,7 +232,7 @@ function emailTyped() {
             }
             emailFeedbackSpan.classList.replace('error', 'success');
             validEmail = true;
-            saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+            saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
         },
         error: (req, err) => {
             console.log(err);
@@ -219,6 +240,47 @@ function emailTyped() {
             emailFeedbackSpan.classList.replace('success', 'error');
         }
     });
+}
+
+let statusTimer;
+statusInput.addEventListener('keyup', () => {
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(statusTyped, 1000);
+});
+statusInput.addEventListener('keydown', () => {
+    clearTimeout(statusTimer);
+});
+statusInput.addEventListener('focusout', () => {
+    clearTimeout(statusTimer);
+    statusTyped();
+});
+function statusTyped() {
+    if(statusInput.value == settings.status) {
+        statusFeedbackSpan.classList.remove('error', 'success');
+        statusFeedbackSpan.innerText = 'You can change your Status';
+        return;
+    }
+    statusFeedbackSpan.classList.add('error');
+    if(statusInput.value.length < 3) {
+        statusFeedbackSpan.innerText = 'Status too short!'
+        statusFeedbackSpan.classList.replace('success', 'error');
+        validStatus = false;
+        saveButton.disabled = true;
+        return;
+    }
+    if(statusInput.value.length > 64) {
+        statusFeedbackSpan.innerText = 'Status too long!'
+        statusFeedbackSpan.classList.replace('success', 'error');
+        validStatus = false;
+        saveButton.disabled = true;
+        return;
+    }
+    else {
+        statusFeedbackSpan.innerText = 'Valid Status'
+        statusFeedbackSpan.classList.replace('error', 'success');
+        validPassword = true;
+        saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
+    }
 }
 
 let passwordTimer;
@@ -290,50 +352,65 @@ function passwordTyped() {
         passwordFeedbackSpan.innerText = 'Valid Password'
         passwordFeedbackSpan.classList.replace('error', 'success');
         validPassword = true;
-        saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+        saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
     }
 }
 
-let statusTimer;
-statusInput.addEventListener('keyup', () => {
-    clearTimeout(statusTimer);
-    statusTimer = setTimeout(statusTyped, 1000);
+regenerateTokenButton.addEventListener('click', () => {
+    $.ajax({
+        url: '/api/user/regenerate-token',
+        method: 'POST',
+        data: JSON.stringify({
+            token: cachedLogin.token,
+            id: cachedLogin.id
+        }),
+        contentType: 'application/json',
+        success: waitAndRefresh,
+        error: waitAndRefresh
+    });
 });
-statusInput.addEventListener('keydown', () => {
-    clearTimeout(statusTimer);
+
+let tokenDurationTimer;
+tokenDurationInput.addEventListener('keyup', () => {
+    clearTimeout(tokenDurationTimer);
+    tokenDurationTimer = setTimeout(tokenDurationTyped, 1000);
 });
-statusInput.addEventListener('focusout', () => {
-    clearTimeout(statusTimer);
-    statusTyped();
+tokenDurationInput.addEventListener('keydown', () => {
+    clearTimeout(tokenDurationTimer);
 });
-function statusTyped() {
-    if(statusInput.value == settings.status) {
-        statusFeedbackSpan.classList.remove('error', 'success');
-        statusFeedbackSpan.innerText = 'You can change your Status';
+tokenDurationInput.addEventListener('focusout', () => {
+    clearTimeout(tokenDurationTimer);
+    tokenDurationTyped();
+});
+function tokenDurationTyped() {
+    if(tokenDurationInput.value == '') {
+        tokenDurationFeedbackSpan.classList.remove('error', 'success');
+        tokenDurationFeedbackSpan.innerText = 'You can change your Token Duration (Days)';
         return;
     }
-    statusFeedbackSpan.classList.add('error');
-    if(statusInput.value.length < 3) {
-        statusFeedbackSpan.innerText = 'Status too short!'
-        statusFeedbackSpan.classList.replace('success', 'error');
-        validStatus = false;
+    tokenDurationFeedbackSpan.classList.add('error');
+    const tokenDuration = parseInt(tokenDurationInput.value);
+    if(tokenDuration < 5) {
+        tokenDurationFeedbackSpan.innerText = 'Token Duration too short!'
+        tokenDurationFeedbackSpan.classList.replace('success', 'error');
+        validTokenDuration = false;
         saveButton.disabled = true;
-        return;
     }
-    if(statusInput.value.length > 64) {
-        statusFeedbackSpan.innerText = 'Status too long!'
-        statusFeedbackSpan.classList.replace('success', 'error');
-        validStatus = false;
+    else if(tokenDuration > 90) {
+        tokenDurationFeedbackSpan.innerText = 'Tooken Duration too long!'
+        tokenDurationFeedbackSpan.classList.replace('success', 'error');
+        validTokenDuration = false;
         saveButton.disabled = true;
-        return;
     }
     else {
-        statusFeedbackSpan.innerText = 'Valid Status'
-        statusFeedbackSpan.classList.replace('error', 'success');
-        validPassword = true;
-        saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+        tokenDurationFeedbackSpan.innerText = 'Valid Token Duration'
+        tokenDurationFeedbackSpan.classList.replace('error', 'success');
+        validTokenDuration = true;
+        saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
     }
 }
+
+//TODO
 
 for(let e of document.getElementsByClassName('slider')) {
     e.addEventListener('click', () => {
@@ -351,23 +428,23 @@ function setFont() {
 compactModeDiv.addEventListener('click', () => {
     settings.settings.compactMode = compactModeDiv.classList.contains('on');
     compactModeCssLink.href = './css/compact-mode-' + (settings.settings.compactMode ? 'on': 'off') + '.css';
-    saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+    saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
 
 });
 condensedFontDiv.addEventListener('click', () => {
     settings.settings.condensedFont = condensedFontDiv.classList.contains('on');
     setFont();
-    saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+    saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
 });
 aurebeshFontDiv.addEventListener('click', () => {
     settings.settings.aurebeshFont = aurebeshFontDiv.classList.contains('on');
     setFont();
-    saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+    saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
 });
 sharpModeDiv.addEventListener('click', () => {
     settings.settings.sharpMode = sharpModeDiv.classList.contains('on');
     sharpModeCssLink.href = './css/sharp-mode-' + (settings.settings.sharpMode ? 'on': 'off') + '.css';
-    saveButton.disabled = !(validUsername && validEmail && validPassword && validStatus);
+    saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
 });
 
 async function hashPassword(password) {
@@ -388,7 +465,7 @@ function waitAndRefresh() {
 }
 
 saveButton.addEventListener('click', async () => {
-    if(!(validUsername && validEmail && validPassword && validStatus)) return;
+    if(!(validUsername && validEmail && validStatus && validPassword && validTokenDuration)) return;
     $.ajax({
         url: '/api/user/set-settings',
         method: 'POST',
@@ -398,6 +475,7 @@ saveButton.addEventListener('click', async () => {
             username: usernameInput.value,
             email: emailInput.value,
             passwordHash: (passwordInput.value.length != 0) ? await hashPassword(passwordInput.value) : '',
+            tokenDuration: tokenDurationInput.value * oneDayTimestamp,
             status: statusInput.value,
             settings: settings.settings
         }),

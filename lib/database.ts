@@ -63,8 +63,8 @@ export function createUser(username: string, email: string, passwordHash: string
         }
         const id = results[0].next_id;
         const timestamp: number = getTimestamp();
-        query('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            [id, username, email, passwordHash, token, timestamp + twoWeeksTimestamp, null, '{}', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'],
+        query('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+            [id, username, email, passwordHash, token, timestamp + twoWeeksTimestamp, twoWeeksTimestamp, null, '{}', false, timestamp, 'New User!', '{"compactMode":false, "condensedFont":false, "aurebeshFont":false, "sharpMode":false}', 'svg'],
             (err: MysqlError | null): void => {
                 if(err) {
                     callback(err, null);
@@ -81,7 +81,7 @@ export function selectUser(id: number, callback: queryCallback): void {
 }
 
 export function selectUserFromUsername(username: string, callback: queryCallback): void {
-    query('SELECT id, password_hash, token, token_expiration FROM users WHERE (username=?);', [username], callback);
+    query('SELECT id, email, password_hash, token, token_expiration, token_duration, tfa_key, settings FROM users WHERE (username=?);', [username], callback);
 }
 
 export function selectUserToken(id: number, callback: queryCallback): void {
@@ -103,9 +103,8 @@ export function selectFromEmail(email: string, callback: queryCallback): void {
         [email, email], callback);
 }
 
-export function updateUserToken(id: number, token: string): void {
-    query('UPDATE users SET token=?, token_expiration=? WHERE id=?;', [token, getTimestamp() + twoWeeksTimestamp, id],
-        logError);
+export function updateUserToken(id: number, token: string, tokenDuration: number): void {
+    query('UPDATE users SET token=?, token_expiration=? WHERE id=?;', [token, getTimestamp() + tokenDuration, id], logError);
 }
 
 export function updateUserPfpType(id: number, pfpType: string): void {
@@ -113,10 +112,9 @@ export function updateUserPfpType(id: number, pfpType: string): void {
         logError);
 }
 
-export function updateUser(id: number, username: string, email: string, passwordHash: string, status: string, settings: {}): void {
-    query('UPDATE users SET username=?, email=?, password_hash=?, status=?, settings=? WHERE id=?;',
-        [username, email, passwordHash, status, JSON.stringify(settings), id],
-        logError);
+export function updateUser(id: number, username: string, email: string, passwordHash: string, tokenDuration: number, status: string, settings: {}): void {
+    query('UPDATE users SET username=?, email=?, password_hash=?, token_duration=?, status=?, settings=? WHERE id=?;',
+        [username, email, passwordHash, tokenDuration, status, JSON.stringify(settings), id], logError);
 }
 
 export function createChat(userId: number, name: string, description: string, token: string, callback: (err: MysqlError | null, id: number | null) => void) {

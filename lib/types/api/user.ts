@@ -1,9 +1,10 @@
 import { Response } from 'express';
 import { TokenIdObject } from './global';
+import { oneDayTimestamp } from '../../timestamp';
 
 export function exitIfDeletedUser(user: any, res: Response): boolean {
     if(user.email == null || user.password_hash == null || user.token == null
-        || user.token_expiration == null || user.settings == null) {
+        || user.token_expiration == null || user.token_duration == null || user.settings == null) {
         res.status(403).send('Forbidden');
         return true;
     }
@@ -111,6 +112,16 @@ export function isValidateTokenRequestValid(req: ValidateTokenRequest): boolean 
         && req.id != undefined && typeof req.id == 'number';
 }
 
+// regenerate-token
+
+export type RegenerateTokenRequest = TokenIdObject;
+
+export function isRegenerateTokenRequestValid(req: RegenerateTokenRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number';
+}
+
 // info
 
 export type UserInfoRequest = {
@@ -144,6 +155,7 @@ export type SetSettingsRequest = {
     username: string,
     email: string,
     passwordHash: string,
+    tokenDuration: number,
     status: string,
     settings: {
         compactMode: boolean,
@@ -162,6 +174,8 @@ export function isSetSettingsRequestValid(req: SetSettingsRequest): boolean {
         && req.email != undefined && typeof req.email == 'string'
         && req.passwordHash != undefined && typeof req.passwordHash == 'string'
         && (req.passwordHash.length == 128 || req.passwordHash.length == 0)
+        && req.tokenDuration != undefined && typeof req.tokenDuration == 'number'
+        && req.tokenDuration >= oneDayTimestamp * 5 && req.tokenDuration <= oneDayTimestamp * 90
         && req.status != undefined && typeof req.status == 'string'
         && req.status.length > 2 && req.status.length <= 64
         && req.settings.compactMode != undefined && typeof req.settings.compactMode == 'boolean'

@@ -1,8 +1,16 @@
+const usernamePasswordDiv = document.getElementById('username-password');
+const tfaDiv = document.getElementById('tfa');
+tfaDiv.style.display = 'none';
+
 const usernameInput = document.getElementById('username');
 const usernameFeedbackSpan = document.getElementById('username-feedback');
 const passwordInput = document.getElementById('password');
 const passwordFeedbackSpan = document.getElementById('password-feedback');
 const loginButton = document.getElementById('login');
+
+const tfaCodeInput = document.getElementById('tfa-code');
+const tfaCodeFeedbackSpan = document.getElementById('tfa-code-feedback');
+const verifyButton = document.getElementById('verify');
 
 let validUsername = false;
 let validPassword = false;
@@ -19,8 +27,47 @@ loginButton.addEventListener('click', async () => {
         }),
         contentType: 'application/json',
         success: (res) => {
-            localStorage.setItem('cachedLogin', JSON.stringify(res));
-            window.location.href = '/';
+            function chacheLogin(response) {
+                res.pendingTfa = undefined;
+                localStorage.setItem('cachedLogin', JSON.stringify(response));
+                window.location.href = '/';
+            }
+            if(res.pendingTfa) {
+                $.ajax({
+                    url: '/api/user/tfauthenticate',
+                    method: 'POST',
+                    data: JSON.stringify({
+                        id: res.id,
+                        tfaToken: res.tfaToken,
+                        tfaCode: tfaCodeInput.value
+                    }),
+                    contentType: 'application/json',
+                    success: (res) => {
+                        chacheLogin(res);
+                    },
+                    statusCode: {
+                        400: () => {
+                            console.log('Error 400: Bad Request');
+                        },
+                        401: () => {
+                            tfaCodeFeedbackSpan.innerText = "Wrong 2FA Code!";
+                            tfaCodeFeedbackSpan.classList.replace('success', 'error');
+                            verifyButton.disabled = true;
+                        },
+                        403: () => {
+                            window.location.href = '/login';
+                        },
+                        404: () => {
+                            window.location.href = '/login';
+                        },
+                        500: () => {
+                            console.log('Error 500: Internal Server Error');
+                        }
+                    }
+                });
+                return;
+            }
+            chacheLogin(res);
         },
         statusCode: {
             400: () => {
@@ -131,16 +178,51 @@ function passwordTyped() {
         loginButton.disabled = true;
     }
     else {
-        passwordFeedbackSpan.innerText = 'Valid password'
+        passwordFeedbackSpan.innerText = 'Valid Password'
         passwordFeedbackSpan.classList.replace('error', 'success');
         validPassword = true;
         loginButton.disabled = !(validUsername && validPassword);
     }
 }
 
+let tfaCodeTimer;
+tfaCodeInput.addEventListener('keyup', () => {
+    clearTimeout(tfaCodeTimer);
+    tfaCodeTimer = setTimeout(tfaCodeTyped, 1000);
+});
+tfaCodeInput.addEventListener('keydown', () => {
+    clearTimeout(tfaCodeTimer);
+});
+tfaCodeInput.addEventListener('focusout', () => {
+    clearTimeout(tfaCodeTimer);
+    tfaCodeTyped();
+});
+function tfaCodeTyped() {
+    tfaCodeFeedbackSpan.classList.add('error');
+    const tfaCode = tfaCodeInput.value.replace(' ', '').replace('-', '');
+    if(tfaCode.length != 6) {
+        tfaCodeFeedbackSpan.innerText = 'Invalid 2FA Code!'
+        tfaCodeFeedbackSpan.classList.replace('success', 'error');
+        verifyButton.disabled = true;
+        return;
+    }
+    for(let i = 0; i < 6; i++) {
+        let c = tfaCode.codePointAt(i);
+        if(c < 48 || c > 57) numbers++; {
+            tfaCodeFeedbackSpan.innerText = 'Invalid 2FA Code!'
+            tfaCodeFeedbackSpan.classList.replace('success', 'error');
+            verifyButton.disabled = true;
+            return;
+        }
+    }
+    tfaCodeFeedbackSpan.innerText = 'Valid 2FA Code'
+    tfaCodeFeedbackSpan.classList.replace('error', 'success');
+    verifyButton.disabled = false;
+}
+
 async function hashPassword(password) {
-    const hashBuffer = await window.crypto.subtle.digest("SHA-512", new TextEncoder().encode(password));
+    const hashBuffer = await window.crypto.subtle.digest('SHA-512', new TextEncoder().encode(password));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex;
 }
