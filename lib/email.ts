@@ -15,7 +15,8 @@ const transporter: nodemailer.Transporter = nodemailer.createTransport({
     }
 });
 
-export function sendEmail(mailOptions: Mail.Options, callback: (err: Error | null) => void): void {
+export function sendEmail(mailOptions: Mail.Options, callback?: (err: Error | null) => void): void {
+    if(callback == undefined) callback = (err: Error | null) => {if(err) console.log(err)};
     mailOptions.sender = email;
     transporter.sendMail(mailOptions, callback);
 }

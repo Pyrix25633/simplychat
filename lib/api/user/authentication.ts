@@ -6,6 +6,7 @@ import { getTimestamp, oneDayTimestamp } from '../../timestamp';
 import { createTfaToken, createUserToken } from '../../hash';
 import { selectUser, selectUserFromUsername, selectUserToken, updateUserToken } from '../../database';
 import { LoginRequest, RegenerateTokenRequest, TfauthenticateRequest, ValidateTokenRequest, VerifyTfaCodeRequest, exitIfDeletedUser, isLoginRequestValid, isRegenerateTokenRequestValid, isTfautheticateRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid, isVerifyTfaCodeRequestValid } from '../../types/api/user';
+import { sendEmail } from '../../email';
 
 const pendingTfa: Map<number, string> = new Map<number, string>();
 
@@ -50,6 +51,14 @@ export function login(req: Request, res: Response): void {
         }
         if(updateUserTokenIfExpiringSoon(user, res)) return;
         res.status(200).send({id: user.id, token: user.token, pendingTfa: false});
+        sendEmail({
+            to: user.email,
+            subject: 'Simply Chat security notification',
+            text: 'A new login to your Simply Chat account (' + user.username + ') has been detected!\n' +
+                'If it was you, you don\'t need to do anything. If not, you should take action.\n' +
+                'Either way we suggest you to activate Two Factor Authentication!\n' +
+                'User-agent: ' + req.headers['user-agent'] + '\nIP address: ' + req.ip
+        });
     });
 }
 
@@ -101,6 +110,14 @@ export function tfauthenticate(req: Request, res: Response): void {
         pendingTfa.delete(user.id);
         if(updateUserTokenIfExpiringSoon(user, res)) return;
         res.status(200).send({id: user.id, token: user.token});
+        sendEmail({
+            to: user.email,
+            subject: 'Simply Chat security notification',
+            text: 'A new login to your Simply Chat account (' + user.username + ') has been detected!\n' +
+                'If it was you, you don\'t need to do anything. If not, you should take action.\n' +
+                'Two Factor Authentication is already active!\n' +
+                'User-agent: ' + req.headers['user-agent'] + '\nIP address: ' + req.ip
+        });
     });
 }
 

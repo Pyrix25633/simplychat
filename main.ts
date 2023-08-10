@@ -23,6 +23,7 @@ import { getSettings, setSettigns } from './lib/api/user/settings';
 const main: Express = express();
 const port: number = 4443;
 
+main.set('trust proxy', true)
 main.use(bodyParser.urlencoded({extended: true}));
 main.use(bodyParser.json({limit: '6mb'}));
 main.use(cors());

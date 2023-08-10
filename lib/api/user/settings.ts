@@ -7,6 +7,7 @@ import { validateTokenAndProceed } from './authentication';
 import { selectFromEmail, selectFromUsername, updateUser, updateUserPfpType, updateUserToken } from '../../database';
 import { createUserToken } from '../../hash';
 import { ISizeCalculationResult } from 'image-size/dist/types/interface';
+import { sendEmail } from '../../email';
 
 export function getSettings(req: Request, res: Response): void {
     const request: GetSettingsRequest = req.body;
@@ -89,6 +90,13 @@ export function setSettigns(req: Request, res: Response): void {
             if(user.password_hash != passwordHash)
                 updateUserToken(user.id, createUserToken(request.username, request.passwordHash), request.tokenDuration);
             res.status(200).send('OK');
+            sendEmail({
+                to: user.email,
+                subject: 'Simply Chat security notification',
+                text: 'Your account (' + user.username + ') settings have been modified!\n' +
+                    'If it was you, you don\'t need to do anything. If not, you should take action.\n' +
+                    'User-agent: ' + req.headers['user-agent'] + '\nIP address: ' + req.ip
+            });
         }
     });
 }
