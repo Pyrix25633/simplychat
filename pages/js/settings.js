@@ -23,6 +23,9 @@ const tokenDurationInput = document.getElementById('token-duration');
 const tokenDurationFeedbackSpan = document.getElementById('token-duration-feedback');
 const tfaDiv = document.getElementById('tfa');
 const tfaEnableDiv = document.getElementById('tfa-enable');
+const tfaQrImage = document.getElementById('tfa-qr');
+const tfaCodeInput = document.getElementById('tfa-code');
+const tfaCodeFeedbackSpan = document.getElementById('tfa-code-feedback');
 tfaEnableDiv.style.display = 'none';
 
 const compactModeDiv = document.getElementById('compact-mode');
@@ -91,6 +94,7 @@ function getSettings() {
 
 function showSettings(res) {
     settings = res;
+    settings.tfaKey = null;
     pfpImage.src = './pfps/' + cachedLogin.id + '.' + res.pfpType;
     idSpan.innerText = cachedLogin.id;
     usernameInput.value = res.username;
@@ -101,7 +105,7 @@ function showSettings(res) {
     tokenExpirationSpan.innerText = new Date(tokenExpiration.getTime() - (tokenExpirationOffset*60*1000))
         .toISOString().split('.')[0].replace('T', ' ').replaceAll('-', '/');
     tokenDurationInput.value = res.tokenDuration / oneDayTimestamp;
-    tfaDiv.classList.add(res.settings.tfaActive ? 'on': 'off');
+    tfaDiv.classList.add(res.tfaActive ? 'on': 'off');
     compactModeDiv.classList.add(res.settings.compactMode ? 'on': 'off');
     compactModeCssLink.href = './css/compact-mode-' + (res.settings.compactMode ? 'on': 'off') + '.css';
     condensedFontDiv.classList.add(res.settings.condensedFont ? 'on': 'off');
@@ -410,14 +414,109 @@ function tokenDurationTyped() {
     }
 }
 
-//TODO
-
 for(let e of document.getElementsByClassName('slider')) {
     e.addEventListener('click', () => {
         if(e.classList.contains('on'))
             e.classList.replace('on', 'off');
         else
             e.classList.replace('off', 'on');
+    });
+}
+
+tfaDiv.addEventListener('click', () => {
+    settings.tfaActive = tfaDiv.classList.contains('on');
+    if(settings.tfaActive) {
+        $.ajax({
+            url: '/api/user/generate-tfa-key',
+            method: 'GET',
+            success: (res) => {
+                res.tfaQr = res.tfaQr.replace('#ffffff', '#dddddd').replace('#000000', '#222222');
+                tfaQrImage.src = 'data:image/svg+xml;base64,' + btoa(res.tfaQr)
+                settings.tfaKey = res.tfaKey;
+                tfaEnableDiv.style.display = '';
+                validTfaCode = false;
+                saveButton.disabled = true;
+            },
+            error: (req, err) => {
+                console.log(err);
+            }
+        });
+    }
+    else {
+        settings.tfaKey = null;
+        tfaEnableDiv.style.display = 'none';
+        tfaCodeInput.value = '';
+        tfaCodeFeedbackSpan.innerText = 'Input 2FA Code!';
+        tfaCodeFeedbackSpan.classList.replace('success', 'error');
+        validTfaCode = true;
+        saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
+    }
+});
+
+let tfaCodeTimer;
+tfaCodeInput.addEventListener('keyup', () => {
+    clearTimeout(tfaCodeTimer);
+    tfaCodeTimer = setTimeout(tfaCodeTyped, 1000);
+});
+tfaCodeInput.addEventListener('keydown', () => {
+    clearTimeout(tfaCodeTimer);
+});
+tfaCodeInput.addEventListener('focusout', () => {
+    clearTimeout(tfaCodeTimer);
+    tfaCodeTyped();
+});
+function tfaCodeTyped() {
+    if(!settings.tfaActive) return;
+    const tfaCode = tfaCodeInput.value.replaceAll(' ', '').replaceAll('-', '');
+    if(tfaCode == '') {
+        tfaCodeFeedbackSpan.classList.replace('success', 'error');
+        tfaCodeFeedbackSpan.innerText = 'Input 2FA Code!';
+        validTfaCode = false;
+        saveButton.disabled = true;
+        return;
+    }
+    if(tfaCode.length != 6) {
+        tfaCodeFeedbackSpan.classList.replace('success', 'error');
+        tfaCodeFeedbackSpan.innerText = 'Invalid 2FA Code!';
+        validTfaCode = false;
+        saveButton.disabled = true;
+        return;
+    }
+    for(let i = 0; i < 6; i++) {
+        let c = tfaCode.codePointAt(i);
+        if(c < 48 || c > 57) {
+            tfaCodeFeedbackSpan.innerText = 'Invalid 2FA Code!'
+            tfaCodeFeedbackSpan.classList.replace('success', 'error');
+            validTfaCode = false;
+            saveButton.disabled = true;
+            return;
+        }
+    }
+    $.ajax({
+        url: '/api/user/verify-tfa-code',
+        method: 'POST',
+        data: JSON.stringify({
+            tfaKey: settings.tfaKey,
+            tfaCode: tfaCode
+        }),
+        contentType: 'application/json',
+        success: (res) => {
+            if(res.valid) {
+                tfaCodeFeedbackSpan.classList.replace('error', 'success');
+                tfaCodeFeedbackSpan.innerText = 'Verified 2FA Code';
+                validTfaCode = true;
+                saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
+            }
+            else {
+                tfaCodeFeedbackSpan.classList.replace('success', 'error');
+                tfaCodeFeedbackSpan.innerText = 'Wrong 2FA Code!';
+                validTfaCode = false;
+                saveButton.disabled = true;
+            }
+        },
+        error: (req, err) => {
+            console.log(err);
+        }
     });
 }
 
@@ -429,7 +528,6 @@ compactModeDiv.addEventListener('click', () => {
     settings.settings.compactMode = compactModeDiv.classList.contains('on');
     compactModeCssLink.href = './css/compact-mode-' + (settings.settings.compactMode ? 'on': 'off') + '.css';
     saveButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
-
 });
 condensedFontDiv.addEventListener('click', () => {
     settings.settings.condensedFont = condensedFontDiv.classList.contains('on');
@@ -476,6 +574,8 @@ saveButton.addEventListener('click', async () => {
             email: emailInput.value,
             passwordHash: (passwordInput.value.length != 0) ? await hashPassword(passwordInput.value) : '',
             tokenDuration: tokenDurationInput.value * oneDayTimestamp,
+            tfaActive: settings.tfaActive,
+            tfaKey: settings.tfaKey,
             status: statusInput.value,
             settings: settings.settings
         }),

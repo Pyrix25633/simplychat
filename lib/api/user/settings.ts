@@ -84,7 +84,8 @@ export function setSettigns(req: Request, res: Response): void {
         }
         function setSettings() {
             const passwordHash = (request.passwordHash.length != 0) ? request.passwordHash : user.password_hash;
-            updateUser(user.id, request.username, request.email, passwordHash, request.tokenDuration,  request.status, request.settings);
+            const tfaKey = (request.tfaActive ? (request.tfaKey == null ? user.tfa_key : request.tfaKey) : null);
+            updateUser(user.id, request.username, request.email, passwordHash, request.tokenDuration, tfaKey, request.status, request.settings);
             if(user.password_hash != passwordHash)
                 updateUserToken(user.id, createUserToken(request.username, request.passwordHash), request.tokenDuration);
             res.status(200).send('OK');

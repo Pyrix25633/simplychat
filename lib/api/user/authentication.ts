@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
 import * as tfa from 'speakeasy';
+import * as qrcode from 'qrcode';
 import { getTimestamp, oneDayTimestamp } from '../../timestamp';
 import { createTfaToken, createUserToken } from '../../hash';
 import { selectUser, selectUserFromUsername, selectUserToken, updateUserToken } from '../../database';
-import { LoginRequest, RegenerateTokenRequest, TfauthenticateRequest, ValidateTokenRequest, exitIfDeletedUser, isLoginRequestValid, isRegenerateTokenRequestValid, isTfautheticateRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from '../../types/api/user';
+import { LoginRequest, RegenerateTokenRequest, TfauthenticateRequest, ValidateTokenRequest, VerifyTfaCodeRequest, exitIfDeletedUser, isLoginRequestValid, isRegenerateTokenRequestValid, isTfautheticateRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid, isVerifyTfaCodeRequestValid } from '../../types/api/user';
 
 const pendingTfa: Map<number, string> = new Map<number, string>();
 
@@ -42,9 +43,10 @@ export function login(req: Request, res: Response): void {
             return;
         }
         if(user.tfa_key != null) {
-            const tfaToken = createTfaToken(user.username, user.id);
+            const tfaToken = createTfaToken(request.username, user.id);
             pendingTfa.set(user.id, tfaToken);
             res.status(200).send({id: user.id, pendingTfa: true, tfaToken: tfaToken});
+            return;
         }
         if(updateUserTokenIfExpiringSoon(user, res)) return;
         res.status(200).send({id: user.id, token: user.token, pendingTfa: false});
@@ -156,6 +158,27 @@ export function regenerateToken(req: Request, res: Response): void {
     });
 }
 
+export function generateTfaKey(req: Request, res: Response): void {
+    const tfaKey: string = tfa.generateSecret().base32;
+    qrcode.toString('otpauth://totp/SimplyChat?secret=' + tfaKey, {type: 'svg'}, (err: Error | null | undefined, string: string): void => {
+        if(err) {
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+        res.status(200).send({
+            tfaKey: tfaKey,
+            tfaQr: string
+        });
+    });
+}
+
 export function verifyTfaCode(req: Request, res: Response): void {
-    //TODO
+    const request: VerifyTfaCodeRequest = req.body;
+    if(!isVerifyTfaCodeRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    res.status(200).send({
+        valid: tfa.totp.verify({secret: request.tfaKey, encoding: 'base32', token: request.tfaCode, window: 2})
+    });
 }

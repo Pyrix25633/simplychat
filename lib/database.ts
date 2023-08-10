@@ -30,7 +30,7 @@ connection.connect((err: MysqlError): void => {
     console.log('Successfully connected to database');
 });
 
-export function query(query: string, values: (string | number | boolean)[], callback: queryCallback): void {
+export function query(query: string, values: (string | number | boolean | null)[], callback: queryCallback): void {
     connection.query(query, values, callback);
 }
 
@@ -112,9 +112,9 @@ export function updateUserPfpType(id: number, pfpType: string): void {
         logError);
 }
 
-export function updateUser(id: number, username: string, email: string, passwordHash: string, tokenDuration: number, status: string, settings: {}): void {
-    query('UPDATE users SET username=?, email=?, password_hash=?, token_duration=?, status=?, settings=? WHERE id=?;',
-        [username, email, passwordHash, tokenDuration, status, JSON.stringify(settings), id], logError);
+export function updateUser(id: number, username: string, email: string, passwordHash: string, tokenDuration: number, tfaKey: string | null, status: string, settings: {}): void {
+    query('UPDATE users SET username=?, email=?, password_hash=?, token_duration=?, tfa_key=?, status=?, settings=? WHERE id=?;',
+        [username, email, passwordHash, tokenDuration, tfaKey, status, JSON.stringify(settings), id], logError);
 }
 
 export function createChat(userId: number, name: string, description: string, token: string, callback: (err: MysqlError | null, id: number | null) => void) {

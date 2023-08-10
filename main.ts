@@ -16,7 +16,7 @@ import { generateRandomChatLogo, generateRandomPfp } from './lib/random-image';
 import { ChatInfoRequest, CreateRequest, GetLastMessagesRequest, ListRequest, isChatInfoRequestValid, isCreateRequestValid, isGetLastMessagesRequestValid, isListRequestValid } from './lib/types/api/chat';
 import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeedback } from './lib/api/user/registration';
-import { login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, validateTokenAndProceed, verifyTfaCode } from './lib/api/user/authentication';
+import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, validateTokenAndProceed, verifyTfaCode } from './lib/api/user/authentication';
 import { userInfo } from './lib/api/user/info';
 import { getSettings, setSettigns } from './lib/api/user/settings';
 
@@ -75,6 +75,8 @@ main.post('/api/user/tfauthenticate', tfauthenticate);
 main.post('/api/user/validate-token', validateToken);
 
 main.post('/api/user/regenerate-token', regenerateToken);
+
+main.get('/api/user/generate-tfa-key', generateTfaKey);
 
 main.post('/api/user/verify-tfa-code', verifyTfaCode);
 

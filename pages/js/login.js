@@ -16,6 +16,13 @@ let validUsername = false;
 let validPassword = false;
 loginButton.disabled = true;
 
+let tfaCache = {};
+function cacheLogin(response) {
+    response.pendingTfa = undefined;
+    localStorage.setItem('cachedLogin', JSON.stringify(response));
+    window.location.href = '/';
+}
+
 loginButton.addEventListener('click', async () => {
     if(!(validUsername && validPassword)) return;
     $.ajax({
@@ -27,47 +34,14 @@ loginButton.addEventListener('click', async () => {
         }),
         contentType: 'application/json',
         success: (res) => {
-            function chacheLogin(response) {
-                res.pendingTfa = undefined;
-                localStorage.setItem('cachedLogin', JSON.stringify(response));
-                window.location.href = '/';
-            }
             if(res.pendingTfa) {
-                $.ajax({
-                    url: '/api/user/tfauthenticate',
-                    method: 'POST',
-                    data: JSON.stringify({
-                        id: res.id,
-                        tfaToken: res.tfaToken,
-                        tfaCode: tfaCodeInput.value
-                    }),
-                    contentType: 'application/json',
-                    success: (res) => {
-                        chacheLogin(res);
-                    },
-                    statusCode: {
-                        400: () => {
-                            console.log('Error 400: Bad Request');
-                        },
-                        401: () => {
-                            tfaCodeFeedbackSpan.innerText = "Wrong 2FA Code!";
-                            tfaCodeFeedbackSpan.classList.replace('success', 'error');
-                            verifyButton.disabled = true;
-                        },
-                        403: () => {
-                            window.location.href = '/login';
-                        },
-                        404: () => {
-                            window.location.href = '/login';
-                        },
-                        500: () => {
-                            console.log('Error 500: Internal Server Error');
-                        }
-                    }
-                });
+                tfaCache.id = res.id;
+                tfaCache.token = res.tfaToken;
+                usernamePasswordDiv.style.display = 'none';
+                tfaDiv.style.display = '';
                 return;
             }
-            chacheLogin(res);
+            cacheLogin(res);
         },
         statusCode: {
             400: () => {
@@ -185,6 +159,41 @@ function passwordTyped() {
     }
 }
 
+verifyButton.addEventListener('click', async () => {
+    $.ajax({
+        url: '/api/user/tfauthenticate',
+        method: 'POST',
+        data: JSON.stringify({
+            id: tfaCache.id,
+            tfaToken: tfaCache.token,
+            tfaCode: tfaCodeInput.value
+        }),
+        contentType: 'application/json',
+        success: (res) => {
+            cacheLogin(res);
+        },
+        statusCode: {
+            400: () => {
+                console.log('Error 400: Bad Request');
+            },
+            401: () => {
+                tfaCodeFeedbackSpan.innerText = "Wrong 2FA Code!";
+                tfaCodeFeedbackSpan.classList.replace('success', 'error');
+                verifyButton.disabled = true;
+            },
+            403: () => {
+                window.location.href = '/login';
+            },
+            404: () => {
+                window.location.href = '/login';
+            },
+            500: () => {
+                console.log('Error 500: Internal Server Error');
+            }
+        }
+    });
+});
+
 let tfaCodeTimer;
 tfaCodeInput.addEventListener('keyup', () => {
     clearTimeout(tfaCodeTimer);
@@ -199,7 +208,7 @@ tfaCodeInput.addEventListener('focusout', () => {
 });
 function tfaCodeTyped() {
     tfaCodeFeedbackSpan.classList.add('error');
-    const tfaCode = tfaCodeInput.value.replace(' ', '').replace('-', '');
+    const tfaCode = tfaCodeInput.value.replaceAll(' ', '').replaceAll('-', '');
     if(tfaCode.length != 6) {
         tfaCodeFeedbackSpan.innerText = 'Invalid 2FA Code!'
         tfaCodeFeedbackSpan.classList.replace('success', 'error');
@@ -208,7 +217,7 @@ function tfaCodeTyped() {
     }
     for(let i = 0; i < 6; i++) {
         let c = tfaCode.codePointAt(i);
-        if(c < 48 || c > 57) numbers++; {
+        if(c < 48 || c > 57) {
             tfaCodeFeedbackSpan.innerText = 'Invalid 2FA Code!'
             tfaCodeFeedbackSpan.classList.replace('success', 'error');
             verifyButton.disabled = true;

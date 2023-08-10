@@ -13,6 +13,10 @@ img#change-pfp {
     background-color: var(--color-simplychat);
 }
 
+img#tfaQr {
+    width: auto;
+}
+
 input#new-pfp {
     display: none;
 }

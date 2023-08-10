@@ -122,6 +122,20 @@ export function isRegenerateTokenRequestValid(req: RegenerateTokenRequest): bool
         && req.id != undefined && typeof req.id == 'number';
 }
 
+// verify-tfa-code
+
+export type VerifyTfaCodeRequest = {
+    tfaKey: string,
+    tfaCode: string
+};
+
+export function isVerifyTfaCodeRequestValid(req: VerifyTfaCodeRequest): boolean {
+    return req.tfaKey != undefined && typeof req.tfaKey == 'string'
+        && req.tfaKey.length == 52
+        && req.tfaCode != undefined && typeof req.tfaCode == 'string'
+        && req.tfaCode.length == 6;
+}
+
 // info
 
 export type UserInfoRequest = {
@@ -156,6 +170,8 @@ export type SetSettingsRequest = {
     email: string,
     passwordHash: string,
     tokenDuration: number,
+    tfaActive: boolean,
+    tfaKey: string | null
     status: string,
     settings: {
         compactMode: boolean,
@@ -176,6 +192,8 @@ export function isSetSettingsRequestValid(req: SetSettingsRequest): boolean {
         && (req.passwordHash.length == 128 || req.passwordHash.length == 0)
         && req.tokenDuration != undefined && typeof req.tokenDuration == 'number'
         && req.tokenDuration >= oneDayTimestamp * 5 && req.tokenDuration <= oneDayTimestamp * 90
+        && req.tfaActive != undefined && typeof req.tfaActive == 'boolean'
+        && ((typeof req.tfaKey == 'string' && req.tfaKey.length == 52) || req.tfaKey == null)
         && req.status != undefined && typeof req.status == 'string'
         && req.status.length > 2 && req.status.length <= 64
         && req.settings.compactMode != undefined && typeof req.settings.compactMode == 'boolean'
