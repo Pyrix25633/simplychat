@@ -2,11 +2,12 @@
     --color-background: #222222;
     --color-lighter: #333333;
     --color-foreground: #DDDDDD;
-    --color-error: #FF6961;
-    --color-warning: #f99046;
-    --color-success: #77DD77;
-    --color-simplychat: #5B8899;
-    --color-simplychat-transparent: #5B889970;
+    --color-error: #F54F47;
+    --color-warning: #F3E63D;
+    --color-success: #71E0AE;
+    --color-simplychat: #409AAF;
+    --color-simplychat-transparent: #409AAF70;
+    --color-simplychat-dark: #2D4348;
 }
 
 * {
@@ -31,15 +32,16 @@ label {
 }
 input {
     height: 26px;
-    padding-left: 5px;
-}
-button, input {
-    border: 2px solid var(--color-foreground);
+    border: 1px solid var(--color-foreground);
+    padding: 1px 1px 2px 5px;
     background-color: var(--color-background);
-    padding-bottom: 1px;
 }
 button {
+    border: 0;
+    padding: 5px 10px 5px 10px;
     background-color: var(--color-simplychat);
+    color: var(--color-background);
+    font-weight: bold;
 }
 input:focus {
     border-color: var(--color-simplychat);
@@ -56,7 +58,6 @@ input.small {
     width: 40px;
 }
 button:active {
-    border-color: var(--color-simplychat);
     color: var(--color-simplychat);
     background-color: var(--color-foreground);
 }
@@ -71,9 +72,6 @@ span.title {
     font-size: 25px;
     line-height: 30px;
     letter-spacing: -1px;
-}
-span.title:not(:last-child) {
-    margin-right: 10px;
 }
 span.simplychat-color {
     color: var(--color-simplychat);
@@ -91,7 +89,12 @@ a {
     border-color: var(--color-warning);
 }
 button.warning {
-    background-color: var(--color-background);
+    background-color: var(--color-warning);
+    color: var(--color-background);
+}
+button.warning:active {
+    background-color: var(--color-foreground);
+    color: var(--color-warning);
 }
 .success {
     color: var(--color-success) !important;
@@ -104,7 +107,7 @@ nav#navbar {
     position: sticky;
     top: 0;
     left: 0;
-    background-color: var(--color-lighter);
+    background-color: var(--color-simplychat-dark);
     z-index: 100;
 }
 
@@ -120,6 +123,7 @@ div#footer {
 
 img#icon {
     width: 30px;
+    margin-left: 10px;
 }
 
 div.box {

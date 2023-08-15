@@ -28,7 +28,7 @@ img#chat-logo {
 }
 
 div.chat, div.user {
-    border: var(--color-foreground) 1px solid;
+    background-color: var(--color-lighter);
 }
 
 div#chats {
@@ -113,7 +113,7 @@ span#chat-description {
 }
 
 div.selected {
-    background-color: var(--color-simplychat-transparent);
+    background-color: var(--color-simplychat-dark);
 }
 span.permission-level-0 {
     color: var(--color-permission-level-0);
