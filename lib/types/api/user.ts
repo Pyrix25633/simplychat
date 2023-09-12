@@ -169,6 +169,7 @@ export type SetSettingsRequest = {
     username: string,
     email: string,
     passwordHash: string,
+    oldPasswordHash: string,
     tokenDuration: number,
     tfaActive: boolean,
     tfaKey: string | null
@@ -190,6 +191,8 @@ export function isSetSettingsRequestValid(req: SetSettingsRequest): boolean {
         && req.email != undefined && typeof req.email == 'string'
         && req.passwordHash != undefined && typeof req.passwordHash == 'string'
         && (req.passwordHash.length == 128 || req.passwordHash.length == 0)
+        && req.oldPasswordHash != undefined && typeof req.oldPasswordHash == 'string'
+        && req.oldPasswordHash.length == 128
         && req.tokenDuration != undefined && typeof req.tokenDuration == 'number'
         && req.tokenDuration >= oneDayTimestamp * 5 && req.tokenDuration <= oneDayTimestamp * 90
         && req.tfaActive != undefined && typeof req.tfaActive == 'boolean'

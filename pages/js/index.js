@@ -6,6 +6,7 @@ const chatLogoImg = document.getElementById('chat-logo');
 const chatNameSpan = document.getElementById('chat-name');
 const chatDescriptionSpan = document.getElementById('chat-description');
 const chatsCache = [];
+let selectedChat = 0;
 let usersCache;
 
 loadSettings(() => {
@@ -19,6 +20,8 @@ loadSettings(() => {
             const chats = Object.keys(res.chats);
             if(chats.length > 0)
                 loadChatsInfo(chats, res.chats);
+            else
+                disableLoadingDiv();
         },
         statusCode: statusCodeActions
     });
@@ -123,9 +126,11 @@ function setChatInfo(chat, i, selected) {
     chatDiv.appendChild(chatLogoImg);
     chatDiv.appendChild(nameDescriptionDiv);
     chatDiv.addEventListener('click', () => {
+        if(i == selectedChat) return;
         enableLoadingDiv();
         for(let div of chatsDiv.getElementsByClassName('chat'))
             div.classList.remove('selected');
+        selectedChat = i;
         chatDiv.classList.add('selected');
         setChatTopbar(chatsCache[i]);
         loadChatUsers(chatsCache[i]);

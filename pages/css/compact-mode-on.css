@@ -1,7 +1,9 @@
 :root {
     --sidebars-height: calc(100vh - 4px);
-    --chat-topbar-width: calc(100vw - 516px - 12px - 4px);
+    --chat-topbar-width: calc(100vw - 262px*2 - 4px);
     --marquee-big-width: calc(var(--chat-topbar-width) - 70px - 2px);
+    --chat-topbar-mobile-width: calc(100vw - 4px);
+    --marquee-big-mobile-width: calc(var(--chat-topbar-mobile-width) - 70px - 2px);
 }
 
 nav#navbar {
@@ -41,7 +43,7 @@ img.chat-logo, img.pfp, img#chat-logo {
     margin-right: 2px;
 }
 
-div.chat, div.user, div#chats, div#users div#chat-topbar {
+div.chat, div.user, div#chats, div#users, div#chat-topbar {
     padding: 2px;
 }
 div.chat:not(:first-child) {

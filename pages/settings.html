@@ -23,7 +23,7 @@
             </div>
         </nav>
         <div class="box main">
-            <div class="box panel">
+            <div class="box panel" id="settings">
                 <div class="box relative">
                     <img id="pfp" src="" alt="Profile Picture">
                     <img id="change-pfp" src="./img/change.svg" alt="Change Profile Picture">
@@ -120,9 +120,18 @@
                     <span class="text">Disables rounded borders</span>
                 </div>
             </div>
+            <div class="box panel" id="confirm-identity">
+                <h3>Confirm your identity</h3>
+                <div class="container">
+                    <label for="old-password">Password:</label>
+                    <input type="password" id="old-password">
+                </div>
+                <span class="text" id="old-password-feedback">Input Password</span>
+            </div>
         </div>
         <div id="footer">
             <button id="cancel">Cancel</button>
+            <button id="continue">Continue</button>
             <button id="save">Save</button>
         </div>
     </body>

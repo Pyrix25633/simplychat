@@ -1,24 +1,19 @@
 import express, { Express, Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { ConfirmRequest, GetSettingsRequest, LoginRequest, RegenerateTokenRequest, SetPfpRequest, SetSettingsRequest, TfauthenticateRequest, UserInfoRequest, UsernameFeedbackResponse, ValidateTokenRequest, exitIfDeletedUser, isConfirmRequestValid, isEmailFeedbackRequestValid, isGetSettingsRequestValid, isLoginRequestValid, isRegenerateTokenRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid, isTfautheticateRequestValid, isUserInfoRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid } from './lib/types/api/user';
-import { createChat, selectChat, selectFromEmail, selectFromUsername, selectLastMessages, selectTempUser, selectUser, selectUserFromUsername, selectUserToken, updateUser, updateUserPfpType, updateUserToken } from './lib/database';
-import { createUserToken, createChatToken, createTfaToken } from './lib/hash';
+import { createChat, selectChat, selectLastMessages } from './lib/database';
+import { createChatToken } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
 import * as https from 'https';
 import * as fs from 'fs';
-import { deleteTempUser } from './lib/database';
-import { createUser } from './lib/database';
-import { getTimestamp, oneDayTimestamp } from './lib/timestamp';
-import { generateRandomChatLogo, generateRandomPfp } from './lib/random-image';
+import { generateRandomChatLogo } from './lib/random-image';
 import { ChatInfoRequest, CreateRequest, GetLastMessagesRequest, ListRequest, isChatInfoRequestValid, isCreateRequestValid, isGetLastMessagesRequestValid, isListRequestValid } from './lib/types/api/chat';
-import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeedback } from './lib/api/user/registration';
 import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, validateTokenAndProceed, verifyTfaCode } from './lib/api/user/authentication';
 import { userInfo } from './lib/api/user/info';
-import { getSettings, setSettigns } from './lib/api/user/settings';
+import { getSettings, setPfp, setSettings } from './lib/api/user/settings';
 
 const main: Express = express();
 const port: number = 4443;
@@ -89,9 +84,9 @@ main.post('/api/user/info', userInfo);
 
 main.post('/api/user/get-settings', getSettings);
 
-main.post('/api/user/set-settings', setSettigns);
+main.post('/api/user/set-settings', setSettings);
 
-main.post('/api/user/set-pfp', );
+main.post('/api/user/set-pfp', setPfp);
 
 // chat //
 

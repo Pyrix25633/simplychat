@@ -34,10 +34,17 @@ div.chat, div.user {
 div#chats {
     border-right: var(--color-foreground) 2px solid;
     height: var(--sidebars-height);
+    overflow-y: scroll;
 }
 div#users {
     border-left: var(--color-foreground) 2px solid;
     height: var(--sidebars-height);
+    overflow-y: scroll;
+}
+div#chats::-webkit-scrollbar-track, div#chats::-webkit-scrollbar, div#chats::-webkit-scrollbar-thumb,
+div#users::-webkit-scrollbar-track, div#users::-webkit-scrollbar, div#users::-webkit-scrollbar-thumb {
+    width: 0;
+    height: 0;
 }
 
 div#main {
@@ -126,4 +133,32 @@ span.permission-level-2 {
 }
 span.permission-level-3 {
     color: var(--color-permission-level-3);
+}
+
+textarea {
+    color: var(--color-foreground);
+    background-color: var(--color-background);
+    border: none;
+    resize: none;
+}
+textarea:focus {
+    outline: none;
+}
+textarea::-webkit-scrollbar-track, textarea::-webkit-scrollbar, textarea::-webkit-scrollbar-thumb {
+    display: none;
+}
+textarea::grammar-error {
+    color: var(--color-error);
+}
+
+@media screen and (max-width: 800px) {
+    div#chats, div#users {
+        display: none;
+    }
+    div#chat-topbar {
+        width: var(--chat-topbar-mobile-width);
+    }
+    div.marquee-big {
+        width: var(--marquee-big-mobile-width);
+    }
 }

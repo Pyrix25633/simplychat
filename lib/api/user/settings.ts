@@ -29,13 +29,17 @@ export function getSettings(req: Request, res: Response): void {
     });
 }
 
-export function setSettigns(req: Request, res: Response): void {
+export function setSettings(req: Request, res: Response): void {
     const request: SetSettingsRequest = req.body;
     if(!isSetSettingsRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
     validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
+        if(user.password_hash != request.oldPasswordHash) {
+            res.status(401).send('Forbidden');
+            return;
+        }
         for(let i = 0; i < request.username.length; i++) {
             const c = request.username.codePointAt(i);
             if((c == undefined) || !((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == 45 || c == 95 || c == 32))) {

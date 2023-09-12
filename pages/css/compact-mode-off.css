@@ -1,7 +1,9 @@
 :root {
     --sidebars-height: calc(100vh - 10px);
-    --chat-topbar-width: calc(100vw - 534px - 24px - 10px);
+    --chat-topbar-width: calc(100vw - 277px*2 - 10px);
     --marquee-big-width: calc(var(--chat-topbar-width) - 70px - 5px);
+    --chat-topbar-mobile-width: calc(100vw - 10px);
+    --marquee-big-mobile-width: calc(var(--chat-topbar-mobile-width) - 70px - 5px);
 }
 
 nav#navbar {
