@@ -630,12 +630,12 @@ async function hashPassword(password) {
 }
 
 cancelButton.addEventListener('click', () => {
-    window.location.href = '/settings';
+    window.location.href = '/';
 });
 
 function waitAndRefresh() {
     setInterval(() => {
-        window.location.href = '/settings';
+        window.location.href = '/';
     }, 250);
 }
 

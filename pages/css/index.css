@@ -32,12 +32,12 @@ div.chat, div.user {
 }
 
 div#chats {
-    border-right: var(--color-foreground) 2px solid;
+    border-right: var(--color-lighter) 2px solid;
     height: var(--sidebars-height);
     overflow-y: scroll;
 }
 div#users {
-    border-left: var(--color-foreground) 2px solid;
+    border-left: var(--color-lighter) 2px solid;
     height: var(--sidebars-height);
     overflow-y: scroll;
 }
@@ -54,13 +54,13 @@ div#main {
 
 div#messages {
     height: auto;
-    width: 100%;
-    border-bottom: var(--color-foreground) 2px solid;
+    width: var(--messages-width);
+    border-bottom: var(--color-lighter) 2px solid;
 }
 
 div#chat-topbar {
     width: var(--chat-topbar-width);
-    border-bottom: var(--color-foreground) 2px solid;
+    border-bottom: var(--color-lighter) 2px solid;
 }
 
 div.marquee {
@@ -74,6 +74,7 @@ div.marquee span {
     display: inline-block;
     padding-left: 100%;
     animation: marquee 10s linear infinite;
+    margin-left: 0 !important;
 }
 @keyframes marquee {
     0% {transform: translate(0, 0);}
@@ -136,8 +137,9 @@ span.permission-level-3 {
 }
 
 textarea {
+    width: var(--textarea-width);
     color: var(--color-foreground);
-    background-color: var(--color-background);
+    background-color: var(--color-lighter);
     border: none;
     resize: none;
 }
@@ -147,8 +149,49 @@ textarea:focus {
 textarea::-webkit-scrollbar-track, textarea::-webkit-scrollbar, textarea::-webkit-scrollbar-thumb {
     display: none;
 }
-textarea::grammar-error {
-    color: var(--color-error);
+
+img.message-button {
+    height: 25px;
+}
+img.message-pfp {
+    height: 30px;
+    background-color: var(--color-lighter);
+}
+
+div.message {
+    align-items: start;
+}
+
+span.message-username, span.message-text {
+    font-size: 20px;
+}
+span.message-meta {
+    font-size: 10px;
+}
+span.message-text {
+    margin-left: 25px !important;
+    background-color: var(--color-lighter);
+}
+div.message div.container {
+    align-items: end;
+}
+
+div#emoji-selector {
+    display: grid;
+    grid-template-columns: auto auto auto auto auto auto auto auto auto auto auto auto auto auto auto auto;
+    overflow-y: scroll;
+    height: 300px;
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    background-color: var(--color-simplychat-dark);
+}
+div#emoji-selector::-webkit-scrollbar-track, div#emoji-selector::-webkit-scrollbar, div#emoji-selector::-webkit-scrollbar-thumb {
+    display: none;
+}
+
+span.emoji {
+    text-align: center;
 }
 
 @media screen and (max-width: 800px) {
@@ -160,5 +203,8 @@ textarea::grammar-error {
     }
     div.marquee-big {
         width: var(--marquee-big-mobile-width);
+    }
+    textarea {
+        width: var(--textarea-mobile-width);
     }
 }

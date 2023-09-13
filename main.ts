@@ -1,19 +1,17 @@
 import express, { Express, Request, Response } from 'express';
-import { MysqlError } from 'mysql';
-import { createChat, selectChat, selectLastMessages } from './lib/database';
-import { createChatToken } from './lib/hash';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
 import * as https from 'https';
 import * as fs from 'fs';
-import { generateRandomChatLogo } from './lib/random-image';
-import { ChatInfoRequest, CreateRequest, GetLastMessagesRequest, ListRequest, isChatInfoRequestValid, isCreateRequestValid, isGetLastMessagesRequestValid, isListRequestValid } from './lib/types/api/chat';
 import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeedback } from './lib/api/user/registration';
-import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, validateTokenAndProceed, verifyTfaCode } from './lib/api/user/authentication';
+import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, verifyTfaCode } from './lib/api/user/authentication';
 import { userInfo } from './lib/api/user/info';
 import { getSettings, setPfp, setSettings } from './lib/api/user/settings';
+import { create } from './lib/api/chat/management';
+import { chatInfo, list } from './lib/api/chat/info';
+import { getLastMessages, sendMessage } from './lib/api/chat/messages';
 
 const main: Express = express();
 const port: number = 4443;
@@ -90,95 +88,15 @@ main.post('/api/user/set-pfp', setPfp);
 
 // chat //
 
-main.post('/api/chat/create', (req: Request, res: Response): void => {
-    const request: CreateRequest = req.body;
-    if(!isCreateRequestValid(request)) {
-        res.status(400).send('Bad Request');
-        return;
-    }
-    validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
-        createChat(user.id, request.name, request.description, createChatToken(request.name, user.id), (err: MysqlError | null, id: number | null): void => {
-            if(err || id == null) {
-                res.status(500).send('Internal Server Error');
-                return;
-            }
-            generateRandomChatLogo(id);
-            res.status(201).send('Created');
-        });
-    });
-});
+main.post('/api/chat/create', create);
 
-main.post('/api/chat/list', (req: Request, res: Response): void => {
-    const request: ListRequest = req.body;
-    if(!isListRequestValid(request)) {
-        res.status(400).send('Bad Request');
-        return;
-    }
-    validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
-        res.status(200).send({chats: JSON.parse(user.chats)});
-    });
-});
+main.post('/api/chat/list', list);
 
-main.post('/api/chat/info', (req: Request, res: Response): void => {
-    const request: ChatInfoRequest = req.body;
-    if(!isChatInfoRequestValid(request)) {
-        res.status(400).send('Bad Request');
-        return;
-    }
-    validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
-        const chats = JSON.parse(user.chats);
-        if(user.chats[request.chatId] != undefined) {
-            selectChat(request.chatId, (err: MysqlError | null, results: any): void => {
-                if(err || results.length == 0) {
-                    res.status(500).send('Internal Server Error');
-                    return;
-                }
-                const selected = results[0];
-                res.status(200).send({
-                    name: selected.name,
-                    description: selected.description,
-                    chatLogoType: selected.chat_logo_type,
-                    users: JSON.parse(selected.users)
-                });
-            });
-        }
-        else
-            res.status(403).send('Forbidden');
-    });
-});
+main.post('/api/chat/info', chatInfo);
 
-main.post('/api/chat/get-last-messages', (req: Request, res: Response): void => {
-    const request: GetLastMessagesRequest = req.body;
-    if(!isGetLastMessagesRequestValid(request)) {
-        res.status(400).send('Bad Request');
-        return;
-    }
-    validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
-        const chats = JSON.parse(user.chats);
-        if(chats[request.chatId] != undefined) {
-            selectLastMessages(request.chatId, request.numberOfMessages, (err: MysqlError | null, results: any): void => {
-                if(err) {
-                    res.status(500).send('Internal Server Error');
-                    console.log(err);
-                    return;
-                }
-                const lastMessages: {lastMessages: any[]} = {lastMessages: []};
-                for(let message of results) {
-                    lastMessages.lastMessages.push({
-                        id: message.id,
-                        timestamp: message.timestamp,
-                        userId: message.user_id,
-                        message: message.message,
-                        modified: message.modified
-                    });
-                }
-                res.status(200).send(lastMessages);
-            });
-        }
-        else
-            res.status(403).send('Forbidden');
-    });
-});
+main.post('/api/chat/get-last-messages', getLastMessages);
+
+main.post('/api/chat/send-message', sendMessage);
 
 //// pages ////
 

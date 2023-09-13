@@ -23,3 +23,19 @@ div.slider div.slider-circle {
 div.chat, div.user {
     border-radius: 10px;
 }
+
+textarea {
+    border-radius: 5px;
+}
+
+img.message-pfp {
+    border-radius: 50%;
+}
+
+span.message-text {
+    border-radius: 10px;
+}
+
+div#emoji-selector {
+    border-radius: 5px;
+}

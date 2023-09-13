@@ -138,7 +138,7 @@ export function createChat(userId: number, name: string, description: string, to
                     'id INT NOT NULL,' +
                     'timestamp INT NOT NULL,' +
                     'user_id INT NOT NULL,' +
-                    'message VARCHAR(2048) NOT NULL,' +
+                    'message BLOB NOT NULL,' +
                     'modified BOOLEAN NOT NULL,' +
                     'PRIMARY KEY (id),' +
                     'FOREIGN KEY (user_id) REFERENCES users(id)' +
@@ -155,4 +155,23 @@ export function selectChat(id: number, callback: queryCallback): void {
 
 export function selectLastMessages(id: number, numberOfMessages: number, callback: queryCallback): void {
     query('SELECT * FROM (SELECT * FROM chat' + id + ' ORDER BY id DESC LIMIT ?) AS temp ORDER BY id ASC;', [numberOfMessages], callback);
+}
+
+export function insertMessage(id: number, userId: number, message: string, callback: queryCallback): void {
+    query('SELECT next_id FROM ids WHERE table_name="chat?";', [id], (err: MysqlError | null, results: any): void => {
+        if(err) {
+            callback(err, null);
+            return;
+        }
+        const messageId = results[0].next_id;
+        query('INSERT INTO chat? VALUES (?, ?, ?, ?, ?);', [id, messageId, getTimestamp(), userId, message, false],
+            (err: MysqlError | null, results: any): void => {
+                if(err) {
+                    callback(err, null);
+                    return;
+                }
+                callback(null);
+                query('UPDATE ids SET next_id=? WHERE table_name="chat?";', [messageId + 1, id], logError);
+            });
+    });
 }

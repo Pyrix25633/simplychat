@@ -14,6 +14,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script defer type="module" src="./js/load-settings.js"></script>
         <script defer type="module" src="./js/index.js"></script>
+        <script defer type="module" src="./js/emoji.js"></script>
     </head>
     <body>
         <div class="container">
@@ -34,8 +35,18 @@
                         <span id="chat-description">Create a Chat!</span>
                     </div>
                 </div>
-                <div class="box" id="messages">Test</div>
-                <textarea></textarea>
+                <div id="messages">
+                </div>
+                <div class="container">
+                    <textarea id="message" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                    <div class="box">
+                        <div class="container">
+                            <img src="./img/send.svg" class="message-button" id="send">
+                            <img src="./img/emoji.svg" class="message-button" id="emoji">
+                        </div>
+                        <span class="text"><span class="text" id="message-chars">0</span>/2048</span>
+                    </div>
+                </div>
             </div>
             <div class="box" id="users">
                 <div class="container user">
@@ -47,5 +58,6 @@
                 </div>
             </div>
         </div>
+        <div class="box" id="emoji-selector"></div>
     </body>
 </html>
