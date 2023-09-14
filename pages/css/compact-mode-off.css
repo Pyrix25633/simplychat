@@ -3,9 +3,11 @@
     --chat-topbar-width: calc(100vw - 277px*2 - 10px);
     --marquee-big-width: calc(var(--chat-topbar-width) - 70px - 5px);
     --messages-width: calc(100% - 10px);
+    --message-max-width: calc(var(--chat-topbar-width) - 100px);
     --textarea-width: calc(var(--chat-topbar-width) - 200px);
     --chat-topbar-mobile-width: calc(100vw - 10px);
     --marquee-big-mobile-width: calc(var(--chat-topbar-mobile-width) - 70px - 5px);
+    --message-mobile-max-width: calc(var(--chat-topbar-mobile-width) - 100px);
     --textarea-mobile-width: calc(var(--chat-topbar-mobile-width) - 200px);
 }
 
@@ -42,6 +44,10 @@ div.panel {
     margin-top: 25px;
 }
 
+div.online, div.offline {
+    right: 5px;
+}
+
 img.chat-logo, img.pfp, img#chat-logo {
     margin-right: 5px;
 }
@@ -57,8 +63,15 @@ div#messages {
     padding: 5px;
 }
 
+div.message {
+    margin-left: 5px;
+}
 div.message:not(:first-child) {
     margin-top: 5px;
+}
+
+div.message-data {
+    margin-bottom: 5px;
 }
 
 img.message-button:not(:first-child) {
@@ -67,6 +80,22 @@ img.message-button:not(:first-child) {
 
 span.message-text {
     padding: 5px;
+}
+
+div#textarea {
+    margin: 5px 0;
+}
+
+textarea {
+    padding: 5px;
+}
+
+div.textarea-extras {
+    padding: 5px;
+}
+
+span.char-counter {
+    margin-top: 5px;
 }
 
 div#emoji-selector {

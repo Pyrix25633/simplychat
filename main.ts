@@ -5,16 +5,22 @@ import path from 'path';
 import cors from 'cors';
 import * as https from 'https';
 import * as fs from 'fs';
+import { Server, Socket } from 'socket.io';
 import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeedback } from './lib/api/user/registration';
 import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, verifyTfaCode } from './lib/api/user/authentication';
 import { userInfo } from './lib/api/user/info';
 import { getSettings, setPfp, setSettings } from './lib/api/user/settings';
 import { create } from './lib/api/chat/management';
 import { chatInfo, list } from './lib/api/chat/info';
-import { getLastMessages, sendMessage } from './lib/api/chat/messages';
+import { getLastMessages, getMessage, sendMessage } from './lib/api/chat/messages';
+import { selectUserToken, updateUserOnline } from './lib/database';
+import { MysqlError } from 'mysql';
+import { getTimestamp } from './lib/timestamp';
 
 const main: Express = express();
 const port: number = 4443;
+
+export const sockets: Map<string, Socket[]> = new Map<string, Socket[]>();
 
 main.set('trust proxy', true)
 main.use(bodyParser.urlencoded({extended: true}));
@@ -88,15 +94,59 @@ main.post('/api/user/set-pfp', setPfp);
 
 // chat //
 
+// management
+
 main.post('/api/chat/create', create);
+
+// info
 
 main.post('/api/chat/list', list);
 
 main.post('/api/chat/info', chatInfo);
 
+// messages
+
+main.post('/api/chat/get-message', getMessage);
+
 main.post('/api/chat/get-last-messages', getLastMessages);
 
 main.post('/api/chat/send-message', sendMessage);
+
+//// socket ////
+
+const options = {
+    key: fs.readFileSync(path.resolve(__dirname, './certs/privateKey.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, './certs/certificate.pem'))
+};
+const server = https.createServer(options, main);
+server.listen(port, () => {
+    console.log('Server listening on port ' + port);
+});
+const io = new Server(server);
+io.on('connection', (socket: Socket) => {
+    socket.once('connect-user', (user) => {
+        selectUserToken(user.id, (err : MysqlError | null, results: any) => {
+            if(err || results[0].token != user.token || results[0].token_expiration < getTimestamp()) {
+                socket.disconnect(true);
+                return;
+            }
+            updateUserOnline(user.id, true);
+            let usersockets = sockets.get(user.id.toString());
+            if(usersockets == undefined) {
+                usersockets = [];
+            }
+            usersockets.push(socket);
+            sockets.set(user.id.toString(), usersockets);
+            socket.on('disconnect', () => {
+                updateUserOnline(user.id, false);
+                let usersockets = sockets.get(user.id.toString());
+                if(usersockets == undefined) return;
+                usersockets.splice(usersockets.indexOf(socket));
+                sockets.set(user.id.toString(), usersockets);
+            });
+        })
+    });
+});
 
 //// pages ////
 
@@ -126,13 +176,4 @@ main.get('/create-chat', (req: Request, res: Response): void => {
 
 main.get('/', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/index.html'));
-});
-
-const options = {
-    key: fs.readFileSync(path.resolve(__dirname, './certs/privateKey.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, './certs/certificate.pem'))
-};
-
-https.createServer(options, main).listen(port, () => {
-    console.log('Server listening on port ' + port);
 });

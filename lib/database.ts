@@ -117,6 +117,13 @@ export function updateUser(id: number, username: string, email: string, password
         [username, email, passwordHash, tokenDuration, tfaKey, status, JSON.stringify(settings), id], logError);
 }
 
+export function updateUserOnline(id: number, online: boolean): void {
+    if(online)
+        query('UPDATE users SET online=true WHERE id=?;', [id], logError);
+    else
+        query('UPDATE users SET online=false, last_online=? WHERE id=?;', [getTimestamp(), id], logError);
+}
+
 export function createChat(userId: number, name: string, description: string, token: string, callback: (err: MysqlError | null, id: number | null) => void) {
     query('SELECT next_id FROM ids WHERE table_name="chats";', [], (err: MysqlError | null, results: any): void => {
         if(err) {
@@ -153,24 +160,28 @@ export function selectChat(id: number, callback: queryCallback): void {
     query('SELECT * FROM chats WHERE id=?;', [id], callback);
 }
 
+export function selectMessage(id: number, messageId: number, callback: queryCallback): void {
+    query('SELECT * FROM chat' + id + ' WHERE id=?;', [messageId], callback);
+}
+
 export function selectLastMessages(id: number, numberOfMessages: number, callback: queryCallback): void {
     query('SELECT * FROM (SELECT * FROM chat' + id + ' ORDER BY id DESC LIMIT ?) AS temp ORDER BY id ASC;', [numberOfMessages], callback);
 }
 
-export function insertMessage(id: number, userId: number, message: string, callback: queryCallback): void {
+export function insertMessage(id: number, userId: number, message: string, callback: (err: MysqlError | null, id?: number) => void): void {
     query('SELECT next_id FROM ids WHERE table_name="chat?";', [id], (err: MysqlError | null, results: any): void => {
         if(err) {
-            callback(err, null);
+            callback(err);
             return;
         }
         const messageId = results[0].next_id;
         query('INSERT INTO chat? VALUES (?, ?, ?, ?, ?);', [id, messageId, getTimestamp(), userId, message, false],
             (err: MysqlError | null, results: any): void => {
                 if(err) {
-                    callback(err, null);
+                    callback(err);
                     return;
                 }
-                callback(null);
+                callback(null, messageId);
                 query('UPDATE ids SET next_id=? WHERE table_name="chat?";', [messageId + 1, id], logError);
             });
     });

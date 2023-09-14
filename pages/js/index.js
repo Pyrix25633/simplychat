@@ -25,8 +25,31 @@ for(let i = 0; i < emojis.length; i++) {
     emojiSelectorDiv.appendChild(emojiSpan);
 }
 const chatsCache = [];
+let messagesCache = [];
 let selectedChat = 0;
 let usersCache;
+
+const socket = io();
+socket.on('connect', () => {
+    socket.emit('connect-user', cachedLogin);
+});
+socket.on('new-message', (data) => {
+    if(data.chatId == chatsCache[selectedChat].id) {
+        $.ajax({
+            url: '/api/chat/get-message',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                chatId: data.chatId,
+                messageId: data.id
+            }),
+            contentType: 'application/json',
+            success: addMessage,
+            statusCode: statusCodeActions
+        });
+    }
+});
 
 onMessageTextareaUpdate(null);
 
@@ -132,18 +155,21 @@ function setChatInfo(chat, i, selected) {
     if(selected) chatDiv.classList.add('selected');
     const nameDescriptionDiv = document.createElement('div');
     nameDescriptionDiv.classList.add('box', 'marquee');
+    const chatLogoDiv = document.createElement('div');
+    chatLogoDiv.classList.add('chat-logo');
     const chatLogoImg = document.createElement('img');
     chatLogoImg.classList.add('chat-logo');
     chatLogoImg.src = './chatLogos/' + chat.id + '.' + chat.chatLogoType;
+    chatLogoDiv.appendChild(chatLogoImg);
+    chatDiv.appendChild(chatLogoDiv);
     const chatNameSpan = document.createElement('span');
     chatNameSpan.classList.add('chat-name');
     chatNameSpan.innerText = chat.name;
+    nameDescriptionDiv.appendChild(chatNameSpan);
     const chatDescriptionSpan = document.createElement('span');
     chatDescriptionSpan.classList.add('chat-description');
     chatDescriptionSpan.innerText = chat.description;
-    nameDescriptionDiv.appendChild(chatNameSpan);
     nameDescriptionDiv.appendChild(chatDescriptionSpan);
-    chatDiv.appendChild(chatLogoImg);
     chatDiv.appendChild(nameDescriptionDiv);
     chatDiv.addEventListener('click', () => {
         if(i == selectedChat) return;
@@ -210,19 +236,26 @@ function setChatUser(user, selected) {
     if(selected) userDiv.classList.add('selected');
     const usernameStatusDiv = document.createElement('div');
     usernameStatusDiv.classList.add('box', 'marquee');
+    const pfpDiv = document.createElement('div');
+    pfpDiv.classList.add('pfp');
     const pfpImg = document.createElement('img');
     pfpImg.classList.add('pfp');
     pfpImg.src = './pfps/' + user.id + '.' + user.pfpType;
+    pfpDiv.appendChild(pfpImg);
+    const onlineDiv = document.createElement('div');
+    console.log(user);
+    onlineDiv.classList.add(user.online ? 'online': 'offline');
+    pfpDiv.appendChild(onlineDiv);
+    userDiv.appendChild(pfpDiv);
     const usernameSpan = document.createElement('span');
     usernameSpan.classList.add('username');
     usernameSpan.classList.add('permission-level-' + user.permissionLevel);
     usernameSpan.innerText = user.username;
+    usernameStatusDiv.appendChild(usernameSpan);
     const statusSpan = document.createElement('span');
     statusSpan.classList.add('status');
     statusSpan.innerText = user.status;
-    usernameStatusDiv.appendChild(usernameSpan);
     usernameStatusDiv.appendChild(statusSpan);
-    userDiv.appendChild(pfpImg);
     userDiv.appendChild(usernameStatusDiv);
     usersDiv.appendChild(userDiv);
 }
@@ -239,7 +272,8 @@ function loadChatLastMessages(selected) {
         }),
         contentType: 'application/json',
         success: (res) => {
-            setMessages(res.lastMessages)
+            messagesCache = res.lastMessages;
+            setMessages(res.lastMessages);
         },
         statusCode: statusCodeActions
     });
@@ -248,43 +282,61 @@ function loadChatLastMessages(selected) {
 function setMessages(messages) {
     messagesDiv.innerHTML = '';
     for(let message of messages) {
-        const user = usersCache[message.userId];
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('box', 'message');
-        const userDiv = document.createElement('div');
-        userDiv.classList.add('container');
-        const pfpImg = document.createElement('img');
-        pfpImg.classList.add('message-pfp');
-        pfpImg.src = './pfps/' + user.id + '.' + user.pfpType;
-        userDiv.appendChild(pfpImg);
-        const usernameSpan = document.createElement('span');
-        usernameSpan.classList.add('message-username',
-            'permission-level-' + chatsCache[selectedChat].users[user.id.toString()].permissionLevel);
-        usernameSpan.innerText = user.username;
-        userDiv.appendChild(usernameSpan);
-        const datetimeSpan = document.createElement('span');
-        datetimeSpan.classList.add('message-meta');
-        datetimeSpan.innerText = new Date(message.timestamp * 1000).toLocaleString();
-        userDiv.appendChild(datetimeSpan);
-        if(message.edited) {
-            const editedSpan = document.createElement('span');
-            editedSpan.classList.add('message-meta');
-            editedSpan.innerText = '(edited)';
-            userDiv.appendChild(editedSpan);
-        }
-        const messageSpan = document.createElement('span');
-        messageSpan.classList.add('message-text');
-        messageSpan.innerText = message.message;
-        messageDiv.appendChild(userDiv);
-        messageDiv.appendChild(messageSpan);
-        messagesDiv.appendChild(messageDiv);
+        messagesDiv.appendChild(createMessageDiv(message));
     }
+}
+
+function addMessage(message) {
+    messagesCache.concat(message);
+    messagesCache.sort((a, b) => {
+        return b.id - a.id;
+    });
+    const i = messagesCache.indexOf(message);
+    const messageDiv = createMessageDiv(message);
+    if(i == messagesCache.length - 1)
+        messagesDiv.appendChild(messageDiv);
+    else
+        messagesDiv.insertBefore(messageDiv, messagesDiv.childNodes[i]);
+}
+
+function createMessageDiv(message) {
+    const user = usersCache[message.userId];
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('box', 'message');
+    const userDiv = document.createElement('div');
+    userDiv.classList.add('container', 'message-data');
+    const pfpImg = document.createElement('img');
+    pfpImg.classList.add('message-pfp');
+    pfpImg.src = './pfps/' + user.id + '.' + user.pfpType;
+    userDiv.appendChild(pfpImg);
+    const usernameSpan = document.createElement('span');
+    usernameSpan.classList.add('message-username',
+        'permission-level-' + chatsCache[selectedChat].users[user.id.toString()].permissionLevel);
+    usernameSpan.innerText = user.username;
+    userDiv.appendChild(usernameSpan);
+    const datetimeSpan = document.createElement('span');
+    datetimeSpan.classList.add('message-meta');
+    datetimeSpan.innerText = new Date(message.timestamp * 1000).toLocaleString();
+    userDiv.appendChild(datetimeSpan);
+    if(message.edited) {
+        const editedSpan = document.createElement('span');
+        editedSpan.classList.add('message-meta');
+        editedSpan.innerText = '(edited)';
+        userDiv.appendChild(editedSpan);
+    }
+    const messageSpan = document.createElement('span');
+    messageSpan.classList.add('message-text');
+    messageSpan.innerText = message.message;
+    messageDiv.appendChild(userDiv);
+    messageDiv.appendChild(messageSpan);
+    return messageDiv;
 }
 
 messageTextarea.addEventListener('keydown', onMessageTextareaUpdate);
 messageTextarea.addEventListener('keyup', onMessageTextareaUpdate);
 function onMessageTextareaUpdate(e) {
-    const message = messageTextarea.value;
+    const capture = /^\s*(.+\S)\s*$/.exec(messageTextarea.value);
+    const message = capture == null ? '' : capture[1];
     const chars = new Blob([message]).size;
     if(chars > 2048) messageCharsSpan.classList.add('error');
     else messageCharsSpan.classList.remove('error');
@@ -298,7 +350,8 @@ function onMessageTextareaUpdate(e) {
 }
 
 sendImg.addEventListener('click', () => {
-    const message = messageTextarea.value;
+    const capture = /^\s*(.+\S)\s*$/.exec(messageTextarea.value);
+    const message = capture == null ? '' : capture[1];
     const chars = new Blob([message]).size;
     if(chars > 2048 || chars == 0) return;
     messageTextarea.value = '';

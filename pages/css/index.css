@@ -18,6 +18,26 @@ div#loading {
     justify-content: center;
 }
 
+div.chat-logo, div.pfp {
+    display: flex;
+    position: relative;
+}
+
+div.online, div.offline {
+    position: absolute;
+    bottom: 0;
+    background-color: var(--color-success);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+div.online {
+    background-color: var(--color-success);
+}
+div.offline {
+    background-color: var(--color-error);
+}
+
 img.chat-logo, img.pfp {
     height: 50px;
     background-color: var(--color-lighter);
@@ -53,9 +73,13 @@ div#main {
 }
 
 div#messages {
-    height: auto;
+    height: 100%;
     width: var(--messages-width);
     border-bottom: var(--color-lighter) 2px solid;
+    overflow-y: scroll;
+}
+div#messages::-webkit-scrollbar-track, div#messages::-webkit-scrollbar, div#messages::-webkit-scrollbar-thumb {
+    display: none;
 }
 
 div#chat-topbar {
@@ -118,6 +142,7 @@ span#chat-description {
     font-size: 20px;
     line-height: 25px;
     margin-bottom: 3px;
+    margin-left: 0;
 }
 
 div.selected {
@@ -150,6 +175,15 @@ textarea::-webkit-scrollbar-track, textarea::-webkit-scrollbar, textarea::-webki
     display: none;
 }
 
+div#textarea {
+    position: relative;
+}
+
+span.char-counter, span.char-counter span {
+    margin-left: 0 !important;
+    font-size: 10px;
+}
+
 img.message-button {
     height: 25px;
 }
@@ -171,6 +205,9 @@ span.message-meta {
 span.message-text {
     margin-left: 25px !important;
     background-color: var(--color-lighter);
+    max-width: var(--message-max-width);
+    word-wrap: break-word;
+    word-break: break-all;
 }
 div.message div.container {
     align-items: end;
@@ -181,9 +218,9 @@ div#emoji-selector {
     grid-template-columns: auto auto auto auto auto auto auto auto auto auto auto auto auto auto auto auto;
     overflow-y: scroll;
     height: 300px;
-    position: fixed;
-    bottom: 50px;
-    right: 20px;
+    position: absolute;
+    bottom: 80px;
+    right: 0;
     background-color: var(--color-simplychat-dark);
 }
 div#emoji-selector::-webkit-scrollbar-track, div#emoji-selector::-webkit-scrollbar, div#emoji-selector::-webkit-scrollbar-thumb {
@@ -192,9 +229,18 @@ div#emoji-selector::-webkit-scrollbar-track, div#emoji-selector::-webkit-scrollb
 
 span.emoji {
     text-align: center;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    margin-left: 0 !important;
+    width: 30px;
+    height: 30px;
 }
 
-@media screen and (max-width: 800px) {
+@media screen and (max-width: 1200px) {
     div#chats, div#users {
         display: none;
     }
@@ -204,7 +250,29 @@ span.emoji {
     div.marquee-big {
         width: var(--marquee-big-mobile-width);
     }
+    @keyframes marquee-big {
+        0% {transform: translate(0, 0);}
+        40% {transform: translate(calc(var(--marquee-big-mobile-width) * -1), 0);}
+        60% {transform: translate(calc(var(--marquee-big-mobile-width) * -1), 0);}
+        100% {transform: translate(-100%, 0);}
+    }
+    div.message-data {
+        flex-direction: column;
+        align-items: start !important;
+    }
+    span.message-username, span.message-meta {
+        margin-left: 0 !important;
+    }
+    span.message-text {
+        max-width: var(--message-mobile-max-width);
+    }
     textarea {
         width: var(--textarea-mobile-width);
+    }
+    @media screen and (max-width: 800px){
+        div#emoji-selector {
+            grid-template-columns: auto auto auto auto auto auto auto auto;
+            height: 200px;
+        }
     }
 }

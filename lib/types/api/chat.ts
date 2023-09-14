@@ -44,6 +44,23 @@ export function isChatInfoRequestValid(req: ChatInfoRequest): boolean {
         && req.chatId != undefined && typeof req.chatId == 'number';
 }
 
+// get-message
+
+export type GetMessageRequest = {
+    token: string,
+    id: number,
+    chatId: number,
+    messageId: number
+};
+
+export function isGetMessageRequestValid(req: GetMessageRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number'
+        && req.messageId != undefined && typeof req.messageId == 'number';
+}
+
 // get-last-messages
 
 export type GetLastMessagesRequest = {

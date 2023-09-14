@@ -25,8 +25,13 @@ export function chatInfo(req: Request, res: Response): void {
         const chats = JSON.parse(user.chats);
         if(user.chats[request.chatId] != undefined) {
             selectChat(request.chatId, (err: MysqlError | null, results: any): void => {
-                if(err || results.length == 0) {
+                if(err) {
                     res.status(500).send('Internal Server Error');
+                    console.log(err);
+                    return;
+                }
+                if(results.length == 0) {
+                    res.status(404).send('Not Found');
                     return;
                 }
                 const selected = results[0];
