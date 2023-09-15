@@ -117,11 +117,11 @@ export function updateUser(id: number, username: string, email: string, password
         [username, email, passwordHash, tokenDuration, tfaKey, status, JSON.stringify(settings), id], logError);
 }
 
-export function updateUserOnline(id: number, online: boolean): void {
+export function updateUserOnline(id: number, online: boolean, lastOnline: number): void {
     if(online)
         query('UPDATE users SET online=true WHERE id=?;', [id], logError);
     else
-        query('UPDATE users SET online=false, last_online=? WHERE id=?;', [getTimestamp(), id], logError);
+        query('UPDATE users SET online=false, last_online=? WHERE id=?;', [lastOnline, id], logError);
 }
 
 export function createChat(userId: number, name: string, description: string, token: string, callback: (err: MysqlError | null, id: number | null) => void) {

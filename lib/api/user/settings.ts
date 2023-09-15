@@ -8,6 +8,7 @@ import { selectFromEmail, selectFromUsername, updateUser, updateUserPfpType, upd
 import { createUserToken } from '../../hash';
 import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 import { sendEmail } from '../../email';
+import { notifyAllRelatedUsers } from '../../socket';
 
 export function getSettings(req: Request, res: Response): void {
     const request: GetSettingsRequest = req.body;
@@ -101,6 +102,7 @@ export function setSettings(req: Request, res: Response): void {
                     'If it was you, you don\'t need to do anything. If not, you should take action.\n' +
                     'User-agent: ' + req.headers['user-agent'] + '\nIP address: ' + req.ip
             });
+            notifyAllRelatedUsers(user.id, 'user-settings', {id: user.id}, true);
         }
     });
 }

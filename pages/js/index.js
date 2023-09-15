@@ -9,6 +9,7 @@ const chatLogoImg = document.getElementById('chat-logo');
 const chatNameSpan = document.getElementById('chat-name');
 const chatDescriptionSpan = document.getElementById('chat-description');
 const messagesDiv = document.getElementById('messages');
+const textareaDiv = document.getElementById('textarea');
 const messageTextarea = document.getElementById('message');
 const messageCharsSpan = document.getElementById('message-chars');
 const sendImg = document.getElementById('send');
@@ -24,10 +25,11 @@ for(let i = 0; i < emojis.length; i++) {
     });
     emojiSelectorDiv.appendChild(emojiSpan);
 }
-const chatsCache = [];
+const chatsCache = {};
 let messagesCache = [];
-let selectedChat = 0;
+let selectedChat;
 let usersCache;
+let selectedUser;
 
 const socket = io();
 socket.on('connect', () => {
@@ -49,6 +51,53 @@ socket.on('new-message', (data) => {
             statusCode: statusCodeActions
         });
     }
+});
+socket.on('user-online', (data) => {
+    const lastOnlineSpan = document.getElementById('last-online-' + data.id);
+    const onlineDiv = document.getElementById('online-' + data.id);
+    if(data.online) {
+        onlineDiv.classList.replace('offline', 'online');
+        lastOnlineSpan.style.display = 'none';
+    }
+    else {
+        onlineDiv.classList.replace('online', 'offline');
+        setReadableDate(lastOnlineSpan, data.lastOnline, 'Last online: $');
+        lastOnlineSpan.style.display = '';
+    }
+});
+socket.on('user-online', (data) => {
+    const lastOnlineSpan = document.getElementById('last-online-' + data.id);
+    const onlineDiv = document.getElementById('online-' + data.id);
+    if(data.online) {
+        onlineDiv.classList.replace('offline', 'online');
+        lastOnlineSpan.style.display = 'none';
+    }
+    else {
+        onlineDiv.classList.replace('online', 'offline');
+        setReadableDate(lastOnlineSpan, data.lastOnline, 'Last online: $');
+        lastOnlineSpan.style.display = '';
+    }
+});
+socket.on('user-settings', (data) => {
+    $.ajax({
+        url: '/api/user/info',
+        method: 'POST',
+        data: JSON.stringify({
+            token: cachedLogin.token,
+            id: cachedLogin.id,
+            userId: data.id
+        }),
+        contentType: 'application/json',
+        success: (res) => {
+            for(const pfp of document.getElementsByClassName('pfp-' + data.id))
+                pfp.src = './pfps/' + data.id + '.' + res.pfpType;
+            for(const username of document.getElementsByClassName('username-' + data.id))
+                username.innerText = res.username;
+            for(const status of document.getElementsByClassName('status-' + data.id))
+                status.innerText = res.status;
+        },
+        statusCode: statusCodeActions
+    });
 });
 
 onMessageTextareaUpdate(null);
@@ -78,12 +127,16 @@ function enableLoadingDiv() {
 }
 
 function disableLoadingDiv() {
+    reloadAnimations();
+    document.body.removeChild(document.getElementById('loading'));
+}
+
+function reloadAnimations() {
     const animations = document.getAnimations();
     for(let animation of animations)
         animation.cancel();
     for(let animation of animations)
         animation.play();
-    document.body.removeChild(document.getElementById('loading'));
 }
 
 function loadChatsInfo(chats, chatsObject) {
@@ -99,8 +152,9 @@ function loadChatsInfo(chats, chatsObject) {
             contentType: 'application/json',
             success: (res) => {
                 res.id = parseInt(chatId);
-                chatsCache.push(res);
-                if(chatsCache.length == chats.length)
+                res.lastReadMessageId = chatsObject[chatId].lastReadMessageId;
+                chatsCache[chatId] = res;
+                if(Object.keys(chatsCache).length == chats.length)
                     loadChatsLastMessage();
             },
             statusCode: statusCodeActions
@@ -110,8 +164,8 @@ function loadChatsInfo(chats, chatsObject) {
 
 function loadChatsLastMessage() {
     let numOfReceivedResponses = 0;
-    for(let i = 0; i < chatsCache.length; i++) {
-        const chat = chatsCache[i];
+    const chatsCacheArray = Object.values(chatsCache);
+    for(const chat of Object.values(chatsCache)) {
         $.ajax({
             url: '/api/chat/get-last-messages',
             method: 'POST',
@@ -128,20 +182,21 @@ function loadChatsLastMessage() {
                     chat.lastMessageTimestamp = res.lastMessages[0].timestamp;
                 else
                     chat.lastMessageTimestamp = 0;
-                if(numOfReceivedResponses == chatsCache.length) {
-                    chatsCache.sort((a, b) => {
+                chatsCache[chat.id].lastMessageTimestamp = chat.lastMessageTimestamp;
+                if(numOfReceivedResponses == chatsCacheArray.length) {
+                    chatsCacheArray.sort((a, b) => {
                         const t = b.lastMessageTimestamp - a.lastMessageTimestamp;
                         if(t == 0)
                             return b.users.length - a.users.length;
                         return t;
                     });
                     chatsDiv.innerHTML = '';
-                    for(let i = 0; i < chatsCache.length; i++) {
-                        const chat = chatsCache[i];
-                        setChatInfo(chat, i, i == 0);
+                    selectedChat = Object.keys(chatsCacheArray)[0];
+                    for(const chat of chatsCacheArray) {
+                        setChatInfo(chat, chat.id == selectedChat);
                     }
-                    setChatTopbar(chatsCache[0]);
-                    loadChatUsers(chatsCache[0], loadChatLastMessages);
+                    setChatTopbar(chatsCacheArray[0]);
+                    loadChatUsers(chatsCacheArray[0], loadChatLastMessages);
                 }
             },
             statusCode: statusCodeActions
@@ -149,10 +204,14 @@ function loadChatsLastMessage() {
     }
 }
 
-function setChatInfo(chat, i, selected) {
+function setChatInfo(chat, selected) {
     const chatDiv = document.createElement('div');
     chatDiv.classList.add('container', 'chat');
     if(selected) chatDiv.classList.add('selected');
+    const boxDiv = document.createElement('div');
+    boxDiv.classList.add('box');
+    const chatInfoDiv = document.createElement('div');
+    chatInfoDiv.classList.add('container');
     const nameDescriptionDiv = document.createElement('div');
     nameDescriptionDiv.classList.add('box', 'marquee');
     const chatLogoDiv = document.createElement('div');
@@ -161,7 +220,7 @@ function setChatInfo(chat, i, selected) {
     chatLogoImg.classList.add('chat-logo');
     chatLogoImg.src = './chatLogos/' + chat.id + '.' + chat.chatLogoType;
     chatLogoDiv.appendChild(chatLogoImg);
-    chatDiv.appendChild(chatLogoDiv);
+    chatInfoDiv.appendChild(chatLogoDiv);
     const chatNameSpan = document.createElement('span');
     chatNameSpan.classList.add('chat-name');
     chatNameSpan.innerText = chat.name;
@@ -170,16 +229,55 @@ function setChatInfo(chat, i, selected) {
     chatDescriptionSpan.classList.add('chat-description');
     chatDescriptionSpan.innerText = chat.description;
     nameDescriptionDiv.appendChild(chatDescriptionSpan);
-    chatDiv.appendChild(nameDescriptionDiv);
+    chatInfoDiv.appendChild(nameDescriptionDiv);
+    boxDiv.appendChild(chatInfoDiv);
+    const chatSettingsDiv = document.createElement('div');
+    chatSettingsDiv.classList.add('container', 'chat-settings');
+    if(chat.users[cachedLogin.id.toString()].permissionLevel == 0) {
+        const settingsImg = document.createElement('img');
+        settingsImg.classList.add('button');
+        settingsImg.src = './img/settings.svg';
+        chatSettingsDiv.appendChild(settingsImg);
+        settingsImg.addEventListener('click', () => {
+            settingsImg.animate([
+                {transform: 'scale(0.6)'},
+                {transform: 'scale(1.4)'},
+                {transform: 'scale(1)'}
+            ], {duration: 250});
+            console.log(chat.id);
+        });
+    }
+    const markAsReadImg = document.createElement('img');
+    markAsReadImg.classList.add('button');
+    markAsReadImg.src = './img/mark_as_read.svg';
+    chatSettingsDiv.appendChild(markAsReadImg);
+    markAsReadImg.addEventListener('click', () => {
+        markAsReadImg.animate([
+            {transform: 'scale(0.6)'},
+            {transform: 'scale(1.4)'},
+            {transform: 'scale(1)'}
+        ], {duration: 250});
+        console.log(chat.id);
+    });
+    if(!selected) chatSettingsDiv.style.display = 'none';
+    boxDiv.appendChild(chatSettingsDiv);
+    chatDiv.appendChild(boxDiv);
     chatDiv.addEventListener('click', () => {
-        if(i == selectedChat) return;
+        if(chat.id == selectedChat) return;
         enableLoadingDiv();
         for(let div of chatsDiv.getElementsByClassName('chat'))
             div.classList.remove('selected');
-        selectedChat = i;
+        for(let div of chatsDiv.getElementsByClassName('chat-settings'))
+            div.style.display = 'none';
+        selectedChat = chat.id;
         chatDiv.classList.add('selected');
-        setChatTopbar(chatsCache[i]);
-        loadChatUsers(chatsCache[i], loadChatLastMessages);
+        chatSettingsDiv.style.display = '';
+        setChatTopbar(chat);
+        loadChatUsers(chat, loadChatLastMessages);
+        if(chat.users[cachedLogin.id.toString()] > 2)
+            textareaDiv.style.display = 'none';
+        else
+            textareaDiv.style.display = '';
     });
     chatsDiv.appendChild(chatDiv);
 }
@@ -192,6 +290,7 @@ function setChatTopbar(selected) {
 
 function loadChatUsers(selected, callback) {
     usersCache = {};
+    selectedUser = cachedLogin.id;
     let usersCacheArray = [];
     usersDiv.innerHTML = '';
     const ids = Object.keys(selected.users);
@@ -212,6 +311,7 @@ function loadChatUsers(selected, callback) {
                 usersCacheArray.push(user);
                 if(usersCacheArray.length == ids.length) {
                     usersCacheArray.sort((a, b) => {
+                        if(a.id == cachedLogin.id) return -1;
                         const p = a.permissionLevel - b.permissionLevel;
                         if(p == 0)
                             return b.lastOnline - a.lastOnline;
@@ -234,30 +334,121 @@ function setChatUser(user, selected) {
     const userDiv = document.createElement('div');
     userDiv.classList.add('container', 'user');
     if(selected) userDiv.classList.add('selected');
+    const boxDiv = document.createElement('div');
+    boxDiv.classList.add('box');
+    const userInfoDiv = document.createElement('div');
+    userInfoDiv.classList.add('container');
     const usernameStatusDiv = document.createElement('div');
     usernameStatusDiv.classList.add('box', 'marquee');
     const pfpDiv = document.createElement('div');
     pfpDiv.classList.add('pfp');
     const pfpImg = document.createElement('img');
-    pfpImg.classList.add('pfp');
+    pfpImg.classList.add('pfp', 'pfp-' + user.id);
     pfpImg.src = './pfps/' + user.id + '.' + user.pfpType;
     pfpDiv.appendChild(pfpImg);
     const onlineDiv = document.createElement('div');
-    console.log(user);
+    onlineDiv.id = 'online-' + user.id;
     onlineDiv.classList.add(user.online ? 'online': 'offline');
     pfpDiv.appendChild(onlineDiv);
-    userDiv.appendChild(pfpDiv);
+    userInfoDiv.appendChild(pfpDiv);
     const usernameSpan = document.createElement('span');
-    usernameSpan.classList.add('username');
-    usernameSpan.classList.add('permission-level-' + user.permissionLevel);
+    usernameSpan.classList.add('username', 'permission-level-' + user.permissionLevel, 'username-' + user.id);
     usernameSpan.innerText = user.username;
     usernameStatusDiv.appendChild(usernameSpan);
     const statusSpan = document.createElement('span');
-    statusSpan.classList.add('status');
+    statusSpan.classList.add('status', 'status-' + user.id);
     statusSpan.innerText = user.status;
     usernameStatusDiv.appendChild(statusSpan);
-    userDiv.appendChild(usernameStatusDiv);
+    userInfoDiv.appendChild(usernameStatusDiv);
+    boxDiv.appendChild(userInfoDiv);
+    const userSettingsDiv = document.createElement('div');
+    if(user.id == cachedLogin.id) {
+        userSettingsDiv.classList.add('container', 'user-settings');
+        const settingsImg = document.createElement('img');
+        settingsImg.classList.add('button');
+        settingsImg.src = './img/settings.svg';
+        userSettingsDiv.appendChild(settingsImg);
+        settingsImg.addEventListener('click', () => {
+            settingsImg.animate([
+                {transform: 'scale(0.6)'},
+                {transform: 'scale(1.4)'},
+                {transform: 'scale(1)'}
+            ], {duration: 250});
+            window.location.href = '/settings';
+        });
+    }
+    else {
+        userSettingsDiv.classList.add('box');
+        const lastOnlineSpan = document.createElement('span');
+        lastOnlineSpan.id = 'last-online-' + user.id;
+        lastOnlineSpan.classList.add('user-last-online');
+        setReadableDate(lastOnlineSpan, user.lastOnline, 'Last online: $');
+        if(user.online) lastOnlineSpan.style.display = 'none';
+        userSettingsDiv.appendChild(lastOnlineSpan);
+        const statusSpan = document.createElement('span');
+        statusSpan.id = 'status-' + user.id;
+        statusSpan.classList.add('user-status', 'status-' + user.id);
+        statusSpan.innerText = user.status;
+        userSettingsDiv.appendChild(statusSpan);
+    }
+    if(!selected) userSettingsDiv.style.display = 'none';
+    boxDiv.appendChild(userSettingsDiv);
+    userDiv.appendChild(boxDiv);
+    userDiv.addEventListener('click', () => {
+        if(user.id == selectedUser) return;
+        for(let div of usersDiv.getElementsByClassName('user'))
+            div.classList.remove('selected');
+        for(let div of usersDiv.getElementsByClassName('user-settings'))
+            div.style.display = 'none';
+        selectedUser = user.id;
+        userDiv.classList.add('selected');
+        userSettingsDiv.style.display = '';
+    });
     usersDiv.appendChild(userDiv);
+}
+
+function setReadableDate(element, timestamp, text) {
+    const minute = 60, hour = minute * 60, day = hour * 24;
+    let difference = Math.floor(Date.now() / 1000) - timestamp;
+    const seconds = difference % minute;
+    difference -= seconds;
+    const minutes = Math.floor(difference / minute) % hour;
+    difference -= minutes;
+    const hours = Math.floor(difference / hour) % day;
+    difference -= hours;
+    const days = Math.floor(difference / day);
+    if(days < 7) {
+        let delay = 1000;
+        let readableDate;
+        if(days == 0) {
+            if(hours == 0) {
+                if(minutes == 0)
+                    readableDate = seconds + ' second' + (seconds == 1 ? '' : 's');
+                else {
+                    readableDate = minutes + ' minute' + (minutes == 1 ? '' : 's');
+                    delay *= minute;
+                }
+            }
+            else {
+                readableDate = hours + ' hour' + (hours == 1 ? '' : 's');
+                delay *= hour;
+            }
+        }
+        else {
+            readableDate = days + ' day' + (days == 1 ? '' : 's');
+            delay *= day;
+        }
+        readableDate += ' ago';
+        element.innerText = text.replace('$', readableDate);
+        if(element.timer != undefined) clearInterval(element.timer);
+        element.timer = setInterval(() => {
+            clearInterval(element.timer);
+            setReadableDate(element, timestamp, text);
+        }, delay);
+    }
+    else {
+        element.innerText = new Date(timestamp).toLocaleString();
+    }
 }
 
 function loadChatLastMessages(selected) {
@@ -306,17 +497,13 @@ function createMessageDiv(message) {
     const userDiv = document.createElement('div');
     userDiv.classList.add('container', 'message-data');
     const pfpImg = document.createElement('img');
-    pfpImg.classList.add('message-pfp');
-    pfpImg.src = './pfps/' + user.id + '.' + user.pfpType;
+    pfpImg.classList.add('message-pfp', 'pfp-' + user.id);
     userDiv.appendChild(pfpImg);
     const usernameSpan = document.createElement('span');
-    usernameSpan.classList.add('message-username',
-        'permission-level-' + chatsCache[selectedChat].users[user.id.toString()].permissionLevel);
-    usernameSpan.innerText = user.username;
     userDiv.appendChild(usernameSpan);
     const datetimeSpan = document.createElement('span');
     datetimeSpan.classList.add('message-meta');
-    datetimeSpan.innerText = new Date(message.timestamp * 1000).toLocaleString();
+    setReadableDate(datetimeSpan, message.timestamp, '$');
     userDiv.appendChild(datetimeSpan);
     if(message.edited) {
         const editedSpan = document.createElement('span');
@@ -329,13 +516,37 @@ function createMessageDiv(message) {
     messageSpan.innerText = message.message;
     messageDiv.appendChild(userDiv);
     messageDiv.appendChild(messageSpan);
+    if(user == undefined) {
+        $.ajax({
+            url: '/api/user/info',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                userId: parseInt(message.userId)
+            }),
+            contentType: 'application/json',
+            success: (res) => {
+                pfpImg.src = './pfps/' + res.id + '.' + res.pfpType;
+                usernameSpan.classList.add('message-username', 'username-' + res.id, 'permission-level-removed');
+                usernameSpan.innerText = res.username;
+            },
+            statusCode: statusCodeActions
+        });
+    }
+    else {
+        pfpImg.src = './pfps/' + user.id + '.' + user.pfpType;
+        usernameSpan.classList.add('message-username', 'username-' + user.id,
+            'permission-level-' + chatsCache[selectedChat].users[user.id.toString()].permissionLevel);
+        usernameSpan.innerText = user.username;
+    }
     return messageDiv;
 }
 
 messageTextarea.addEventListener('keydown', onMessageTextareaUpdate);
 messageTextarea.addEventListener('keyup', onMessageTextareaUpdate);
 function onMessageTextareaUpdate(e) {
-    const capture = /^\s*(.+\S)\s*$/.exec(messageTextarea.value);
+    const capture = /^\s*(.*\S)\s*$/.exec(messageTextarea.value);
     const message = capture == null ? '' : capture[1];
     const chars = new Blob([message]).size;
     if(chars > 2048) messageCharsSpan.classList.add('error');
@@ -350,16 +561,19 @@ function onMessageTextareaUpdate(e) {
 }
 
 sendImg.addEventListener('click', () => {
-    const capture = /^\s*(.+\S)\s*$/.exec(messageTextarea.value);
+    const capture = /^\s*(.*\S)\s*$/.exec(messageTextarea.value);
     const message = capture == null ? '' : capture[1];
     const chars = new Blob([message]).size;
     if(chars > 2048 || chars == 0) return;
     messageTextarea.value = '';
     sendImg.animate([
-        {transform: 'rotate(0deg)'},
-        {transform: 'rotate(-90deg)'},
-        {transform: 'translate(0, -10px) rotate(-90deg)'}
-    ], {duration: 250});
+        {transform: 'rotate(0deg)', offset: 0},
+        {transform: 'rotate(-90deg)', offset: 0.2},
+        {transform: 'translate(0, -10px) rotate(-90deg)', offset: 0.3},
+        {transform: 'translate(0, -10px) rotate(-270deg)', offset: 0.6},
+        {transform: 'translate(0, 0) rotate(-270deg)', offset: 0.9},
+        {transform: 'rotate(0deg)', offset: 1}
+    ], {duration: 700});
     $.ajax({
         url: '/api/chat/send-message',
         method: 'POST',
@@ -378,8 +592,29 @@ sendImg.addEventListener('click', () => {
 });
 
 emojiImg.addEventListener('click', () => {
+    emojiImg.animate([
+        {transform: 'scale(0.6)'},
+        {transform: 'scale(1.4)'},
+        {transform: 'scale(1)'}
+    ], {duration: 250});
     if(emojiSelectorDiv.style.display == 'none')
         emojiSelectorDiv.style.display = '';
     else
         emojiSelectorDiv.style.display = 'none';
+});
+
+window.addEventListener('resize', () => {
+    let temp = chatNameSpan.style.animation;
+    chatNameSpan.style.display = 'none';
+    chatNameSpan.style.animation = 'none';
+    chatNameSpan.offsetHeight;
+    chatNameSpan.style.animation = temp;
+    chatNameSpan.style.display = '';
+    chatDescriptionSpan.style.display = 'none';
+    temp = chatDescriptionSpan.style.animation;
+    chatDescriptionSpan.style.animation = 'none';
+    chatDescriptionSpan.offsetHeight;
+    chatDescriptionSpan.style.animation = temp;
+    chatDescriptionSpan.style.display = '';
+    reloadAnimations();
 });

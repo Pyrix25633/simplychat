@@ -3,6 +3,7 @@
     --color-permission-level-1: #FECF15;
     --color-permission-level-2: #DDDDDD;
     --color-permission-level-3: #b913fb;
+    --color-permission-level-removed: #666666;
 }
 
 div#loading {
@@ -65,6 +66,17 @@ div#chats::-webkit-scrollbar-track, div#chats::-webkit-scrollbar, div#chats::-we
 div#users::-webkit-scrollbar-track, div#users::-webkit-scrollbar, div#users::-webkit-scrollbar-thumb {
     width: 0;
     height: 0;
+}
+
+span.user-last-online {
+    font-size: 10px !important;
+    max-width: 200px;
+}
+span.user-status {
+    font-size: 15px !important;
+    max-width: 200px;
+    word-wrap: break-word;
+    word-break: break-all;
 }
 
 div#main {
@@ -148,6 +160,11 @@ span#chat-description {
 div.selected {
     background-color: var(--color-simplychat-dark);
 }
+
+img.button {
+    height: 25px;
+}
+
 span.permission-level-0 {
     color: var(--color-permission-level-0);
 }
@@ -159,6 +176,9 @@ span.permission-level-2 {
 }
 span.permission-level-3 {
     color: var(--color-permission-level-3);
+}
+span.permission-level-removed {
+    color: var(--color-permission-level-removed);
 }
 
 textarea {
@@ -184,9 +204,6 @@ span.char-counter, span.char-counter span {
     font-size: 10px;
 }
 
-img.message-button {
-    height: 25px;
-}
 img.message-pfp {
     height: 30px;
     background-color: var(--color-lighter);

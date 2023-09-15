@@ -2,10 +2,9 @@ import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
 import { insertMessage, selectLastMessages, selectMessage } from "../../database";
 import { GetLastMessagesRequest, GetMessageRequest, SendMessageRequest, isGetLastMessagesRequestValid, isGetMessageRequestValid, isSendMessageRequestValid } from "../../types/api/chat";
-import { validateTokenAndProceed } from "../user/authentication";
 import { validatePermissionLevelAndProceed } from './management';
-import { sockets } from '../../../main';
 import { Socket } from 'socket.io';
+import { notifyAllUsersInChat } from '../../socket';
 
 
 export function getMessage(req: Request, res: Response): void {
@@ -72,7 +71,7 @@ export function sendMessage(req: Request, res: Response): void {
         return;
     }
     validatePermissionLevelAndProceed(request.id, request.token, request.chatId, 2, res, (user, chat) => {
-        const capture = /^\s*(.+\S)\s*$/.exec(request.message);
+        const capture = /^\s*(.*\S)\s*$/.exec(request.message);
         const message = capture == null ? '' : capture[1];
         insertMessage(request.chatId, request.id, message, (err: MysqlError | null, id?: number): void => {
             if(err) {
@@ -81,14 +80,7 @@ export function sendMessage(req: Request, res: Response): void {
                 return;
             }
             res.status(201).send('Created');
-            const users: string[] = Object.keys(JSON.parse(chat.users));
-            for(const user of users) {
-                const usersockets: Socket[] | undefined = sockets.get(user);
-                if(usersockets == undefined) continue;
-                for(const usersocket of usersockets) {
-                    usersocket.emit('new-message', {chatId: chat.id, id: id});
-                }
-            }
+            notifyAllUsersInChat(chat, 'new-message', {id: id});
         });
     });
 }

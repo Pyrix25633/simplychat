@@ -55,8 +55,16 @@ img.chat-logo, img.pfp, img#chat-logo {
 div.chat, div.user, div#chats, div#users, div#chat-topbar {
     padding: 2px;
 }
-div.chat:not(:first-child) {
+div.chat:not(:first-child), div.user:not(:first-child) {
     margin-top: 2px;
+}
+
+div.chat-settings, div.user-settings, span.user-last-online, span.user-status {
+    margin-top: 1px !important;
+}
+
+img.button:not(:first-child) {
+    margin-left: 2px;
 }
 
 div#messages {
@@ -72,10 +80,6 @@ div.message:not(:first-child) {
 
 div.message-data {
     margin-bottom: 2px;
-}
-
-img.message-button:not(:first-child) {
-    margin-left: 2px;
 }
 
 span.message-text {

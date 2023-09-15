@@ -19,7 +19,8 @@ export function userInfo(req: Request, res: Response): void {
             const selected = results[0];
             res.status(200).send({
                 username: selected.username,
-                online: user.online,
+                online: selected.online,
+                lastOnline: selected.last_online,
                 status: selected.status,
                 pfpType: selected.pfp_type
             });
