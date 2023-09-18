@@ -10,6 +10,9 @@ export const statusCodeActions = {
     401: () => {
         window.location.href = '/login';
     },
+    403: () => {
+        window.location.href = '/';
+    },
     404: () => {
         window.location.href = '/register';
     },

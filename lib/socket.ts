@@ -2,6 +2,7 @@ import { MysqlError } from "mysql";
 import { selectChat, selectUser, selectUserToken, updateUserOnline } from "./database";
 import { Socket } from "socket.io";
 import { getTimestamp } from "./timestamp";
+import { settings } from "./settings";
 
 export const sockets: Map<string, Socket[]> = new Map<string, Socket[]>();
 
@@ -40,7 +41,8 @@ function notifyUserOnline(id: number, online: boolean): void {
         data.lastOnline = lastOnline;
     }
     updateUserOnline(id, online, lastOnline);
-    notifyAllRelatedUsers(id, 'user-online', data, false);
+    if(settings.dynamicUpdates["user-online"])
+        notifyAllRelatedUsers(id, 'user-online', data, false);
 }
 
 export function notifyAllRelatedUsers(id: number, event: string, data: any, updateSelf: boolean): void {

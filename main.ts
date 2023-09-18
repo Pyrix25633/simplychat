@@ -9,11 +9,12 @@ import { Server } from 'socket.io';
 import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeedback } from './lib/api/user/registration';
 import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, verifyTfaCode } from './lib/api/user/authentication';
 import { userInfo } from './lib/api/user/info';
-import { getSettings, setPfp, setSettings } from './lib/api/user/settings';
+import { getUserSettings, setPfp, setUserSettings } from './lib/api/user/settings';
 import { create } from './lib/api/chat/management';
 import { chatInfo, list } from './lib/api/chat/info';
 import { getLastMessages, getMessage, sendMessage } from './lib/api/chat/messages';
 import { onConnect } from './lib/socket';
+import { generateChatToken, getChatSettings, setChatLogo, setChatSettings } from './lib/api/chat/settings';
 
 const main: Express = express();
 const port: number = 4443;
@@ -82,9 +83,9 @@ main.post('/api/user/info', userInfo);
 
 // settings
 
-main.post('/api/user/get-settings', getSettings);
+main.post('/api/user/get-settings', getUserSettings);
 
-main.post('/api/user/set-settings', setSettings);
+main.post('/api/user/set-settings', setUserSettings);
 
 main.post('/api/user/set-pfp', setPfp);
 
@@ -107,6 +108,16 @@ main.post('/api/chat/get-message', getMessage);
 main.post('/api/chat/get-last-messages', getLastMessages);
 
 main.post('/api/chat/send-message', sendMessage);
+
+// settings
+
+main.post('/api/chat/get-settings', getChatSettings);
+
+main.post('/api/chat/generate-token', generateChatToken)
+
+main.post('/api/chat/set-settings', setChatSettings);
+
+main.post('/api/chat/set-chat-logo', setChatLogo);
 
 //// server ////
 
@@ -145,6 +156,10 @@ main.get('/settings', (req: Request, res: Response): void => {
 
 main.get('/create-chat', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/create-chat.html'));
+});
+
+main.get('/chat-settings', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/chat-settings.html'));
 });
 
 main.get('/', (req: Request, res: Response): void => {

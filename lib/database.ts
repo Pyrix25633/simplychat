@@ -1,8 +1,7 @@
-import path from 'path';
-import * as fs from 'fs';
 import mysql, {Connection, MysqlError, queryCallback} from 'mysql';
 import { RegisterRequest } from './types/api/user';
 import { getTimestamp, twoWeeksTimestamp } from './timestamp';
+import { settings } from './settings';
 
 process.on('uncaughtException', (exc: Error) => {
     connection.end((err?: MysqlError): void => {
@@ -15,12 +14,7 @@ process.on('uncaughtException', (exc: Error) => {
     throw exc;
 });
 
-const connection: Connection = mysql.createConnection({
-    host: '127.0.0.1',
-    user: 'root',
-    password: fs.readFileSync(path.resolve(__dirname, '../passwords/database.txt')).toString(),
-    database: 'simplychat'
-});
+const connection: Connection = mysql.createConnection(settings.mysqlConnection);
 
 connection.connect((err: MysqlError): void => {
     if(err) {
@@ -108,8 +102,7 @@ export function updateUserToken(id: number, token: string, tokenDuration: number
 }
 
 export function updateUserPfpType(id: number, pfpType: string): void {
-    query('UPDATE users SET pfp_type=? WHERE id=?;', [pfpType, id],
-        logError);
+    query('UPDATE users SET pfp_type=? WHERE id=?;', [pfpType, id], logError);
 }
 
 export function updateUser(id: number, username: string, email: string, passwordHash: string, tokenDuration: number, tfaKey: string | null, status: string, settings: {}): void {
@@ -124,6 +117,8 @@ export function updateUserOnline(id: number, online: boolean, lastOnline: number
         query('UPDATE users SET online=false, last_online=? WHERE id=?;', [lastOnline, id], logError);
 }
 
+// chat //
+
 export function createChat(userId: number, name: string, description: string, token: string, callback: (err: MysqlError | null, id: number | null) => void) {
     query('SELECT next_id FROM ids WHERE table_name="chats";', [], (err: MysqlError | null, results: any): void => {
         if(err) {
@@ -131,16 +126,16 @@ export function createChat(userId: number, name: string, description: string, to
             return;
         }
         const id = results[0].next_id;
-        query('INSERT INTO chats VALUES (?, ?, ?, ?, ?, ?);',
-            [id, name, '{"' + userId + '": {"permissionLevel": 0}}', description, token, 'svg'],
+        query('INSERT INTO chats VALUES (?, ?, ?, ?, ?, ?, ?);',
+            [id, name, '{"' + userId + '": {"permissionLevel": 0}}', description, token, null, 'svg'],
             (err: MysqlError | null): void => {
                 if(err) {
                     callback(err, null);
                     return;
                 }
                 callback(null, id);
-                query('UPDATE users SET chats=(SELECT JSON_SET(temp.chats, \'$."?"\', CAST(? AS JSON)) FROM (SELECT chats FROM users WHERE id=?) AS temp) WHERE id=?;',
-                    [id, '{"lastReadMessageId":-1}', userId, userId], logError);
+                query('UPDATE users SET chats=JSON_SET(chats, \'$."?"\', ?) WHERE id=?;',
+                    [id, '{"lastReadMessageId":-1}', userId], logError);
                 query('CREATE TABLE chat' + id + ' (' +
                     'id INT NOT NULL,' +
                     'timestamp INT NOT NULL,' +
@@ -185,4 +180,22 @@ export function insertMessage(id: number, userId: number, message: string, callb
                 query('UPDATE ids SET next_id=? WHERE table_name="chat?";', [messageId + 1, id], logError);
             });
     });
+}
+
+export function updateChatLogoType(id: number, chatLogoType: string): void {
+    query('UPDATE chats SET chat_logo_type=? WHERE id=?;', [chatLogoType, id], logError);
+}
+
+export function updateChatSettings(id: number, name: string, description: string, token: string, tokenExpiration: number): void {
+    query('UPDATE chats SET name=?, description=?, token=?, token_expiration=? WHERE id=?;',
+        [name, description, token, tokenExpiration, id], logError);
+}
+
+export function removeUserFromChat(id: number, userId: number) {
+    query('UPDATE chats SET users=JSON_REMOVE(users, \'$."?"\') WHERE id=?', [userId, id], logError);
+    query('UPDATE users SET chats=JSON_REMOVE(chats, \'$."?"\') WHERE id=?', [id, userId], logError);
+}
+
+export function updateChatUser(id: number, userId: number, permissionLevel: number) {
+    query('UPDATE chats SET users=JSON_SET(users, \'$."?"."permissionLevel"\', ?) WHERE id=?;', [userId, permissionLevel, id], logError);
 }

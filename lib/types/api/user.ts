@@ -153,9 +153,9 @@ export function isUserInfoRequestValid(req: UserInfoRequest): boolean {
 
 // get-settings
 
-export type GetSettingsRequest = TokenIdObject;
+export type GetUserSettingsRequest = TokenIdObject;
 
-export function isGetSettingsRequestValid(req: GetSettingsRequest): boolean {
+export function isGetUserSettingsRequestValid(req: GetUserSettingsRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number';
@@ -163,7 +163,7 @@ export function isGetSettingsRequestValid(req: GetSettingsRequest): boolean {
 
 // set-settigns
 
-export type SetSettingsRequest = {
+export type SetUserSettingsRequest = {
     id: number,
     token: string,
     username: string,
@@ -182,7 +182,7 @@ export type SetSettingsRequest = {
     }
 };
 
-export function isSetSettingsRequestValid(req: SetSettingsRequest): boolean {
+export function isSetUserSettingsRequestValid(req: SetUserSettingsRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number'
@@ -210,15 +210,12 @@ export function isSetSettingsRequestValid(req: SetSettingsRequest): boolean {
 export type SetPfpRequest = {
     token: string,
     id: number,
-    pfp: string,
-    pfpType: string
+    pfp: string
 };
 
 export function isSetPfpRequestValid(req: SetPfpRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number'
-        && req.pfp != undefined && typeof req.pfp == 'string'
-        && req.pfpType != undefined && typeof req.pfpType == 'string'
-        && req.pfpType.length < 6;
+        && req.pfp != undefined && typeof req.pfp == 'string';
 }

@@ -2,17 +2,18 @@ import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
 import imageSize from 'image-size';
 import * as fs from 'fs';
-import { GetSettingsRequest, SetPfpRequest, SetSettingsRequest, isGetSettingsRequestValid, isSetPfpRequestValid, isSetSettingsRequestValid } from '../../types/api/user';
+import { GetUserSettingsRequest, SetPfpRequest, SetUserSettingsRequest, isGetUserSettingsRequestValid, isSetPfpRequestValid, isSetUserSettingsRequestValid } from '../../types/api/user';
 import { validateTokenAndProceed } from './authentication';
 import { selectFromEmail, selectFromUsername, updateUser, updateUserPfpType, updateUserToken } from '../../database';
 import { createUserToken } from '../../hash';
 import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 import { sendEmail } from '../../email';
 import { notifyAllRelatedUsers } from '../../socket';
+import { settings } from '../../settings';
 
-export function getSettings(req: Request, res: Response): void {
-    const request: GetSettingsRequest = req.body;
-    if(!isGetSettingsRequestValid(request)) {
+export function getUserSettings(req: Request, res: Response): void {
+    const request: GetUserSettingsRequest = req.body;
+    if(!isGetUserSettingsRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
@@ -30,9 +31,9 @@ export function getSettings(req: Request, res: Response): void {
     });
 }
 
-export function setSettings(req: Request, res: Response): void {
-    const request: SetSettingsRequest = req.body;
-    if(!isSetSettingsRequestValid(request)) {
+export function setUserSettings(req: Request, res: Response): void {
+    const request: SetUserSettingsRequest = req.body;
+    if(!isSetUserSettingsRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
@@ -102,7 +103,8 @@ export function setSettings(req: Request, res: Response): void {
                     'If it was you, you don\'t need to do anything. If not, you should take action.\n' +
                     'User-agent: ' + req.headers['user-agent'] + '\nIP address: ' + req.ip
             });
-            notifyAllRelatedUsers(user.id, 'user-settings', {id: user.id}, true);
+            if(settings.dynamicUpdates['user-settings'])
+                notifyAllRelatedUsers(user.id, 'user-settings', {id: user.id}, true);
         }
     });
 }
@@ -114,28 +116,24 @@ export function setPfp(req: Request, res: Response): void {
         return;
     }
     validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
-        if(request.pfpType != 'svg' && request.pfpType != 'png' && request.pfpType != 'jpg' &&
-            request.pfpType != 'jpeg' && request.pfpType != 'gif') {
+        const match = /^data:image\/(?:(?:(\S+)\+\S+)|(\S+));base64,(\S*)$/.exec(request.pfp);
+        if(match == null || !(match[1] == 'svg' || match[2] == 'png' || match[2] == 'jpeg' || match[2] == 'gif')) {
             res.status(400).send('Bad Request');
             return;
         }
-        const base64: string | undefined = request.pfp.split(';base64,').pop();
-        if(request.pfp.substring(0, 11) != 'data:image/' || base64 == undefined) {
-            res.status(400).send('Bad Request');
-            return;
-        }
-        const dimensions: ISizeCalculationResult = imageSize(Buffer.from(base64, 'base64'));
+        const dimensions: ISizeCalculationResult = imageSize(Buffer.from(match[3], 'base64'));
         if(dimensions.width != dimensions.height || dimensions.width == undefined || dimensions.width < 512 || dimensions.width > 2048) {
             res.status(400).send('Bad Request');
             return;
         }
-        fs.writeFile('./pfps/' + user.id + '.' + request.pfpType, base64, {encoding: 'base64'}, function(err) {
+        const pfpType = match[1] == undefined ? match[2] : match[1];
+        fs.writeFile('./pfps/' + user.id + '.' + pfpType, match[3], {encoding: 'base64'}, function(err) {
             if(err) {
                 res.status(500).send('Internal Server Error');
                 return;
             }
-            updateUserPfpType(user.id, request.pfpType);
-            if(user.pfp_type != request.pfpType) {
+            updateUserPfpType(user.id, pfpType);
+            if(user.pfp_type != pfpType) {
                 fs.unlink('./pfps/' + user.id + '.' + user.pfp_type, (err) => {
                     if(err) res.status(500).send('Internal Server Error');
                     else res.status(200).send('OK');

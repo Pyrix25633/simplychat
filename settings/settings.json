@@ -1,0 +1,22 @@
+{
+    "mysqlConnection": {
+        "host": "127.0.0.1",
+        "user": "root",
+        "password": "CT-2722@Admin25633",
+        "database": "simplychat"
+    },
+    "nodemailerTransport": {
+        "host": "smtp.zoho.eu",
+        "port": 465,
+        "secure": true,
+        "auth": {
+            "user": "simplychat@zohomail.eu",
+            "pass": "CT-2722@25633"
+        }
+    },
+    "dynamicUpdates": {
+        "message-new": true,
+        "user-online": true,
+        "user-settings": true
+    }
+}

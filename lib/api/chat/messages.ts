@@ -3,8 +3,8 @@ import { MysqlError } from 'mysql';
 import { insertMessage, selectLastMessages, selectMessage } from "../../database";
 import { GetLastMessagesRequest, GetMessageRequest, SendMessageRequest, isGetLastMessagesRequestValid, isGetMessageRequestValid, isSendMessageRequestValid } from "../../types/api/chat";
 import { validatePermissionLevelAndProceed } from './management';
-import { Socket } from 'socket.io';
 import { notifyAllUsersInChat } from '../../socket';
+import { settings } from '../../settings';
 
 
 export function getMessage(req: Request, res: Response): void {
@@ -80,7 +80,8 @@ export function sendMessage(req: Request, res: Response): void {
                 return;
             }
             res.status(201).send('Created');
-            notifyAllUsersInChat(chat, 'new-message', {id: id});
+            if(settings.dynamicUpdates['message-new'])
+                notifyAllUsersInChat(chat, 'message-new', {id: id});
         });
     });
 }

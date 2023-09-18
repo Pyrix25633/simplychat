@@ -44,6 +44,7 @@ CREATE TABLE chats (
     users JSON NOT NULL,
     description VARCHAR(128) NOT NULL,
     token CHAR(128) NOT NULL,
+    token_expiration INT NULL,
     chat_logo_type VARCHAR(5) NOT NULL,
     PRIMARY KEY (id)
 );

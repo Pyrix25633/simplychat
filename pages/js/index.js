@@ -35,7 +35,7 @@ const socket = io();
 socket.on('connect', () => {
     socket.emit('connect-user', cachedLogin);
 });
-socket.on('new-message', (data) => {
+socket.on('message-new', (data) => {
     if(data.chatId == chatsCache[selectedChat].id) {
         $.ajax({
             url: '/api/chat/get-message',
@@ -50,19 +50,6 @@ socket.on('new-message', (data) => {
             success: addMessage,
             statusCode: statusCodeActions
         });
-    }
-});
-socket.on('user-online', (data) => {
-    const lastOnlineSpan = document.getElementById('last-online-' + data.id);
-    const onlineDiv = document.getElementById('online-' + data.id);
-    if(data.online) {
-        onlineDiv.classList.replace('offline', 'online');
-        lastOnlineSpan.style.display = 'none';
-    }
-    else {
-        onlineDiv.classList.replace('online', 'offline');
-        setReadableDate(lastOnlineSpan, data.lastOnline, 'Last online: $');
-        lastOnlineSpan.style.display = '';
     }
 });
 socket.on('user-online', (data) => {
@@ -244,12 +231,12 @@ function setChatInfo(chat, selected) {
                 {transform: 'scale(1.4)'},
                 {transform: 'scale(1)'}
             ], {duration: 250});
-            console.log(chat.id);
+            window.location.href = '/chat-settings?id=' + chat.id;
         });
     }
     const markAsReadImg = document.createElement('img');
     markAsReadImg.classList.add('button');
-    markAsReadImg.src = './img/mark_as_read.svg';
+    markAsReadImg.src = './img/mark-as-read.svg';
     chatSettingsDiv.appendChild(markAsReadImg);
     markAsReadImg.addEventListener('click', () => {
         markAsReadImg.animate([
@@ -312,6 +299,7 @@ function loadChatUsers(selected, callback) {
                 if(usersCacheArray.length == ids.length) {
                     usersCacheArray.sort((a, b) => {
                         if(a.id == cachedLogin.id) return -1;
+                        if(b.id == cachedLogin.id) return 1;
                         const p = a.permissionLevel - b.permissionLevel;
                         if(p == 0)
                             return b.lastOnline - a.lastOnline;
@@ -368,6 +356,10 @@ function setChatUser(user, selected) {
         settingsImg.classList.add('button');
         settingsImg.src = './img/settings.svg';
         userSettingsDiv.appendChild(settingsImg);
+        const createChatImg = document.createElement('img');
+        createChatImg.classList.add('button');
+        createChatImg.src = './img/create-chat.svg';
+        userSettingsDiv.appendChild(createChatImg);
         settingsImg.addEventListener('click', () => {
             settingsImg.animate([
                 {transform: 'scale(0.6)'},
@@ -375,6 +367,14 @@ function setChatUser(user, selected) {
                 {transform: 'scale(1)'}
             ], {duration: 250});
             window.location.href = '/settings';
+        });
+        createChatImg.addEventListener('click', () => {
+            createChatImg.animate([
+                {transform: 'scale(0.6)'},
+                {transform: 'scale(1.4)'},
+                {transform: 'scale(1)'}
+            ], {duration: 250});
+            window.location.href = '/create-chat';
         });
     }
     else {
@@ -440,13 +440,19 @@ function setReadableDate(element, timestamp, text) {
         }
         readableDate += ' ago';
         element.innerText = text.replace('$', readableDate);
-        if(element.timer != undefined) clearInterval(element.timer);
-        element.timer = setInterval(() => {
+        if(element.timer != undefined) {
             clearInterval(element.timer);
+            element.timer = undefined;
+        }
+        element.timer = setInterval(() => {
             setReadableDate(element, timestamp, text);
         }, delay);
     }
     else {
+        if(element.timer != undefined) {
+            clearInterval(element.timer);
+            element.timer = undefined;
+        }
         element.innerText = new Date(timestamp).toLocaleString();
     }
 }
@@ -497,9 +503,10 @@ function createMessageDiv(message) {
     const userDiv = document.createElement('div');
     userDiv.classList.add('container', 'message-data');
     const pfpImg = document.createElement('img');
-    pfpImg.classList.add('message-pfp', 'pfp-' + user.id);
+    pfpImg.classList.add('message-pfp');
     userDiv.appendChild(pfpImg);
     const usernameSpan = document.createElement('span');
+    usernameSpan.classList.add('message-username');
     userDiv.appendChild(usernameSpan);
     const datetimeSpan = document.createElement('span');
     datetimeSpan.classList.add('message-meta');
@@ -528,7 +535,7 @@ function createMessageDiv(message) {
             contentType: 'application/json',
             success: (res) => {
                 pfpImg.src = './pfps/' + res.id + '.' + res.pfpType;
-                usernameSpan.classList.add('message-username', 'username-' + res.id, 'permission-level-removed');
+                usernameSpan.classList.add('permission-level-removed');
                 usernameSpan.innerText = res.username;
             },
             statusCode: statusCodeActions
@@ -536,7 +543,8 @@ function createMessageDiv(message) {
     }
     else {
         pfpImg.src = './pfps/' + user.id + '.' + user.pfpType;
-        usernameSpan.classList.add('message-username', 'username-' + user.id,
+        pfpImg.classList.add('pfp-' + user.id);
+        usernameSpan.classList.add('username-' + user.id,
             'permission-level-' + chatsCache[selectedChat].users[user.id.toString()].permissionLevel);
         usernameSpan.innerText = user.username;
     }
@@ -556,11 +564,19 @@ function onMessageTextareaUpdate(e) {
     if(lines > 6) lines = 6;
     else if(lines < 2) lines = 2;
     messageTextarea.rows = lines;
-    if(e != null)
-        console.log(e.keyCode == 13 && e.shiftKey && e.type == 'keydown', e);
+    if(e != null) {
+        if(e.keyCode == 13 && !e.shiftKey) {
+            if(e.type == 'keydown')
+                sendMessage();
+            else
+                messageTextarea.value = '';
+        }
+    }
 }
 
-sendImg.addEventListener('click', () => {
+sendImg.addEventListener('click', sendMessage);
+
+function sendMessage() {
     const capture = /^\s*(.*\S)\s*$/.exec(messageTextarea.value);
     const message = capture == null ? '' : capture[1];
     const chars = new Blob([message]).size;
@@ -589,7 +605,7 @@ sendImg.addEventListener('click', () => {
         },
         statusCode: statusCodeActions
     });
-});
+}
 
 emojiImg.addEventListener('click', () => {
     emojiImg.animate([

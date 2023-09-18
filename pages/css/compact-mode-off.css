@@ -106,3 +106,7 @@ div#emoji-selector {
     gap: 5px;
     padding: 5px;
 }
+
+div.user-options {
+    margin-left: 5px;
+}

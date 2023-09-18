@@ -1,19 +1,11 @@
 import path from 'path';
-import * as fs from 'fs';
 import nodemailer from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
+import { settings } from './settings';
 
-const email: string = 'simplychat@zohomail.eu';
+const email: string = settings.nodemailerTransport.auth.user;
 
-const transporter: nodemailer.Transporter = nodemailer.createTransport({
-    host: 'smtp.zoho.eu',
-    port: 465,
-    secure: true,
-    auth: {
-        user: email,
-        pass: fs.readFileSync(path.resolve(__dirname, '../passwords/email.txt')).toString()
-    }
-});
+const transporter: nodemailer.Transporter = nodemailer.createTransport(settings.nodemailerTransport);
 
 export function sendEmail(mailOptions: Mail.Options, callback?: (err: Error | null) => void): void {
     if(callback == undefined) callback = (err: Error | null) => {if(err) console.log(err)};

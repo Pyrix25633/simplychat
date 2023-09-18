@@ -1,0 +1,69 @@
+:root {
+    --color-permission-level-0: #FF4A40;
+    --color-permission-level-1: #FECF15;
+    --color-permission-level-2: #DDDDDD;
+    --color-permission-level-3: #b913fb;
+}
+
+img#chat-logo {
+    height: 100px;
+    background-color: var(--color-lighter);
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+img#change-chat-logo {
+    position: absolute;
+    bottom: 5px;
+    right: 0;
+    height: 30px;
+    background-color: var(--color-simplychat);
+}
+
+input#new-chat-logo {
+    display: none;
+}
+
+div.relative {
+    position: relative;
+}
+
+div#users {
+    max-height: 500px;
+    overflow-y: scroll;
+}
+div#users::-webkit-scrollbar-track, div#users::-webkit-scrollbar, div#users::-webkit-scrollbar-thumb {
+    display: none;
+}
+
+div.user {
+    background-color: var(--color-background);
+}
+
+img.pfp {
+    height: 25px;
+}
+
+span.username {
+    font-size: 20px;
+    width: 200px;
+    overflow: hidden;
+}
+
+span.permission-level-0 {
+    color: var(--color-permission-level-0);
+}
+span.permission-level-1 {
+    color: var(--color-permission-level-1);
+}
+span.permission-level-2 {
+    color: var(--color-permission-level-2);
+}
+span.permission-level-3 {
+    color: var(--color-permission-level-3);
+}
+
+div.user-options {
+    width: 82px;
+    margin-top: 0 !important;
+}

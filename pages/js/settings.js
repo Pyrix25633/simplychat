@@ -132,25 +132,24 @@ changePfpImage.addEventListener('click', () => {
 });
 
 newPfpInput.addEventListener('change', () => {
-    const pfpType = newPfpInput.value.split('.').pop();
     pfpFeedbackSpan.classList.add('error');
     function invalidType() {
         pfpFeedbackSpan.innerText = 'Profile Picture type must be SVG, PNG, JPG, JPEG or GIF!';
         pfpFeedbackSpan.classList.replace('success', 'error');
     }
-    if(pfpType != 'svg' && pfpType != 'png' && pfpType != 'jpg' && pfpType != 'jpeg' && pfpType != 'gif') {
-        invalidType();
-        return;
-    }
     const image = new Image();
     image.onload = () => {
+        const match = /^data:image\/(?:(?:(\S+)\+\S+)|(\S+));base64,(\S*)$/.exec(image.src);
+        if(!(match[1] == 'svg' || match[2] == 'png' || match[2] == 'jpeg' || match[2] == 'gif')) {
+            invalidType();
+            return;
+        }
         if(image.width == image.height) {
             if(image.width >= 512 && image.width <= 2048) {
                 pfpFeedbackSpan.innerText = 'Valid Profile Picture';
                 pfpFeedbackSpan.classList.replace('error', 'success');
                 pfpImage.src = image.src;
                 continueButton.disabled = !(validUsername && validEmail && validStatus && validPassword && validTokenDuration && validTfaCode);
-                settings.pfpType = pfpType;
                 settings.pfp = pfpImage.src;
             }
             else {
@@ -564,16 +563,16 @@ sharpModeDiv.addEventListener('click', () => {
 let oldPasswordTimer;
 oldPasswordInput.addEventListener('keyup', () => {
     clearTimeout(oldPasswordTimer);
-    oldPasswordTimer = setTimeout(passwordTyped, 1000);
+    oldPasswordTimer = setTimeout(oldPasswordTyped, 1000);
 });
 oldPasswordInput.addEventListener('keydown', () => {
     clearTimeout(oldPasswordTimer);
 });
 oldPasswordInput.addEventListener('focusout', () => {
     clearTimeout(oldPasswordTimer);
-    passwordTyped();
+    oldPasswordTyped();
 });
-function passwordTyped() {
+function oldPasswordTyped() {
     oldPasswordFeedbackSpan.classList.add('error');
     if(oldPasswordInput.value.length < 4) {
         oldPasswordFeedbackSpan.innerText = 'Password too short!'
@@ -683,8 +682,7 @@ saveButton.addEventListener('click', async () => {
             data: JSON.stringify({
                 token: cachedLogin.token,
                 id: cachedLogin.id,
-                pfp: settings.pfp,
-                pfpType: settings.pfpType
+                pfp: settings.pfp
             }),
             contentType: 'application/json',
             success: waitAndRefresh,

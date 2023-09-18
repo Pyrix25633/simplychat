@@ -12,6 +12,13 @@ export function create(req: Request, res: Response): void {
         res.status(400).send('Bad Request');
         return;
     }
+    for(let i = 0; i < request.name.length; i++) {
+        const c = request.name.codePointAt(i);
+        if(c == undefined || !((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == 45 || c == 95 || c == 32))) {
+            res.status(400).send('Bad Request');
+            return;
+        }
+    }
     validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
         createChat(user.id, request.name, request.description, createChatToken(request.name, user.id), (err: MysqlError | null, id: number | null): void => {
             if(err || id == null) {
@@ -33,8 +40,8 @@ export function validatePermissionLevelAndProceed(id: number, token: string, cha
                 return;
             }
             const chat = results[0];
-            const users = JSON.parse(chat.users);
-            if(users[id.toString()].permissionLevel <= permissionLevel) {
+            const chatUser = JSON.parse(chat.users)[id.toString()];
+            if(chatUser != undefined && chatUser.permissionLevel <= permissionLevel) {
                 callback(user, chat);
                 return;
             }

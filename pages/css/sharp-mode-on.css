@@ -5,7 +5,7 @@ button, input {
 img.rounded {
     border-radius: 0;
 }
-img#pfp, img#change-pfp, img.chat-logo, img.pfp, img#chat-logo {
+img#pfp, img#change-pfp, img.chat-logo, img.pfp, img#chat-logo, img#change-chat-logo {
     border-radius: 0;
 }
 
