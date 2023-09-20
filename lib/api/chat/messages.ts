@@ -71,8 +71,11 @@ export function sendMessage(req: Request, res: Response): void {
         return;
     }
     validatePermissionLevelAndProceed(request.id, request.token, request.chatId, 2, res, (user, chat) => {
-        const capture = /^\s*(.*\S)\s*$/.exec(request.message);
-        const message = capture == null ? '' : capture[1];
+        const expr = /^\s*(.*\S)\s*$/gm;
+        let message = '';
+        for(let match = expr.exec(request.message); match != null; match = expr.exec(request.message))
+            message += match[1] + '\n';
+        message.replace('\n', '');
         insertMessage(request.chatId, request.id, message, (err: MysqlError | null, id?: number): void => {
             if(err) {
                 res.status(500).send('Internal Server Error');

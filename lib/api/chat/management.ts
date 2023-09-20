@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { createChat, selectChat } from "../../database";
+import { addUserToChat, createChat, insertMessage, selectChat } from "../../database";
 import { createChatToken } from "../../hash";
 import { generateRandomChatLogo } from "../../random-image";
-import { CreateRequest, isCreateRequestValid } from "../../types/api/chat";
+import { CreateRequest, JoinChatRequest, isCreateRequestValid, isJoinChatRequestValid } from "../../types/api/chat";
 import { validateTokenAndProceed } from "../user/authentication";
+import { settings } from '../../settings';
+import { notifyAllUsersInChat } from '../../socket';
+import { getTimestamp } from '../../timestamp';
 
 export function create(req: Request, res: Response): void {
     const request: CreateRequest = req.body;
@@ -31,12 +34,56 @@ export function create(req: Request, res: Response): void {
     });
 }
 
+export function join(req: Request, res: Response): void {
+    const request: JoinChatRequest = req.body;
+    if(!isJoinChatRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
+        selectChat(request.chatId, (err: MysqlError | null, results?: any): void => {
+            if(err) {
+                res.status(500).send('Internal Server Error');
+                console.log(err);
+                return;
+            }
+            if(results.length == 0) {
+                res.status(404).send('Not Found');
+                return;
+            }
+            const chat = results[0];
+            const chatUser = JSON.parse(chat.users)[request.id.toString()];
+            if(chatUser != undefined || (chat.token != request.chatToken || (chat.token_expiration != null && chat.token_expiration < getTimestamp()))) {
+                res.status(403).send('Forbidden');
+                return;
+            }
+            addUserToChat(request.chatId, request.id);
+            insertMessage(request.chatId, 0, 'Welcome @' + request.id + '!', (err: MysqlError | null, id?: number): void => {
+                if(err) {
+                    res.status(500).send('Internal Server Error');
+                    console.log(err);
+                    return;
+                }
+                if(settings.dynamicUpdates['message-new'])
+                    notifyAllUsersInChat(chat, 'message-new', {id: id});
+            });
+            if(settings.dynamicUpdates['user-join'])
+                notifyAllUsersInChat(chat, 'user-join', {chatId: chat.id, id: request.id})
+            res.status(200).send('OK');
+        });
+    });
+}
+
 export function validatePermissionLevelAndProceed(id: number, token: string, chatId: number, permissionLevel: number, res: Response, callback: (user: any, chat: any) => void) {
     validateTokenAndProceed(id, token, res, (user) => {
         selectChat(chatId, (err: MysqlError | null, results: any): void => {
-            if(err || results.length == 0) {
+            if(err) {
                 res.status(500).send('Internal Server Error');
                 console.log(err);
+                return;
+            }
+            if(results.length == 0) {
+                res.status(404).send('Not Found');
                 return;
             }
             const chat = results[0];

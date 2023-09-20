@@ -9,7 +9,7 @@ export const sockets: Map<string, Socket[]> = new Map<string, Socket[]>();
 export function onConnect(socket: Socket): void {
     socket.once('connect-user', (user: {id: number, token: string}): void => {
         selectUserToken(user.id, (err : MysqlError | null, results: any) => {
-            if(err || results[0].token != user.token || results[0].token_expiration < getTimestamp()) {
+            if(err || results.length == 0 || results[0].token != user.token || results[0].token_expiration < getTimestamp()) {
                 socket.disconnect(true);
                 return;
             }

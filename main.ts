@@ -10,14 +10,16 @@ import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeed
 import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, verifyTfaCode } from './lib/api/user/authentication';
 import { userInfo } from './lib/api/user/info';
 import { getUserSettings, setPfp, setUserSettings } from './lib/api/user/settings';
-import { create } from './lib/api/chat/management';
-import { chatInfo, list } from './lib/api/chat/info';
+import { create, join } from './lib/api/chat/management';
+import { chatInfo, chatJoinInfo, list } from './lib/api/chat/info';
 import { getLastMessages, getMessage, sendMessage } from './lib/api/chat/messages';
 import { onConnect } from './lib/socket';
 import { generateChatToken, getChatSettings, setChatLogo, setChatSettings } from './lib/api/chat/settings';
+import { runTests } from './test/test';
+import { settings } from './lib/settings';
 
 const main: Express = express();
-const port: number = 4443;
+export const port: number = 4443;
 
 main.set('trust proxy', true)
 main.use(bodyParser.urlencoded({extended: true}));
@@ -95,11 +97,15 @@ main.post('/api/user/set-pfp', setPfp);
 
 main.post('/api/chat/create', create);
 
+main.post('/api/chat/join', join);
+
 // info
 
 main.post('/api/chat/list', list);
 
 main.post('/api/chat/info', chatInfo);
+
+main.post('/api/chat/join-info', chatJoinInfo)
 
 // messages
 
@@ -122,8 +128,9 @@ main.post('/api/chat/set-chat-logo', setChatLogo);
 //// server ////
 
 const options = {
-    key: fs.readFileSync(path.resolve(__dirname, './certs/privateKey.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, './certs/certificate.pem'))
+    key: fs.readFileSync(path.resolve(__dirname, settings.https.key)),
+    cert: fs.readFileSync(path.resolve(__dirname, settings.https.cert)),
+    passphrase: settings.https.passphrase
 };
 export const server = https.createServer(options, main);
 server.listen(port, () => {
@@ -162,6 +169,15 @@ main.get('/chat-settings', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/chat-settings.html'));
 });
 
+main.get('/join-chat', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/join-chat.html'));
+});
+
 main.get('/', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/index.html'));
 });
+
+//// test ////
+
+if(settings.tests.run)
+    runTests();

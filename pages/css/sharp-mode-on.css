@@ -1,41 +1,45 @@
+div.navbar {
+    border-radius: 4px;
+}
+
 button, input {
-    border-radius: 0;
+    border-radius: 2px;
 }
 
 img.rounded {
-    border-radius: 0;
+    border-radius: 5%;
 }
 img#pfp, img#change-pfp, img.chat-logo, img.pfp, img#chat-logo, img#change-chat-logo {
-    border-radius: 0;
+    border-radius: 20%;
 }
 
 div.panel {
-    border-radius: 0;
+    border-radius: 10px;
 }
 
 div.slider {
-    border-radius: 0;
+    border-radius: 5px;
 }
 div.slider div.slider-circle {
-    border-radius: 0;
+    border-radius: 10%;
 }
 
-div.chat, div.user {
-    border-radius: 0;
+div.chat, div.user, div.dpl {
+    border-radius: 4px;
 }
 
 textarea {
-    border-radius: 0;
+    border-radius: 2px;
 }
 
 img.message-pfp {
-    border-radius: 0;
+    border-radius: 20%;
 }
 
 span.message-text {
-    border-radius: 0;
+    border-radius: 4px;
 }
 
 div#emoji-selector {
-    border-radius: 0;
+    border-radius: 2px;
 }

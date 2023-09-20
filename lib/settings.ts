@@ -2,6 +2,13 @@ import path from 'path';
 import * as fs from 'fs';
 
 export const settings: {
+    https: {
+        cert: string,
+        key: string,
+        passphrase: string,
+        suppressRejectUnauthorized: boolean,
+        hostname: string
+    }
     mysqlConnection: {
         host: string,
         user: string,
@@ -18,8 +25,20 @@ export const settings: {
         }
     },
     dynamicUpdates: {
-        'message-new': boolean,
         'user-online': boolean,
-        'user-settings': boolean
+        'user-settings': boolean,
+        'message-new': boolean,
+        'chat-settings': boolean,
+        'user-join': boolean
+    },
+    tests: {
+        run: boolean,
+        static: boolean,
+        pages: boolean,
+        api: {
+            user: boolean,
+            chat: boolean
+        },
+        database: string
     }
 } = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../settings/settings.json')).toString());

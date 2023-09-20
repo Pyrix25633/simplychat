@@ -126,9 +126,7 @@ function showSettings(res) {
 }
 
 changePfpImage.addEventListener('click', () => {
-    var evt = document.createEvent("MouseEvents");
-    evt.initEvent("click", true, false);
-    newPfpInput.dispatchEvent(evt);
+    newPfpInput.click();
 });
 
 newPfpInput.addEventListener('change', () => {
@@ -140,12 +138,13 @@ newPfpInput.addEventListener('change', () => {
     const image = new Image();
     image.onload = () => {
         const match = /^data:image\/(?:(?:(\S+)\+\S+)|(\S+));base64,(\S*)$/.exec(image.src);
-        if(!(match[1] == 'svg' || match[2] == 'png' || match[2] == 'jpeg' || match[2] == 'gif')) {
+        const pfpType = match[1] == undefined ? match[2] : match[1];
+        if(!(pfpType == 'svg' || pfpType == 'png' || pfpType == 'jpeg' || pfpType == 'gif')) {
             invalidType();
             return;
         }
         if(image.width == image.height) {
-            if(image.width >= 512 && image.width <= 2048) {
+            if(((pfpType == 'svg' && image.width >= 8) || (pfpType != 'svg' && image.width >= 64)) && image.width <= 2048) {
                 pfpFeedbackSpan.innerText = 'Valid Profile Picture';
                 pfpFeedbackSpan.classList.replace('error', 'success');
                 pfpImage.src = image.src;
@@ -153,7 +152,7 @@ newPfpInput.addEventListener('change', () => {
                 settings.pfp = pfpImage.src;
             }
             else {
-                pfpFeedbackSpan.innerText = 'Profile Picture resolution must be between 512x512 and 2048x2048!';
+                pfpFeedbackSpan.innerText = 'Profile Picture resolution must be between 8x8 (svg) or 64x64 (others) and 2048x2048!';
                 pfpFeedbackSpan.classList.replace('success', 'error');
             }
         } else {

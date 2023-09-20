@@ -122,11 +122,12 @@ export function setPfp(req: Request, res: Response): void {
             return;
         }
         const dimensions: ISizeCalculationResult = imageSize(Buffer.from(match[3], 'base64'));
-        if(dimensions.width != dimensions.height || dimensions.width == undefined || dimensions.width < 512 || dimensions.width > 2048) {
+        const pfpType = match[1] == undefined ? match[2] : match[1];
+        if(dimensions.width != dimensions.height || dimensions.width == undefined || dimensions.width > 2048 ||
+            (pfpType == 'svg' && dimensions.width < 8) || (pfpType != 'svg' && dimensions.width < 64)) {
             res.status(400).send('Bad Request');
             return;
         }
-        const pfpType = match[1] == undefined ? match[2] : match[1];
         fs.writeFile('./pfps/' + user.id + '.' + pfpType, match[3], {encoding: 'base64'}, function(err) {
             if(err) {
                 res.status(500).send('Internal Server Error');

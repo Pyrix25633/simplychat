@@ -45,6 +45,7 @@ CREATE TABLE chats (
     description VARCHAR(128) NOT NULL,
     token CHAR(128) NOT NULL,
     token_expiration INT NULL,
+    default_permission_level INT NOT NULL,
     chat_logo_type VARCHAR(5) NOT NULL,
     PRIMARY KEY (id)
 );

@@ -1,15 +1,5 @@
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
 nav#navbar {
     position: absolute !important;
-    background-color: #00000000;
-    justify-content: center;
-    margin-top: 20px;
 }
 
 label {

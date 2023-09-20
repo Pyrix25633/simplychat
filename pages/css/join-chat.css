@@ -1,0 +1,23 @@
+nav#navbar {
+    position: absolute !important;
+}
+
+img#chat-logo {
+    width: 100px;
+}
+
+h3#name, span#description {
+    max-width: 500px;
+    overflow: hidden;
+}
+span#description {
+    margin-top: 0;
+}
+
+span {
+    text-align: center;
+}
+
+div.container:not(:first-child) {
+    margin-top: 10px;
+}

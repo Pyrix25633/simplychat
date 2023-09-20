@@ -63,7 +63,20 @@ span.permission-level-3 {
     color: var(--color-permission-level-3);
 }
 
+div.dpl {
+    background-color: var(--color-background);
+}
+div.dpl-options {
+    width: 60px;
+    margin-top: 0 !important;
+}
+span#dpl {
+    font-size: 20px;
+    width: 150px;
+    margin-left: 5px;
+}
+
 div.user-options {
-    width: 82px;
+    width: 85px;
     margin-top: 0 !important;
 }

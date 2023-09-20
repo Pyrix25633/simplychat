@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { getTimestamp } from './timestamp';
 
-function SHA512Hash(data: string): string {
+export function SHA512Hash(data: string): string {
     const hash = crypto.createHash('sha512');
     hash.update(data);
     return hash.digest('hex');

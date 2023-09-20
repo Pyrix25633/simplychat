@@ -1,16 +1,14 @@
 import { Request, Response } from 'express';
-import { MysqlError } from 'mysql';
 import imageSize from 'image-size';
 import * as fs from 'fs';
-import { SetPfpRequest, isRegenerateTokenRequestValid, isSetPfpRequestValid } from '../../types/api/user';
-import { removeUserFromChat, selectFromEmail, selectFromUsername, updateChatLogoType, updateChatSettings, updateChatUser, updateUser, updateUserPfpType, updateUserToken } from '../../database';
-import { createChatToken, createUserToken } from '../../hash';
+import { insertMessage, removeUserFromChat, updateChatLogoType, updateChatSettings, updateChatUser } from '../../database';
+import { createChatToken } from '../../hash';
 import { ISizeCalculationResult } from 'image-size/dist/types/interface';
-import { sendEmail } from '../../email';
-import { notifyAllRelatedUsers } from '../../socket';
-import { settings } from '../../settings';
 import { GenerateTokenRequest, GetChatSettingsRequest, SetChatLogoRequest, SetChatSettingsRequest, isGenerateTokenRequestValid, isGetChatSettingsRequestValid, isSetChatLogoRequestValid, isSetChatSettingsRequestValid } from '../../types/api/chat';
 import { validatePermissionLevelAndProceed } from './management';
+import { settings } from '../../settings';
+import { notifyAllUsersInChat } from '../../socket';
+import { MysqlError } from 'mysql';
 
 export function getChatSettings(req: Request, res: Response): void {
     const request: GetChatSettingsRequest = req.body;
@@ -26,6 +24,7 @@ export function getChatSettings(req: Request, res: Response): void {
             description: chat.description,
             token: chat.token,
             tokenExpiration: chat.token_expiration,
+            defaultPermissionLevel: chat.default_permission_level,
             chatLogoType: chat.chat_logo_type
         });
     });
@@ -56,10 +55,20 @@ export function setChatSettings(req: Request, res: Response): void {
         }
     }
     validatePermissionLevelAndProceed(request.id, request.token, request.chatId, 0, res, (user: any, chat: any): void => {
-        updateChatSettings(request.chatId, request.name, request.description, request.chatToken, request.tokenExpiration);
+        updateChatSettings(request.chatId, request.name, request.description,
+            request.chatToken, request.tokenExpiration, request.defaultPermissionLevel);
         for(const userId of request.removedUsers) {
             if(typeof userId != 'number') continue;
             removeUserFromChat(request.chatId, userId);
+            insertMessage(request.chatId, 0, '@' + userId + ' was removed by @' + request.id, (err: MysqlError | null, id?: number): void => {
+                if(err) {
+                    res.status(500).send('Internal Server Error');
+                    console.log(err);
+                    return;
+                }
+                if(settings.dynamicUpdates['message-new'])
+                    notifyAllUsersInChat(chat, 'message-new', {id: id});
+            });
         }
         for(const userId of Object.keys(JSON.parse(chat.users))) {
             const user = request.modifiedUsers[userId];
@@ -68,6 +77,12 @@ export function setChatSettings(req: Request, res: Response): void {
             updateChatUser(request.chatId, parseInt(userId), user.permissionLevel);
         }
         res.status(200).send('OK');
+        if(settings.dynamicUpdates['chat-settings'])
+            notifyAllUsersInChat(chat, 'chat-settings', {
+                chatId: chat.id,
+                modifiedUsers: request.modifiedUsers,
+                removedUsers: request.removedUsers
+            });
     });
 }
 
@@ -84,12 +99,12 @@ export function setChatLogo(req: Request, res: Response): void {
             return;
         }
         const dimensions: ISizeCalculationResult = imageSize(Buffer.from(match[3], 'base64'));
-        if(dimensions.width != dimensions.height || dimensions.width == undefined || dimensions.width < 512 || dimensions.width > 2048) {
-            console.log('Bad Request 2')
+        const chatLogoType = match[1] == undefined ? match[2] : match[1];
+        if(dimensions.width != dimensions.height || dimensions.width == undefined || dimensions.width > 2048 ||
+            (chatLogoType == 'svg' && dimensions.width < 8) || (chatLogoType != 'svg' && dimensions.width < 64)) {
             res.status(400).send('Bad Request');
             return;
         }
-        const chatLogoType = match[1] == undefined ? match[2] : match[1];
         fs.writeFile('./chatLogos/' + chat.id + '.' + chatLogoType, match[3], {encoding: 'base64'}, function(err) {
             if(err) {
                 console.log('Internal Server Error')

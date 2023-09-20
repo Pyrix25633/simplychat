@@ -12,8 +12,11 @@
 }
 
 nav#navbar {
-    padding: 15px 0 15px 20px;
-    width: calc(100vw - 20px);
+    padding: 20px 0;
+    width: 100vw;
+}
+div.navbar {
+    padding: 10px;
 }
 
 div#footer {
@@ -41,7 +44,6 @@ div.container span:not(:first-child) {
 
 div.panel {
     padding: 40px;
-    margin-top: 25px;
 }
 
 div.online, div.offline {
@@ -52,18 +54,24 @@ img.chat-logo, img.pfp, img#chat-logo {
     margin-right: 5px;
 }
 
-div.chat, div.user, div#chats, div#users, div#chat-topbar {
+div.chat, div.user, div#chats, div#users, div#chat-topbar, div.dpl {
     padding: 5px;
 }
 div.chat:not(:first-child), div.user:not(:first-child) {
     margin-top: 5px;
 }
 
-div.chat-settings, div.user-settings, span.user-last-online, span.user-status {
+div.chat-settings, div.user-settings, div.user-actions, span.user-last-online, span.user-status {
     margin-top: 3px !important;
 }
 
+button {
+    padding: 5px 10px 5px 10px;
+}
 img.button:not(:first-child) {
+    margin-left: 5px;
+}
+button img.button {
     margin-left: 5px;
 }
 
@@ -109,4 +117,8 @@ div#emoji-selector {
 
 div.user-options {
     margin-left: 5px;
+}
+
+h3#name {
+    margin: 10px 0;
 }

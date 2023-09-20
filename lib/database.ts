@@ -28,7 +28,7 @@ export function query(query: string, values: (string | number | boolean | null)[
     connection.query(query, values, callback);
 }
 
-function logError(err: MysqlError | null, results: any): void {
+function logError(err: MysqlError | null, results?: any): void {
     if(err) console.log(err);
 }
 
@@ -151,6 +151,16 @@ export function createChat(userId: number, name: string, description: string, to
     });
 }
 
+export function addUserToChat(id: number, userId: number): void {
+    query('SELECT default_permission_level FROM chats WHERE id=?;', [id], (err: MysqlError | null, results?: any): void => {
+        logError(err);
+        if(!err)
+            query('UPDATE chats SET users=JSON_SET(users, \'$."?"\', JSON_SET("{}", \'$."permissionLevel"\', ?)) WHERE id=?;',
+                [userId, results[0].default_permission_level, id], logError);
+    });
+    query('UPDATE users SET chats=JSON_SET(chats, \'$."?"\', JSON_SET("{}", \'$."lastReadMessageId"\', -1)) WHERE id=?;', [id, userId], logError);
+}
+
 export function selectChat(id: number, callback: queryCallback): void {
     query('SELECT * FROM chats WHERE id=?;', [id], callback);
 }
@@ -186,9 +196,10 @@ export function updateChatLogoType(id: number, chatLogoType: string): void {
     query('UPDATE chats SET chat_logo_type=? WHERE id=?;', [chatLogoType, id], logError);
 }
 
-export function updateChatSettings(id: number, name: string, description: string, token: string, tokenExpiration: number): void {
-    query('UPDATE chats SET name=?, description=?, token=?, token_expiration=? WHERE id=?;',
-        [name, description, token, tokenExpiration, id], logError);
+export function updateChatSettings(id: number, name: string, description: string,
+    token: string, tokenExpiration: number, defaultPermissionLevel: number): void {
+    query('UPDATE chats SET name=?, description=?, token=?, token_expiration=?, default_permission_level=? WHERE id=?;',
+        [name, description, token, tokenExpiration, defaultPermissionLevel, id], logError);
 }
 
 export function removeUserFromChat(id: number, userId: number) {

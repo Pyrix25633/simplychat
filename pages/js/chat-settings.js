@@ -15,13 +15,14 @@ const copyLinkButton = document.getElementById('copy-link');
 const regenerateTokenButton = document.getElementById('regenerate-token');
 const tokenExpirationInput = document.getElementById('token-expiration');
 const tokenExpirationFeedbackSpan = document.getElementById('token-expiration-feedback');
+const dplSpan = document.getElementById('dpl');
+const increaseDplImg = document.getElementById('increase-dpl');
+const decreaseDplImg = document.getElementById('decrease-dpl');
 
 const usersDiv = document.getElementById('users');
 
 const cancelButton = document.getElementById('cancel');
 const saveButton = document.getElementById('save');
-
-const oneDayTimestamp = 60 * 60 * 24;
 
 const chatId = parseInt(new URLSearchParams(window.location.search).get('id'));
 
@@ -56,6 +57,49 @@ function showChatSettings(res) {
         tokenExpirationInput.value = 'Never';
     else
         tokenExpirationInput.value = new Date(res.tokenExpiration * 1000).toLocaleDateString("en-GB");
+    function setDplSpan() {
+        switch(settings.defaultPermissionLevel) {
+            case 0:
+                dplSpan.innerText = 'Administator';
+                break;
+            case 1:
+                dplSpan.innerText = 'Moderator';
+                break;
+            case 2:
+                dplSpan.innerText = 'User';
+                break;
+            default:
+                dplSpan.innerText = 'Viewer';
+                break;
+        }
+        dplSpan.classList.remove('permission-level-0', 'permission-level-1', 'permission-level-2', 'permission-level-3');
+        dplSpan.classList.add('permission-level-' + settings.defaultPermissionLevel);
+    }
+    setDplSpan();
+    increaseDplImg.addEventListener('click', () => {
+        increaseDplImg.animate([
+            {transform: 'scale(0.6)'},
+            {transform: 'scale(1.4)'},
+            {transform: 'scale(1)'}
+        ], {duration: 250});
+        settings.defaultPermissionLevel -= 1;
+        setDplSpan();
+        if(settings.defaultPermissionLevel == 0) increaseDplImg.style.display = 'none';
+        else decreaseDplImg.style.display = '';
+        saveButton.disabled = !(validName && validDescription && validTokenExpiration);
+    });
+    decreaseDplImg.addEventListener('click', () => {
+        decreaseDplImg.animate([
+            {transform: 'scale(0.6)'},
+            {transform: 'scale(1.4)'},
+            {transform: 'scale(1)'}
+        ], {duration: 250});
+        settings.defaultPermissionLevel += 1;
+        setDplSpan();
+        if(settings.defaultPermissionLevel >= 3) decreaseDplImg.style.display = 'none';
+        else increaseDplImg.style.display = '';
+        saveButton.disabled = !(validName && validDescription && validTokenExpiration);
+    });
     settings.removedUsers = [];
     settings.modifiedUsers = {};
     const ids = Object.keys(res.users);
@@ -114,7 +158,7 @@ function setUser(user) {
     userOptionsDiv.appendChild(removeImg);
     removeImg.addEventListener('click', () => {
         usersDiv.removeChild(userDiv);
-        settings.removedUsers.push(user.id);
+        settings.removedUsers.push(parseInt(user.id));
         saveButton.disabled = !(validName && validDescription && validTokenExpiration);
     });
     const increaseImg = document.createElement('img');
@@ -159,9 +203,7 @@ function setUser(user) {
 }
 
 changeChatLogoImage.addEventListener('click', () => {
-    var evt = document.createEvent("MouseEvents");
-    evt.initEvent("click", true, false);
-    newChatLogoInput.dispatchEvent(evt);
+    newChatLogoInput.click();
 });
 
 newChatLogoInput.addEventListener('change', () => {
@@ -173,12 +215,13 @@ newChatLogoInput.addEventListener('change', () => {
     const image = new Image();
     image.onload = () => {
         const match = /^data:image\/(?:(?:(\S+)\+\S+)|(\S+));base64,(\S*)$/.exec(image.src);
-        if(!(match[1] == 'svg' || match[2] == 'png' || match[2] == 'jpeg' || match[2] == 'gif')) {
+        const chatLogoType = match[1] == undefined ? match[2] : match[1];
+        if(!(chatLogoType == 'svg' || chatLogoType == 'png' || chatLogoType == 'jpeg' || chatLogoType == 'gif')) {
             invalidType();
             return;
         }
         if(image.width == image.height) {
-            if(image.width >= 512 && image.width <= 2048) {
+            if(((chatLogoType == 'svg' && image.width >= 8) || (chatLogoType != 'svg' && image.width >= 64)) && image.width <= 2048) {
                 chatLogoFeedbackSpan.innerText = 'Valid Chat Logo';
                 chatLogoFeedbackSpan.classList.replace('error', 'success');
                 chatLogoImage.src = image.src;
@@ -186,7 +229,7 @@ newChatLogoInput.addEventListener('change', () => {
                 settings.chatLogo = chatLogoImage.src;
             }
             else {
-                chatLogoFeedbackSpan.innerText = 'Chat Logo resolution must be between 512x512 and 2048x2048!';
+                chatLogoFeedbackSpan.innerText = 'Chat Logo resolution must be between 8x8 (svg) or 64x64 (others) and 2048x2048!';
                 chatLogoFeedbackSpan.classList.replace('success', 'error');
             }
         } else {
@@ -281,7 +324,7 @@ function descriptionTyped() {
 }
 
 copyLinkButton.addEventListener('click', () => {
-    navigator.clipboard.writeText(window.location.host + '/join-chat?id=' + settings.id + '&token=' + settings.token);
+    navigator.clipboard.writeText('https://' + window.location.host + '/join-chat?id=' + settings.id + '&token=' + settings.token);
 });
 
 regenerateTokenButton.addEventListener('click', () => {
@@ -367,6 +410,7 @@ saveButton.addEventListener('click', async () => {
             description: descriptionInput.value,
             chatToken: settings.token,
             tokenExpiration: settings.tokenExpiration,
+            defaultPermissionLevel: settings.defaultPermissionLevel,
             removedUsers: settings.removedUsers,
             modifiedUsers: settings.modifiedUsers
         }),

@@ -16,9 +16,16 @@
 }
 
 body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     background-color: var(--color-background);
     min-height: 100vh;
     margin: 0;
+}
+body::-webkit-scrollbar-track, body::-webkit-scrollbar, body::-webkit-scrollbar-thumb {
+    display: none;
 }
 
 h3 {
@@ -37,11 +44,15 @@ input {
     background-color: var(--color-background);
 }
 button {
+    display: flex;
     border: 0;
-    padding: 5px 10px 5px 10px;
     background-color: var(--color-simplychat);
     color: var(--color-background);
     font-weight: bold;
+    align-items: center;
+}
+img.button {
+    height: 25px;
 }
 input:focus {
     border-color: var(--color-simplychat);
@@ -104,11 +115,14 @@ nav#navbar {
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: center;
     position: sticky;
     top: 0;
     left: 0;
-    background-color: var(--color-simplychat-dark);
     z-index: 100;
+}
+div.navbar {
+    background-color: var(--color-simplychat-dark);
 }
 
 div#footer {
@@ -153,8 +167,6 @@ div.margin-top {
 
 div.panel {
     background-color: var(--color-lighter);
-    margin-right: 10px;
-    margin-left: 10px;
 }
 div.panel > h3 {
     margin-top: 0;

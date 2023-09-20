@@ -17,7 +17,12 @@ export function userInfo(req: Request, res: Response): void {
                 return;
             }
             const selected = results[0];
+            if(selected == undefined) {
+                res.status(404).send('Not Found');
+                return;
+            }
             res.status(200).send({
+                id: selected.id,
                 username: selected.username,
                 online: selected.online,
                 lastOnline: selected.last_online,

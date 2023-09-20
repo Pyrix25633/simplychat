@@ -19,6 +19,24 @@ export function isCreateRequestValid(req: CreateRequest) {
         && req.description.length > 2 && req.description.length <= 128;
 }
 
+// join
+
+export type JoinChatRequest = {
+    token: string,
+    id: number,
+    chatId: number,
+    chatToken: string
+};
+
+export function isJoinChatRequestValid(req: JoinChatRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number'
+        && req.chatToken != undefined && typeof req.chatToken == 'string'
+        && req.chatToken.length == 128;
+}
+
 // list
 
 export type ListRequest = TokenIdObject;
@@ -42,6 +60,24 @@ export function isChatInfoRequestValid(req: ChatInfoRequest): boolean {
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number'
         && req.chatId != undefined && typeof req.chatId == 'number';
+}
+
+// join-info
+
+export type ChatJoinInfoRequest = {
+    token: string,
+    id: number,
+    chatId: number,
+    chatToken: string
+};
+
+export function isChatJoinInfoRequestValid(req: ChatJoinInfoRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number'
+        && req.chatToken != undefined && typeof req.chatToken == 'string'
+        && req.chatToken.length == 128;
 }
 
 // get-message
@@ -137,6 +173,7 @@ export type SetChatSettingsRequest = {
     description: string,
     chatToken: string,
     tokenExpiration: number,
+    defaultPermissionLevel: number,
     removedUsers: number[],
     modifiedUsers: any
 };
@@ -153,6 +190,8 @@ export function isSetChatSettingsRequestValid(req: SetChatSettingsRequest): bool
         && req.chatToken != undefined && typeof req.chatToken == 'string'
         && req.chatToken.length == 128
         && (req.tokenExpiration == undefined || typeof req.tokenExpiration == 'number')
+        && req.defaultPermissionLevel != undefined && typeof req.defaultPermissionLevel == 'number'
+        && req.defaultPermissionLevel >= 0 && req.defaultPermissionLevel <= 3
         && req.removedUsers != undefined && typeof req.removedUsers.length != undefined
         && typeof req.removedUsers.length == 'number'
         && req.modifiedUsers != undefined;

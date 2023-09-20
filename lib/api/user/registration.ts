@@ -3,9 +3,11 @@ import { MysqlError } from 'mysql';
 import { sendEmail } from '../../email';
 import Mail from 'nodemailer/lib/mailer';
 import { ConfirmRequest, RegisterRequest, UsernameFeedbackResponse, isConfirmRequestValid, isEmailFeedbackRequestValid, isRegisterRequestValid, isUsernameConfirmFeedbackRequestValid, isUsernameFeedbackRequestValid } from "../../types/api/user";
-import { createUser, deleteTempUser, insertTempUser, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUserFromUsername } from '../../database';
+import { createUser, deleteTempUser, insertTempUser, query, selectFromEmail, selectFromUsername, selectFromUsernameOrEmail, selectTempUser, selectUserFromUsername } from '../../database';
 import { createUserToken } from '../../hash';
 import { generateRandomPfp } from '../../random-image';
+import { settings } from '../../settings';
+import { port } from '../../../main';
 
 export function register(req: Request, res: Response): void {
     const request: RegisterRequest = req.body;
@@ -37,9 +39,9 @@ export function register(req: Request, res: Response): void {
                 subject: 'Simply Chat verification code',
                 text: 'Your verification code for username ' + request.username + ' is ' + verificationCode + '.',
                 html: 'Your verification code for username ' + request.username + ' is ' + verificationCode +
-                    '.<br> Click <a href="https://simplychat.ddns.net:4443/confirm?username=' + request.username +
+                    '.<br> Click <a href="https://' + settings.https.hostname + ':' + port + '/confirm?username=' + request.username +
                     '&verificationCode=' + verificationCode + '">here</a> to confirm your registration.' +
-                    '<br> If the link above does not work open <a href="https://simplychat.ddns.net:4443/confirm">' +
+                    '<br> If the link above does not work open <a href="https://' + settings.https.hostname + ':' + port + '/confirm">' +
                     'this page</a> and enter username and verification code.'
             };
             sendEmail(mailOptions, (err: Error | null): void => {

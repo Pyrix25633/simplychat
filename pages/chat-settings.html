@@ -17,7 +17,7 @@
     </head>
     <body>
         <nav id="navbar">
-            <div class="container">
+            <div class="container navbar">
                 <span class="title">SIMPLY</span>
                 <span class="title simplychat-color">CHAT</span>
                 <img id="icon" src="./img/icon.svg" alt="Simply Chat Icon">
@@ -32,7 +32,7 @@
                 </div>
                 <span class="text" id="chat-logo-feedback">You can change the Chat's Logo</span>
                 <div class="box section">
-                    <h3>Infos</h3>
+                    <h3>Info</h3>
                     <div class="container no-margin">
                         <span class="text">Id:</span>
                         <span class="text" id="id"></span>
@@ -51,11 +51,11 @@
                 <div class="box section">
                     <h3 class="warning">Security</h3>
                     <div class="container">
-                        <button id="copy-link" class="warning">Copy Invite Link</button>
+                        <button id="copy-link" class="warning">Copy Invite Link <img src="./img/link.svg" class="button"></button>
                     </div>
                     <span class="text warning">Any User can join your Chat with this Link</span>
                     <div class="container">
-                        <button id="regenerate-token" class="warning">Regenerate Invite Link</button>
+                        <button id="regenerate-token" class="warning">Regenerate Invite Link <img src="./img/change.svg" class="button"></button>
                     </div>
                     <span class="text warning">Previous Link will no longer function</span>
                     <div class="container">
@@ -64,6 +64,14 @@
                     </div>
                     <span class="text warning" id="token-expiration-feedback">You can change your Token Expiration</span>
                     <span class="text warning">Type 'Never' or D/M/Y</span>
+                    <div class="container dpl">
+                        <span class="" id="dpl"></span>
+                        <div class="container dpl-options">
+                            <img src="./img/increase.svg" class="button" id="increase-dpl">
+                            <img src="./img/decrease.svg" class="button" id="decrease-dpl">
+                        </div>
+                    </div>
+                    <span class="text warning">Default Permission Level</span>
                 </div>
                 <div class="box section">
                     <h3>Users</h3>
@@ -77,8 +85,8 @@
             </div>
         </div>
         <div id="footer">
-            <button id="cancel">Cancel</button>
-            <button id="save">Save</button>
+            <button id="cancel">Cancel <img src="./img/cancel.svg" class="button"></button>
+            <button id="save">Save <img src="./img/save.svg" class="button"></button>
         </div>
     </body>
 </html>
