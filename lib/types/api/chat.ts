@@ -37,6 +37,21 @@ export function isJoinChatRequestValid(req: JoinChatRequest): boolean {
         && req.chatToken.length == 128;
 }
 
+// leave
+
+export type LeaveChatRequest = {
+    token: string,
+    id: number,
+    chatId: number
+};
+
+export function isLeaveChatRequestValid(req: LeaveChatRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number';
+}
+
 // list
 
 export type ListRequest = TokenIdObject;

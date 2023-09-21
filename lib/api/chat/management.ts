@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { addUserToChat, createChat, insertMessage, selectChat } from "../../database";
+import { addUserToChat, createChat, insertMessage, removeUserFromChat, selectChat } from "../../database";
 import { createChatToken } from "../../hash";
 import { generateRandomChatLogo } from "../../random-image";
-import { CreateRequest, JoinChatRequest, isCreateRequestValid, isJoinChatRequestValid } from "../../types/api/chat";
+import { CreateRequest, JoinChatRequest, LeaveChatRequest, isCreateRequestValid, isJoinChatRequestValid, isLeaveChatRequestValid } from "../../types/api/chat";
 import { validateTokenAndProceed } from "../user/authentication";
 import { settings } from '../../settings';
-import { notifyAllUsersInChat } from '../../socket';
+import { notifyAllUsersInChat, sockets } from '../../socket';
 import { getTimestamp } from '../../timestamp';
 
 export function create(req: Request, res: Response): void {
@@ -52,25 +52,57 @@ export function join(req: Request, res: Response): void {
                 return;
             }
             const chat = results[0];
-            const chatUser = JSON.parse(chat.users)[request.id.toString()];
+            const chatUser = JSON.parse(chat.users)[request.id];
             if(chatUser != undefined || (chat.token != request.chatToken || (chat.token_expiration != null && chat.token_expiration < getTimestamp()))) {
                 res.status(403).send('Forbidden');
                 return;
             }
-            addUserToChat(request.chatId, request.id);
-            insertMessage(request.chatId, 0, 'Welcome @' + request.id + '!', (err: MysqlError | null, id?: number): void => {
+            addUserToChat(request.chatId, request.id, (err: MysqlError | null, permissionLevel: number): void => {
                 if(err) {
                     res.status(500).send('Internal Server Error');
+                    console.log(err);
+                    return;
+                }
+                insertMessage(request.chatId, 0, 'Welcome @' + request.id + '!', (err: MysqlError | null, id?: number): void => {
+                    if(err) {
+                        console.log(err);
+                        return;
+                    }
+                    if(settings.dynamicUpdates['message-new'])
+                        notifyAllUsersInChat(chat, 'message-new', {id: id});
+                });
+                if(settings.dynamicUpdates['user-join']) {
+                    notifyAllUsersInChat(chat, 'user-join', {chatId: chat.id, id: request.id, permissionLevel: permissionLevel});
+                    const userSockets = sockets.get(request.id);
+                    if(userSockets == undefined) return;
+                    for(const socket of userSockets)
+                        socket.emit('user-join', {chatId: chat.id, id: request.id, permissionLevel: permissionLevel});
+                }
+                res.status(200).send('OK');
+            });
+        });
+    });
+}
+
+export function leave(req: Request, res: Response): void {
+    const request: LeaveChatRequest = req.body;
+    if(!isLeaveChatRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validatePermissionLevelAndProceed(request.id, request.token, request.chatId, 3, res, (user: any, chat: any): void => {
+        removeUserFromChat(request.chatId, request.id);
+            insertMessage(request.chatId, 0, '@' + request.id + ' left the chat', (err: MysqlError | null, id?: number): void => {
+                if(err) {
                     console.log(err);
                     return;
                 }
                 if(settings.dynamicUpdates['message-new'])
                     notifyAllUsersInChat(chat, 'message-new', {id: id});
             });
-            if(settings.dynamicUpdates['user-join'])
-                notifyAllUsersInChat(chat, 'user-join', {chatId: chat.id, id: request.id})
+            if(settings.dynamicUpdates['user-leave'])
+                notifyAllUsersInChat(chat, 'user-leave', {chatId: chat.id, id: request.id});
             res.status(200).send('OK');
-        });
     });
 }
 

@@ -47,16 +47,14 @@ Frontend made with:
         'user-settings': boolean,
         'message-new': boolean,
         'chat-settings': boolean,
-        'user-join': boolean
+        'user-join': boolean,
+        'user-leave': boolean
     },
     tests: {
         run: boolean,
         static: boolean,
         pages: boolean,
-        api: {
-            user: boolean,
-            chat: boolean
-        },
+        api: boolean,
         database: string
     }
 }

@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import * as chai from "chai";
+import * as tfa from "speakeasy";
 import { IncomingMessage } from "http";
 import { port } from "../main";
 import { request } from "https";
@@ -7,6 +8,7 @@ import { settings } from "../lib/settings";
 import { SHA512Hash } from "../lib/hash";
 import { query } from "../lib/database";
 import { MysqlError } from "mysql";
+import { pendingTfa, tfauthenticate } from "../lib/api/user/authentication";
 
 if(settings.https.suppressRejectUnauthorized)
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -140,22 +142,87 @@ function runInTestDatabase(callback: () => void) {
 }
 
 function testApi() {
-    if(!settings.tests.api.user && !settings.tests.api.user) return;
+    if(!settings.tests.api) return;
     describe('API', () => {
-        if(settings.tests.api.user)
-            describe('USER', () => {
-                testPost('REGISTER', '/api/user/register', {
-                    username: 'Test',
-                    email: 'test@mail.com',
-                    passwordHash: SHA512Hash('StrongPassword12@')
-                }, 201);
-                testGet('USERNAME FEEDBACK', '/api/user/username-feedback?username=Test', 200);
-                testGet('EMAIL FEEDBACK', '/api/user/email-feedback?email=test@mail.com', 200);
+        describe('USER', () => {
+            testPost('REGISTER', '/api/user/register', {
+                username: 'Test',
+                email: 'test@mail.com',
+                passwordHash: SHA512Hash('StrongPassword12@')
+            }, 201);
+            testGet('USERNAME FEEDBACK', '/api/user/username-feedback?username=Test', 200);
+            testGet('EMAIL FEEDBACK', '/api/user/email-feedback?email=test@mail.com', 200);
+            let verificationRequest = {username: 'Test', verificationCode: 0};
+            it('SELECT verification_code', async () => {
+                await new Promise<void>((resolve): void => {
+                    query('SELECT verification_code FROM temp_users WHERE username=\'Test\';', [], (err: MysqlError | null, results?: any): void => {
+                        verificationRequest.verificationCode = results[0].verification_code;
+                        chai.expect(err).to.equal(null);
+                        resolve();
+                    });
+                });
             });
-        if(settings.tests.api.chat)
-            describe('CHAT', () => {
+            testPost('CONFIRM', '/api/user/confirm', verificationRequest, 200);
+            testGet('USERNAME CONFIRM FEEDBACK', '/api/user/username-confirm-feedback?username=Test', 200);
+            let tfaKey = tfa.generateSecret().base32;
+            it('UPDATE users SET tfa_key', async () => {
+                await new Promise<void>((resolve): void => {
+                    query('UPDATE users SET tfa_key=? WHERE id=0;', [tfaKey], (err: MysqlError | null): void => {
+                        chai.expect(err).to.equal(null);
+                        resolve();
+                    });
+                });
+            });
+            testPost('LOGIN', '/api/user/login', {
+                username: 'Test',
+                passwordHash: SHA512Hash('StrongPassword12@')
+            }, 200);
+            testGet('USERNAME LOGIN FEEDBACK', '/api/user/username-login-feedback?username=Test', 200);
+            let tfauthenticateRequest = {
+                id: 0,
+                tfaToken: '',
+                tfaCode: tfa.totp({secret: tfaKey, encoding: 'base32'})
+            };
+            it('GET pendingTfa', () => {
+                const tfaToken = pendingTfa.get(0);
+                if(tfaToken != undefined)
+                    tfauthenticateRequest.tfaToken = tfaToken;
+            });
+            testPost('2 FACTOR AUTHENTICATE', '/api/user/tfauthenticate', tfauthenticateRequest, 200);
+            testPost('VALIDATE TOKEN', '/api/user/validate-token', {
+                id: 0,
+                token: SHA512Hash('Fake token')
+            }, 200);
+            let userTokenId = {id: 0, token: ''};
+            it('SELECT token', async () => {
+                await new Promise<void>((resolve): void => {
+                    query('SELECT token FROM users WHERE id=0;', [], (err: MysqlError | null, results?: any): void => {
+                        userTokenId.token = results[0].token;
+                        chai.expect(err).to.equal(null);
+                        resolve();
+                    });
+                });
+            });
+            testPost('REGENERATE TOKEN', '/api/user/regenerate-token', userTokenId, 200);
+            it('SELECT token', async () => {
+                await new Promise<void>((resolve): void => {
+                    query('SELECT token FROM users WHERE id=0;', [], (err: MysqlError | null, results?: any): void => {
+                        userTokenId.token = results[0].token;
+                        chai.expect(err).to.equal(null);
+                        resolve();
+                    });
+                });
+            });
+            testGet('GENERATE TFA KEY', '/api/user/generate-tfa-key', 200);
+            testPost('VERIFIFY TFA CODE', '/api/user/verify-tfa-code', {
+                tfaKey: tfaKey,
+                tfaCode: tfa.totp({secret: tfaKey, encoding: 'base32'})
+            }, 200);
+            testPost('GET SETTINGS', '/api/user/get-settings', userTokenId, 200);
+        });
+        describe('CHAT', () => {
 
-            });
+        });
     });
 }
 

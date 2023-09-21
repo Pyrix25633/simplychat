@@ -3,15 +3,21 @@ import { RegisterRequest } from './types/api/user';
 import { getTimestamp, twoWeeksTimestamp } from './timestamp';
 import { settings } from './settings';
 
-process.on('uncaughtException', (exc: Error) => {
+process.on('uncaughtException', async (exc: Error) => {
+    if(settings.tests.run) {
+        await new Promise<void>((resolve): void => {
+            query('DROP DATABASE ' + settings.tests.database + ';', [], () => {
+                resolve();
+            });
+        });
+    }
     connection.end((err?: MysqlError): void => {
         if(err) {
             console.log('Error attempting database connection end because of other exception!');
-            throw err;
         }
         console.log('Succesfully ended database connection because of other exception');
     });
-    throw exc;
+    console.log(exc);
 });
 
 const connection: Connection = mysql.createConnection(settings.mysqlConnection);
@@ -151,12 +157,14 @@ export function createChat(userId: number, name: string, description: string, to
     });
 }
 
-export function addUserToChat(id: number, userId: number): void {
+export function addUserToChat(id: number, userId: number, callback: (err: MysqlError | null, permissionLevel: number) => void): void {
     query('SELECT default_permission_level FROM chats WHERE id=?;', [id], (err: MysqlError | null, results?: any): void => {
         logError(err);
         if(!err)
             query('UPDATE chats SET users=JSON_SET(users, \'$."?"\', JSON_SET("{}", \'$."permissionLevel"\', ?)) WHERE id=?;',
-                [userId, results[0].default_permission_level, id], logError);
+                [userId, results[0].default_permission_level, id], (err: MysqlError | null): void => {
+                callback(err, results[0].default_permission_level)
+            });
     });
     query('UPDATE users SET chats=JSON_SET(chats, \'$."?"\', JSON_SET("{}", \'$."lastReadMessageId"\', -1)) WHERE id=?;', [id, userId], logError);
 }
@@ -202,7 +210,7 @@ export function updateChatSettings(id: number, name: string, description: string
         [name, description, token, tokenExpiration, defaultPermissionLevel, id], logError);
 }
 
-export function removeUserFromChat(id: number, userId: number) {
+export function removeUserFromChat(id: number, userId: number): void {
     query('UPDATE chats SET users=JSON_REMOVE(users, \'$."?"\') WHERE id=?', [userId, id], logError);
     query('UPDATE users SET chats=JSON_REMOVE(chats, \'$."?"\') WHERE id=?', [id, userId], logError);
 }

@@ -62,7 +62,6 @@ export function setChatSettings(req: Request, res: Response): void {
             removeUserFromChat(request.chatId, userId);
             insertMessage(request.chatId, 0, '@' + userId + ' was removed by @' + request.id, (err: MysqlError | null, id?: number): void => {
                 if(err) {
-                    res.status(500).send('Internal Server Error');
                     console.log(err);
                     return;
                 }

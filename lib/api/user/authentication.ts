@@ -8,7 +8,7 @@ import { selectUser, selectUserFromUsername, selectUserToken, updateUserToken } 
 import { LoginRequest, RegenerateTokenRequest, TfauthenticateRequest, ValidateTokenRequest, VerifyTfaCodeRequest, exitIfDeletedUser, isLoginRequestValid, isRegenerateTokenRequestValid, isTfautheticateRequestValid, isUsernameFeedbackRequestValid, isValidateTokenRequestValid, isVerifyTfaCodeRequestValid } from '../../types/api/user';
 import { sendEmail } from '../../email';
 
-const pendingTfa: Map<number, string> = new Map<number, string>();
+export const pendingTfa: Map<number, string> = new Map<number, string>();
 
 function updateUserTokenIfExpiringSoon(user: any, res: Response): boolean {
     if(user.token_expiration - oneDayTimestamp < getTimestamp()) {
@@ -39,7 +39,6 @@ export function login(req: Request, res: Response): void {
         const user = results[0];
         if(exitIfDeletedUser(user, res)) return;
         if(user.password_hash != request.passwordHash) {
-            console.log(request, user);
             res.status(401).send('Unauthorized');
             return;
         }

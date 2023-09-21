@@ -10,7 +10,7 @@ import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeed
 import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, verifyTfaCode } from './lib/api/user/authentication';
 import { userInfo } from './lib/api/user/info';
 import { getUserSettings, setPfp, setUserSettings } from './lib/api/user/settings';
-import { create, join } from './lib/api/chat/management';
+import { create, join, leave } from './lib/api/chat/management';
 import { chatInfo, chatJoinInfo, list } from './lib/api/chat/info';
 import { getLastMessages, getMessage, sendMessage } from './lib/api/chat/messages';
 import { onConnect } from './lib/socket';
@@ -98,6 +98,8 @@ main.post('/api/user/set-pfp', setPfp);
 main.post('/api/chat/create', create);
 
 main.post('/api/chat/join', join);
+
+main.post('/api/chat/leave', leave);
 
 // info
 

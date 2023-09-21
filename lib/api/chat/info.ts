@@ -36,6 +36,7 @@ export function chatInfo(req: Request, res: Response): void {
                 }
                 const selected = results[0];
                 res.status(200).send({
+                    id: selected.id,
                     name: selected.name,
                     description: selected.description,
                     chatLogoType: selected.chat_logo_type,
