@@ -1,15 +1,3 @@
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-nav#navbar {
-    position: absolute !important;
-    justify-content: center;
-}
-
 ol, span {
     max-width: 70vw;
 }

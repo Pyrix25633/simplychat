@@ -31,6 +31,8 @@ let messagesCache = [];
 let selectedChat;
 let usersCache;
 let selectedUser;
+let selectedMessage;
+let editingMessage = null;
 
 const socket = io();
 socket.on('connect', () => {
@@ -74,93 +76,7 @@ socket.on('user-settings', (data) => {
         },
         statusCode: statusCodeActions
     });
-});
-socket.on('message-new', (data) => {
-    if(switchingChat) return;
-    if(data.chatId == chatsCache[selectedChat].id) {
-        $.ajax({
-            url: '/api/chat/get-message',
-            method: 'POST',
-            data: JSON.stringify({
-                token: cachedLogin.token,
-                id: cachedLogin.id,
-                chatId: data.chatId,
-                messageId: data.id
-            }),
-            contentType: 'application/json',
-            success: addMessage,
-            statusCode: () => {}
-        });
-    }
-});
-socket.on('chat-settings', (data) => {
-    if(data.chatId == selectedChat) {
-        for(const userId of Object.keys(data.modifiedUsers)) {
-            const oldPermissionLevel = usersCache[userId].permissionLevel;
-            const newPermissionLevel = data.modifiedUsers[userId].permissionLevel;
-            for(const username of document.getElementsByClassName('username-' + userId)) {
-                username.classList.remove('permission-level-' + oldPermissionLevel);
-                username.classList.add('permission-level-' + newPermissionLevel);
-            }
-            for(const userTag of document.getElementsByClassName('user-tag-' + userId)) {
-                userTag.classList.remove('permission-level-' + oldPermissionLevel);
-                userTag.classList.add('permission-level-' + newPermissionLevel);
-            }
-            usersCache[userId].permissionLevel = newPermissionLevel;
-            if(userId == cachedLogin.id) {
-                if(newPermissionLevel >= 3) textareaDiv.style.display = 'none';
-                else textareaDiv.style.display = '';
-            }
-        }
-    }
-    if(data.modifiedUsers[cachedLogin.id] != undefined) {
-        chatsCache[data.chatId].users[cachedLogin] = data.modifiedUsers[cachedLogin];
-    }
-    let removedFromChat = false;
-    for(const userId of data.removedUsers) {
-        if(userId == cachedLogin.id) {
-            removedFromChat = true;
-            chatsDiv.removeChild(document.getElementById('chat-' + data.chatId));
-            delete chatsCache[data.chatId];
-            if(data.chatId == selectedChat) {
-                const temp = parseInt(Object.keys(chatsCache)[0]);
-                document.getElementById('chat-' + temp).click();
-            }
-        }
-        else if(data.chatId == selectedChat) {
-            usersDiv.removeChild(document.getElementById('user-' + userId));
-            delete usersCache[userId];
-        }
-    }
-    const settingsImg = document.getElementById('settings-' + data.chatId);
-    if(data.modifiedUsers[cachedLogin.id] != undefined) {
-        if(data.modifiedUsers[cachedLogin.id].permissionLevel > 0) settingsImg.style.display = 'none';
-        else settingsImg.style.display = '';
-    }
-    if(!removedFromChat) {
-        $.ajax({
-            url: '/api/chat/info',
-            method: 'POST',
-            data: JSON.stringify({
-                token: cachedLogin.token,
-                id: cachedLogin.id,
-                chatId: data.chatId
-            }),
-            contentType: 'application/json',
-            success: (res) => {
-                for(const chatName of document.getElementsByClassName('chat-name-' + data.chatId))
-                    chatName.innerText = res.name;
-                for(const chatDescription of document.getElementsByClassName('chat-description-' + data.chatId))
-                    chatDescription.innerText = res.description;
-                for(const chatLogo of document.getElementsByClassName('chat-logo-' + data.chatId))
-                    chatLogo.src = './chatLogos/' + data.chatId + '.' + res.chatLogoType;
-                chatsCache[data.chatId].name = res.name;
-                chatsCache[data.chatId].description = res.description;
-                chatsCache[data.chatId].chatLogoType = res.chatLogoType;
-            },
-            statusCode: statusCodeActions
-        });
-    }
+    if(data.id == cachedLogin.id) loadSettings();
 });
 socket.on('user-join', (data) => {
     if(data.chatId == selectedChat && !switchingChat) {
@@ -235,8 +151,11 @@ socket.on('user-join', (data) => {
                         chatsCacheArray.sort((a, b) => {
                             return b.lastMessageTimestamp - a.lastMessageTimestamp;
                         });
-                        chatsDiv.innerHTML = '';
-                        loadChatUsers(chatsCache[data.chatId], loadChatLastMessages);
+                        loadChatUsers(chatsCache[data.chatId], () => {
+                            chatsDiv.innerHTML = '';
+                            for(const chat of chatsCacheArray)
+                                setChatInfo(chat);
+                        });
                     },
                     statusCode: statusCodeActions
                 });
@@ -248,6 +167,8 @@ socket.on('user-join', (data) => {
 socket.on('user-leave', (data) => {
     if(data.chatId == selectedChat) {
         usersDiv.removeChild(document.getElementById('user-' + data.id));
+        if(data.id != cachedLogin.id && data.id == selectedUser)
+            document.getElementById('user-' + cachedLogin.id).click();
         const oldPermissionLevel = usersCache[data.id].permissionLevel;
         const newPermissionLevel = 'removed';
         for(const username of document.getElementsByClassName('username-' + data.id)) {
@@ -264,10 +185,141 @@ socket.on('user-leave', (data) => {
         chatsDiv.removeChild(document.getElementById('chat-' + data.chatId));
         delete chatsCache[data.chatId];
         if(data.chatId == selectedChat) {
-            const temp = parseInt(Object.keys(chatsCache)[0]);
-            document.getElementById('chat-' + temp).click();
+            const chatsCacheArray = Object.values(chatsCache);
+            chatsCacheArray.sort((a, b) => {
+                return b.lastMessageTimestamp - a.lastMessageTimestamp;
+            });
+            document.getElementById('chat-' + chatsCacheArray[0].id).click();
         }
     }
+});
+socket.on('chat-settings', (data) => {
+    if(data.chatId == selectedChat) {
+        for(const userId of Object.keys(data.modifiedUsers)) {
+            const oldPermissionLevel = usersCache[userId].permissionLevel;
+            const newPermissionLevel = data.modifiedUsers[userId].permissionLevel;
+            for(const username of document.getElementsByClassName('username-' + userId)) {
+                username.classList.remove('permission-level-' + oldPermissionLevel);
+                username.classList.add('permission-level-' + newPermissionLevel);
+            }
+            for(const userTag of document.getElementsByClassName('user-tag-' + userId)) {
+                userTag.classList.remove('permission-level-' + oldPermissionLevel);
+                userTag.classList.add('permission-level-' + newPermissionLevel);
+            }
+            usersCache[userId].permissionLevel = newPermissionLevel;
+        }
+    }
+    let removedFromChat = false;
+    for(const userId of data.removedUsers) {
+        if(userId == cachedLogin.id) {
+            removedFromChat = true;
+            chatsDiv.removeChild(document.getElementById('chat-' + data.chatId));
+            delete chatsCache[data.chatId];
+            if(data.chatId == selectedChat) {
+                const temp = parseInt(Object.keys(chatsCache)[0]);
+                document.getElementById('chat-' + temp).click();
+            }
+        }
+        else if(data.chatId == selectedChat) {
+            usersDiv.removeChild(document.getElementById('user-' + userId));
+            delete usersCache[userId];
+        }
+    }
+    const settingsImg = document.getElementById('settings-' + data.chatId);
+    if(data.modifiedUsers[cachedLogin.id] != undefined) {
+        if(data.modifiedUsers[cachedLogin.id].permissionLevel > 0) {
+            settingsImg.style.display = 'none';
+            if(data.modifiedUsers[cachedLogin.id].permissionLevel > 1) {
+                for(const del of document.getElementsByClassName('delete'))
+                    del.style.display = 'none';
+                if(selectedMessage != undefined) {
+                    document.getElementById('message-' + selectedMessage).click();
+                }
+                if(data.modifiedUsers[cachedLogin.id].permissionLevel >= 3) {
+                    textareaDiv.style.display = 'none';
+                    if(editingMessage != null) {
+                        messageTextarea.value = '';
+                        editingMessage = null;
+                    }
+                }
+                else textareaDiv.style.display = '';
+            }
+            else {
+                for(const del of document.getElementsByClassName('delete'))
+                    del.style.display = '';
+                textareaDiv.style.display = '';
+            }
+        }
+        else {
+            settingsImg.style.display = '';
+            for(const del of document.getElementsByClassName('delete'))
+                del.style.display = '';
+            textareaDiv.style.display = '';
+        }
+        chatsCache[data.chatId].users[cachedLogin] = data.modifiedUsers[cachedLogin];
+    }
+    if(!removedFromChat) {
+        $.ajax({
+            url: '/api/chat/info',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                chatId: data.chatId
+            }),
+            contentType: 'application/json',
+            success: (res) => {
+                for(const chatName of document.getElementsByClassName('chat-name-' + data.chatId))
+                    chatName.innerText = res.name;
+                for(const chatDescription of document.getElementsByClassName('chat-description-' + data.chatId))
+                    chatDescription.innerText = res.description;
+                for(const chatLogo of document.getElementsByClassName('chat-logo-' + data.chatId))
+                    chatLogo.src = './chatLogos/' + data.chatId + '.' + res.chatLogoType;
+                chatsCache[data.chatId].name = res.name;
+                chatsCache[data.chatId].description = res.description;
+                chatsCache[data.chatId].chatLogoType = res.chatLogoType;
+            },
+            statusCode: statusCodeActions
+        });
+    }
+});
+socket.on('message-send', (data) => {
+    if(switchingChat) return;
+    $.ajax({
+        url: '/api/chat/get-message',
+        method: 'POST',
+        data: JSON.stringify({
+            token: cachedLogin.token,
+            id: cachedLogin.id,
+            chatId: data.chatId,
+            messageId: data.id
+        }),
+        contentType: 'application/json',
+        success: (res) => {
+            if(data.chatId == chatsCache[selectedChat].id) addMessage(res);
+            chatsCache[data.chatId].lastMessageTimestamp = res.timestamp;
+            const chatsCacheArray = Object.values(chatsCache);
+            chatsCacheArray.sort((a, b) => {
+                return b.lastMessageTimestamp - a.lastMessageTimestamp;
+            });
+            chatsDiv.innerHTML = '';
+            for(const chat of chatsCacheArray)
+                setChatInfo(chat);
+        },
+        statusCode: () => {}
+    });
+});
+socket.on('message-edit', (data) => {
+    if(switchingChat) return;
+    if(data.chatId == selectedChat) {
+        document.getElementById('message-' + data.id).innerText = data.message;
+        document.getElementById('edited-' + data.id).style.display = '';
+    }
+});
+socket.on('message-delete', (data) => {
+    if(switchingChat) return;
+    if(data.chatId == selectedChat)
+        messagesDiv.removeChild(document.getElementById('message-' + data.id).parentElement);
 });
 
 onMessageTextareaUpdate(null);
@@ -361,7 +413,7 @@ function loadChatsLastMessage() {
                     });
                     chatsDiv.innerHTML = '';
                     selectedChat = chatsCacheArray[0].id;
-                    loadChatUsers(chatsCacheArray[0], loadChatLastMessages);
+                    loadChatUsers(chatsCacheArray[0]);
                     for(const chat of chatsCacheArray)
                         setChatInfo(chat);
                 }
@@ -455,6 +507,7 @@ function setChatInfo(chat) {
     chatDiv.appendChild(boxDiv);
     chatDiv.addEventListener('click', () => {
         if(chat.id == selectedChat) return;
+        editingMessage = null;
         enableLoadingDiv();
         for(let div of chatsDiv.getElementsByClassName('chat'))
             div.classList.remove('selected');
@@ -462,7 +515,7 @@ function setChatInfo(chat) {
             div.style.display = 'none';
         chatDiv.classList.add('selected');
         chatSettingsDiv.style.display = '';
-        loadChatUsers(chat, loadChatLastMessages);
+        loadChatUsers(chat);
     });
     chatsDiv.appendChild(chatDiv);
 }
@@ -516,7 +569,8 @@ function loadChatUsers(selected, callback) {
                         if(numOfReceivedResponses == users.length) {
                             setChatUsers();
                             setChatTopbar(selected);
-                            callback(selected);
+                            loadChatLastMessages(selected);
+                            if(callback) callback();
                             disableLoadingDiv();
                         }
                     },
@@ -639,10 +693,12 @@ function setChatUser(user) {
     userDiv.appendChild(boxDiv);
     userDiv.addEventListener('click', () => {
         if(user.id == selectedUser) return;
-        for(let div of usersDiv.getElementsByClassName('user'))
-            div.classList.remove('selected');
-        for(let div of usersDiv.getElementsByClassName('user-settings'))
-            div.style.display = 'none';
+        const selectedUserDiv = document.getElementById('user-' + selectedUser);
+        if(selectedUserDiv != null) {
+            selectedUserDiv.classList.remove('selected');
+            for(const div of selectedUserDiv.getElementsByClassName('user-settings'))
+                div.style.display = 'none';
+        }
         selectedUser = user.id;
         userDiv.classList.add('selected');
         userSettingsDiv.style.display = '';
@@ -708,7 +764,7 @@ function loadChatLastMessages(selected) {
             token: cachedLogin.token,
             id: cachedLogin.id,
             chatId: selected.id,
-            numberOfMessages: 10
+            numberOfMessages: 16
         }),
         contentType: 'application/json',
         success: (res) => {
@@ -755,13 +811,14 @@ function createMessageDiv(message) {
     datetimeSpan.classList.add('message-meta');
     setReadableDate(datetimeSpan, message.timestamp, '$');
     userDiv.appendChild(datetimeSpan);
-    if(message.edited) {
-        const editedSpan = document.createElement('span');
-        editedSpan.classList.add('message-meta');
-        editedSpan.innerText = '(edited)';
-        userDiv.appendChild(editedSpan);
-    }
+    const editedSpan = document.createElement('span');
+    editedSpan.id = 'edited-' + message.id;
+    editedSpan.classList.add('message-meta');
+    editedSpan.innerText = '(edited)';
+    userDiv.appendChild(editedSpan);
+    if(!message.edited) editedSpan.style.display = 'none';
     const messageSpan = document.createElement('span');
+    messageSpan.id = 'message-' + message.id;
     messageSpan.classList.add('message-text');
     const expr = /@(\d{1,9})/g;
     const matches = [];
@@ -802,8 +859,79 @@ function createMessageDiv(message) {
         message.message = message.message.replace(match[0], userTagSpan.outerHTML);
     }
     messageSpan.innerHTML = message.message;
+    const messageActionsDiv = document.createElement('div');
+    messageSpan.addEventListener('click', () => {
+        if((message.userId != cachedLogin.id && usersCache[cachedLogin.id].permissionLevel > 1) || usersCache[cachedLogin.id].permissionLevel >= 3) {
+            messageSpan.classList.remove('selected');
+            messageActionsDiv.style.display = 'none';
+            selectedMessage = undefined;
+            return;
+        }
+        if(messageSpan.classList.contains('selected')) {
+            messageSpan.classList.remove('selected');
+            messageActionsDiv.style.display = 'none';
+            selectedMessage = undefined;
+        }
+        else {
+            for(const span of document.getElementsByClassName('message-text'))
+            span.classList.remove('selected');
+            for(const actions of document.getElementsByClassName('message-actions'))
+                actions.style.display = 'none';
+            messageSpan.classList.add('selected');
+            messageActionsDiv.style.display = '';
+            selectedMessage = message.id;
+        }
+    });
     messageDiv.appendChild(userDiv);
     messageDiv.appendChild(messageSpan);
+    messageActionsDiv.classList.add('container', 'message-actions');
+    messageActionsDiv.style.display = 'none';
+    const deleteImg = document.createElement('img');
+    deleteImg.src = './img/delete.svg';
+    deleteImg.classList.add('button');
+    if(message.userId != cachedLogin.id) deleteImg.classList.add('delete');
+    messageActionsDiv.appendChild(deleteImg);
+    deleteImg.addEventListener('click', () => {
+        deleteImg.animate([
+            {transform: 'scale(0.6)'},
+            {transform: 'scale(1.4)'},
+            {transform: 'scale(1)'}
+        ], {duration: 250});
+        $.ajax({
+            url: '/api/chat/delete-message',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                chatId: selectedChat,
+                messageId: message.id
+            }),
+            contentType: 'application/json',
+            success: () => {},
+            statusCode: statusCodeActions
+        });
+    });
+    if(usersCache[cachedLogin.id].permissionLevel > 1 && message.userId != cachedLogin.id)
+        deleteImg.style.display = 'none';
+    if(message.userId == cachedLogin.id) {
+        const editImg = document.createElement('img');
+        editImg.src = './img/edit.svg';
+        editImg.classList.add('button');
+        messageActionsDiv.appendChild(editImg);
+        editImg.addEventListener('click', () => {
+            editImg.animate([
+                {transform: 'scale(0.6)'},
+                {transform: 'scale(1.4)'},
+                {transform: 'scale(1)'}
+            ], {duration: 250});
+            if(editingMessage == null) editingMessage = message.id;
+            else editingMessage = null;
+            if(editingMessage != null)
+                messageTextarea.value = document.getElementById('message-' + message.id).innerText;
+            else messageTextarea.value = '';
+        });
+    }
+    messageDiv.appendChild(messageActionsDiv);
     if(user == undefined) {
         $.ajax({
             url: '/api/user/info',
@@ -876,21 +1004,39 @@ function sendMessage() {
         {transform: 'translate(0, 0) rotate(-270deg)', offset: 0.9},
         {transform: 'rotate(0deg)', offset: 1}
     ], {duration: 700});
-    $.ajax({
-        url: '/api/chat/send-message',
-        method: 'POST',
-        data: JSON.stringify({
-            token: cachedLogin.token,
-            id: cachedLogin.id,
-            chatId: chatsCache[selectedChat].id,
-            message: message
-        }),
-        contentType: 'application/json',
-        success: (res) => {
-            
-        },
-        statusCode: statusCodeActions
-    });
+    if(editingMessage == null) {
+        $.ajax({
+            url: '/api/chat/send-message',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                chatId: chatsCache[selectedChat].id,
+                message: message
+            }),
+            contentType: 'application/json',
+            success: () => {},
+            statusCode: statusCodeActions
+        });
+    }
+    else {
+        $.ajax({
+            url: '/api/chat/edit-message',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                chatId: chatsCache[selectedChat].id,
+                messageId: editingMessage,
+                message: message
+            }),
+            contentType: 'application/json',
+            success: () => {},
+            statusCode: statusCodeActions
+        });
+        document.getElementById('message-' + editingMessage).click();
+        editingMessage = null;
+    }
 }
 
 emojiImg.addEventListener('click', () => {

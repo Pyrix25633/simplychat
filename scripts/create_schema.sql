@@ -55,7 +55,7 @@ CREATE TABLE chat<id> (
     timestamp INT NOT NULL,
     user_id INT NOT NULL,
     message BLOB NOT NULL,
-    modified BOOLEAN NOT NULL,
+    edited BOOLEAN NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

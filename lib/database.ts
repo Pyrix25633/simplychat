@@ -11,6 +11,11 @@ process.on('uncaughtException', async (exc: Error) => {
             });
         });
     }
+    await new Promise<void>((resolve): void => {
+        query('UPDATE users SET online=false, last_online=? WHERE online=true;' + settings.tests.database + ';', [getTimestamp()], () => {
+            resolve();
+        });
+    });
     connection.end((err?: MysqlError): void => {
         if(err) {
             console.log('Error attempting database connection end because of other exception!');
@@ -132,27 +137,47 @@ export function createChat(userId: number, name: string, description: string, to
             return;
         }
         const id = results[0].next_id;
-        query('INSERT INTO chats VALUES (?, ?, ?, ?, ?, ?, ?);',
-            [id, name, '{"' + userId + '": {"permissionLevel": 0}}', description, token, null, 'svg'],
+        query('INSERT INTO chats VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
+            [id, name, '{"' + userId + '": {"permissionLevel": 0}}', description, token, null, 2, 'svg'],
             (err: MysqlError | null): void => {
                 if(err) {
                     callback(err, null);
                     return;
                 }
-                callback(null, id);
                 query('UPDATE users SET chats=JSON_SET(chats, \'$."?"\', ?) WHERE id=?;',
-                    [id, '{"lastReadMessageId":-1}', userId], logError);
-                query('CREATE TABLE chat' + id + ' (' +
-                    'id INT NOT NULL,' +
-                    'timestamp INT NOT NULL,' +
-                    'user_id INT NOT NULL,' +
-                    'message BLOB NOT NULL,' +
-                    'modified BOOLEAN NOT NULL,' +
-                    'PRIMARY KEY (id),' +
-                    'FOREIGN KEY (user_id) REFERENCES users(id)' +
-                ');', [], logError);
-                query('INSERT INTO ids VALUES (?, ?)', ['chat' + id, 0], logError);
-                query('UPDATE ids SET next_id=? WHERE table_name="chats";', [id + 1], logError);
+                    [id, '{"lastReadMessageId":-1}', userId], (err0: MysqlError | null): void => {
+                    if(err0) {
+                        callback(err0, null);
+                        return;
+                    }
+                    query('CREATE TABLE chat' + id + ' (' +
+                        'id INT NOT NULL,' +
+                        'timestamp INT NOT NULL,' +
+                        'user_id INT NOT NULL,' +
+                        'message BLOB NOT NULL,' +
+                        'edited BOOLEAN NOT NULL,' +
+                        'PRIMARY KEY (id),' +
+                        'FOREIGN KEY (user_id) REFERENCES users(id)' +
+                        ');', [], (err1: MysqlError | null): void => {
+                        if(err1) {
+                            callback(err1, null);
+                            return;
+                        }
+                        query('INSERT INTO ids VALUES (?, ?)', ['chat' + id, 0], (err2: MysqlError | null): void => {
+                            if(err2) {
+                                callback(err2, null);
+                                return;
+                            }
+                            query('UPDATE ids SET next_id=? WHERE table_name="chats";', [id + 1], (err3: MysqlError | null): void => {
+                                if(err3) {
+                                    callback(err3, null);
+                                    return;
+                                }
+                                callback(null, id);
+                            });
+                        });
+                    });
+                });
             });
     });
 }
@@ -189,15 +214,24 @@ export function insertMessage(id: number, userId: number, message: string, callb
         }
         const messageId = results[0].next_id;
         query('INSERT INTO chat? VALUES (?, ?, ?, ?, ?);', [id, messageId, getTimestamp(), userId, message, false],
-            (err: MysqlError | null, results: any): void => {
+            (err: MysqlError | null): void => {
                 if(err) {
                     callback(err);
                     return;
                 }
-                callback(null, messageId);
-                query('UPDATE ids SET next_id=? WHERE table_name="chat?";', [messageId + 1, id], logError);
+                query('UPDATE ids SET next_id=? WHERE table_name="chat?";', [messageId + 1, id], (err: MysqlError | null): void => {
+                    callback(null, messageId);
+                });
             });
     });
+}
+
+export function updateMessage(id: number, messageId: number, message: string, callback: queryCallback): void {
+    query('UPDATE chat' + id + ' SET message=?, edited=true WHERE id=?;', [message, messageId], callback);
+}
+
+export function deleteMessageFromChat(id: number, messageId: number, callback: queryCallback): void {
+    query('DELETE FROM chat' + id + ' WHERE id=?;', [messageId], callback);
 }
 
 export function updateChatLogoType(id: number, chatLogoType: string): void {

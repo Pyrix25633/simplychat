@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Simply Chat - Status</title>
+        <link rel="stylesheet" href="./css/style.css">
+        <link rel="stylesheet" href="./css/status.css">
+        <link rel="stylesheet" href="" id="compact-mode-css">
+        <link rel="stylesheet" href="" id="sharp-mode-css">
+        <link href="" rel="stylesheet" id="font-css">
+        <link rel="icon" href="./img/icon.svg" type="image/png">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script defer type="module" src="./js/load-settings.js"></script>
+        <script defer type="module" src="./js/status.js"></script>
+    </head>
+    <body>
+        <nav id="navbar">
+            <div class="container navbar">
+                <span class="title">SIMPLY</span>
+                <span class="title simplychat-color">CHAT</span>
+                <img id="icon" src="./img/icon.svg" alt="Simply Chat Icon">
+            </div>
+        </nav>
+        <div class="box bottom-margin">
+            <div class="container panel">
+                <h3 class="error" id="status">Offline</h3>
+                <img src="./img/offline.svg" class="status" id="status-img">
+            </div>
+            <div class="container">
+                <div class="box panel">
+                    <div class="container">
+                        <h3>Resources</h3>
+                        <img src="./img/resources.svg" class="status">
+                    </div>
+                    <div class="box">
+                        <span class="text">CPU</span>
+                        <canvas id="cpu"></canvas>
+                    </div>
+                </div>
+                <div class="box panel">
+                    <div class="container">
+                        <h3>Database</h3>
+                        <img src="./img/database.svg" class="status">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

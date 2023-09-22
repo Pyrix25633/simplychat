@@ -9,6 +9,7 @@ import { SHA512Hash } from "../lib/hash";
 import { query } from "../lib/database";
 import { MysqlError } from "mysql";
 import { pendingTfa, tfauthenticate } from "../lib/api/user/authentication";
+import { oneDayTimestamp } from "../lib/timestamp";
 
 if(settings.https.suppressRejectUnauthorized)
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -46,6 +47,7 @@ function testPages() {
         testGet('CHAT SETTINGS', '/chat-settings', 200);
         testGet('JOIN CHAT', '/join-chat', 200);
         testGet('INDEX', '/', 200);
+        testGet('STATUS', '/status', 200);
         testGet('404', '/404', 404);
     });
 }
@@ -144,6 +146,36 @@ function runInTestDatabase(callback: () => void) {
 function testApi() {
     if(!settings.tests.api) return;
     describe('API', () => {
+        const userTokenId = {id: 0, token: ''};
+        const setSettingsRequest = {
+            token: '',
+            id: userTokenId.id,
+            username: 'Test 2',
+            email: 'fake@gg.com',
+            passwordHash: '',
+            oldPasswordHash: SHA512Hash('StrongPassword12@'),
+            tokenDuration: 16 * oneDayTimestamp,
+            tfaActive: true,
+            tfaKey: null,
+            status: 'Just a Test User',
+            settings: {
+                compactMode: true,
+                condensedFont: true,
+                aurebeshFont: true,
+                sharpMode: true
+            }
+        };
+        const setPfpRequest = {
+            token: '',
+            id: userTokenId.id,
+            pfp: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K'
+        };
+        const createChatRequest = {
+            token: '',
+            id: userTokenId.id,
+            name: 'Test Chat',
+            description: 'Very Long Description'
+        };
         describe('USER', () => {
             testPost('REGISTER', '/api/user/register', {
                 username: 'Test',
@@ -178,7 +210,7 @@ function testApi() {
                 passwordHash: SHA512Hash('StrongPassword12@')
             }, 200);
             testGet('USERNAME LOGIN FEEDBACK', '/api/user/username-login-feedback?username=Test', 200);
-            let tfauthenticateRequest = {
+            const tfauthenticateRequest = {
                 id: 0,
                 tfaToken: '',
                 tfaCode: tfa.totp({secret: tfaKey, encoding: 'base32'})
@@ -193,7 +225,6 @@ function testApi() {
                 id: 0,
                 token: SHA512Hash('Fake token')
             }, 200);
-            let userTokenId = {id: 0, token: ''};
             it('SELECT token', async () => {
                 await new Promise<void>((resolve): void => {
                     query('SELECT token FROM users WHERE id=0;', [], (err: MysqlError | null, results?: any): void => {
@@ -207,7 +238,11 @@ function testApi() {
             it('SELECT token', async () => {
                 await new Promise<void>((resolve): void => {
                     query('SELECT token FROM users WHERE id=0;', [], (err: MysqlError | null, results?: any): void => {
-                        userTokenId.token = results[0].token;
+                        const token = results[0].token;
+                        userTokenId.token = token;
+                        setSettingsRequest.token = token;
+                        setPfpRequest.token = token;
+                        createChatRequest.token = token;
                         chai.expect(err).to.equal(null);
                         resolve();
                     });
@@ -219,9 +254,11 @@ function testApi() {
                 tfaCode: tfa.totp({secret: tfaKey, encoding: 'base32'})
             }, 200);
             testPost('GET SETTINGS', '/api/user/get-settings', userTokenId, 200);
+            testPost('SET SETTINGS', '/api/user/set-settings', setSettingsRequest, 200);
+            testPost('SET PFP', '/api/user/set-pfp', setPfpRequest, 200);
         });
         describe('CHAT', () => {
-
+            testPost('CREATE', '/api/chat/create', createChatRequest, 201);
         });
     });
 }

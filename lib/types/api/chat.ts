@@ -148,6 +148,43 @@ export function isSendMessageRequestValid(req: SendMessageRequest): boolean {
         && req.message.length <= 2048;
 }
 
+//edit-message
+
+export type EditMessageRequest = {
+    token: string,
+    id: number,
+    chatId: number,
+    messageId: number,
+    message: string
+};
+
+export function isEditMessageRequestValid(req: EditMessageRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number'
+        && req.messageId != undefined && typeof req.messageId == 'number'
+        && req.message != undefined && typeof req.message == 'string'
+        && req.message.length <= 2048;
+}
+
+//delete-message
+
+export type DeleteMessageRequest = {
+    token: string,
+    id: number,
+    chatId: number,
+    messageId: number
+};
+
+export function isDeleteMessageRequestValid(req: DeleteMessageRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number'
+        && req.messageId != undefined && typeof req.messageId == 'number';
+}
+
 // get-settings
 
 export type GetChatSettingsRequest = {

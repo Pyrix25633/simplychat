@@ -157,8 +157,8 @@ span#chat-description {
     margin-left: 0;
 }
 
-div.selected {
-    background-color: var(--color-simplychat-dark);
+div.selected, span.selected {
+    background-color: var(--color-simplychat-dark) !important;
 }
 
 span.permission-level-0 {
@@ -226,6 +226,9 @@ span.user-tag {
 }
 div.message div.container {
     align-items: end;
+}
+div.message-actions {
+    width: 100%;
 }
 
 div#emoji-selector {

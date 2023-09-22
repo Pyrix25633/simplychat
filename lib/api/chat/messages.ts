@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { insertMessage, selectLastMessages, selectMessage } from "../../database";
-import { GetLastMessagesRequest, GetMessageRequest, SendMessageRequest, isGetLastMessagesRequestValid, isGetMessageRequestValid, isSendMessageRequestValid } from "../../types/api/chat";
+import { deleteMessageFromChat, insertMessage, selectLastMessages, selectMessage, updateMessage } from "../../database";
+import { DeleteMessageRequest, EditMessageRequest, GetLastMessagesRequest, GetMessageRequest, SendMessageRequest, isDeleteMessageRequestValid, isEditMessageRequestValid, isGetLastMessagesRequestValid, isGetMessageRequestValid, isSendMessageRequestValid } from "../../types/api/chat";
 import { validatePermissionLevelAndProceed } from './management';
 import { notifyAllUsersInChat } from '../../socket';
 import { settings } from '../../settings';
@@ -30,7 +30,7 @@ export function getMessage(req: Request, res: Response): void {
                 timestamp: message.timestamp,
                 userId: message.user_id,
                 message: new String(message.message),
-                modified: message.modified
+                edited: message.edited
             });
         });
     });
@@ -56,7 +56,7 @@ export function getLastMessages(req: Request, res: Response): void {
                     timestamp: message.timestamp,
                     userId: message.user_id,
                     message: new String(message.message),
-                    modified: message.modified
+                    edited: message.edited
                 });
             }
             res.status(200).send(lastMessages);
@@ -78,13 +78,69 @@ export function sendMessage(req: Request, res: Response): void {
         message.replace('\n', '');
         insertMessage(request.chatId, request.id, message, (err: MysqlError | null, id?: number): void => {
             if(err) {
-                res.status(500).send('Internal Server Error');
                 console.log(err);
+                res.status(500).send('Internal Server Error');
                 return;
             }
             res.status(201).send('Created');
-            if(settings.dynamicUpdates['message-new'])
-                notifyAllUsersInChat(chat, 'message-new', {id: id});
+            if(settings.dynamicUpdates['message-send'])
+                notifyAllUsersInChat(chat, 'message-send', {id: id});
+        });
+    });
+}
+
+export function editMessage(req: Request, res: Response): void {
+    const request: EditMessageRequest = req.body;
+    if(!isEditMessageRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validatePermissionLevelAndProceed(request.id, request.token, request.chatId, 2, res, (user, chat) => {
+        const expr = /^\s*(.*\S)\s*$/gm;
+        let message = '';
+        for(let match = expr.exec(request.message); match != null; match = expr.exec(request.message))
+            message += match[1] + '\n';
+        message.replace('\n', '');
+        selectMessage(request.chatId, request.messageId, (err: MysqlError | null, results?: any): void => {
+            if(err || results.length == 0) {
+                console.log(err);
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+            if(results[0].user_id != request.id) {
+                res.status(403).send('Forbidden');
+                return;
+            }
+            updateMessage(request.chatId, request.messageId, request.message, (err: MysqlError | null) => {
+                if(err) {
+                    console.log(err);
+                    res.status(500).send('Internal Server Error');
+                    return;
+                }
+                res.status(200).send('OK');
+                if(settings.dynamicUpdates['message-edit'])
+                    notifyAllUsersInChat(chat, 'message-edit', {id: request.messageId, message: request.message});
+            });
+        });
+    });
+}
+
+export function deleteMessage(req: Request, res: Response): void {
+    const request: DeleteMessageRequest = req.body;
+    if(!isDeleteMessageRequestValid(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validatePermissionLevelAndProceed(request.id, request.token, request.chatId, 1, res, (user, chat) => {
+        deleteMessageFromChat(request.chatId, request.messageId, (err: MysqlError | null): void => {
+            if(err) {
+                console.log(err);
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+            res.status(200).send('Created');
+            if(settings.dynamicUpdates['message-delete'])
+                notifyAllUsersInChat(chat, 'message-delete', {id: request.messageId});
         });
     });
 }

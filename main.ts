@@ -12,7 +12,7 @@ import { userInfo } from './lib/api/user/info';
 import { getUserSettings, setPfp, setUserSettings } from './lib/api/user/settings';
 import { create, join, leave } from './lib/api/chat/management';
 import { chatInfo, chatJoinInfo, list } from './lib/api/chat/info';
-import { getLastMessages, getMessage, sendMessage } from './lib/api/chat/messages';
+import { deleteMessage, editMessage, getLastMessages, getMessage, sendMessage } from './lib/api/chat/messages';
 import { onConnect } from './lib/socket';
 import { generateChatToken, getChatSettings, setChatLogo, setChatSettings } from './lib/api/chat/settings';
 import { runTests } from './test/test';
@@ -117,6 +117,10 @@ main.post('/api/chat/get-last-messages', getLastMessages);
 
 main.post('/api/chat/send-message', sendMessage);
 
+main.post('/api/chat/edit-message', editMessage);
+
+main.post('/api/chat/delete-message', deleteMessage);
+
 // settings
 
 main.post('/api/chat/get-settings', getChatSettings);
@@ -177,6 +181,10 @@ main.get('/join-chat', (req: Request, res: Response): void => {
 
 main.get('/', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/index.html'));
+});
+
+main.get('/status', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/status.html'));
 });
 
 //// test ////

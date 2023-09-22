@@ -65,8 +65,8 @@ export function setChatSettings(req: Request, res: Response): void {
                     console.log(err);
                     return;
                 }
-                if(settings.dynamicUpdates['message-new'])
-                    notifyAllUsersInChat(chat, 'message-new', {id: id});
+                if(settings.dynamicUpdates['message-send'])
+                    notifyAllUsersInChat(chat, 'message-send', {id: id});
             });
         }
         for(const userId of Object.keys(JSON.parse(chat.users))) {
@@ -78,7 +78,6 @@ export function setChatSettings(req: Request, res: Response): void {
         res.status(200).send('OK');
         if(settings.dynamicUpdates['chat-settings'])
             notifyAllUsersInChat(chat, 'chat-settings', {
-                chatId: chat.id,
                 modifiedUsers: request.modifiedUsers,
                 removedUsers: request.removedUsers
             });

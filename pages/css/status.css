@@ -1,0 +1,12 @@
+div.panel:not(:first-child) {
+    margin-left: 0 !important;
+}
+
+h3 {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+img.status {
+    width: 30px;
+}

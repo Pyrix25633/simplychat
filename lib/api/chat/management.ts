@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { addUserToChat, createChat, insertMessage, removeUserFromChat, selectChat } from "../../database";
+import { addUserToChat, createChat, insertMessage, query, removeUserFromChat, selectChat } from "../../database";
 import { createChatToken } from "../../hash";
 import { generateRandomChatLogo } from "../../random-image";
 import { CreateRequest, JoinChatRequest, LeaveChatRequest, isCreateRequestValid, isJoinChatRequestValid, isLeaveChatRequestValid } from "../../types/api/chat";
@@ -25,11 +25,22 @@ export function create(req: Request, res: Response): void {
     validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
         createChat(user.id, request.name, request.description, createChatToken(request.name, user.id), (err: MysqlError | null, id: number | null): void => {
             if(err || id == null) {
+                console.log(err);
                 res.status(500).send('Internal Server Error');
                 return;
             }
             generateRandomChatLogo(id);
-            res.status(201).send('Created');
+            insertMessage(id, 0, 'Welcome @' + request.id + '!', (err: MysqlError | null): void => {
+                if(err) {
+                    console.log(err);
+                    return;
+                }
+                const userSockets = sockets.get(request.id);
+                if(userSockets != undefined)
+                    for(const socket of userSockets)
+                        socket.emit('user-join', {chatId: id, id: request.id, permissionLevel: 0});
+                res.status(201).send('Created');
+            });
         });
     });
 }
@@ -68,17 +79,17 @@ export function join(req: Request, res: Response): void {
                         console.log(err);
                         return;
                     }
-                    if(settings.dynamicUpdates['message-new'])
-                        notifyAllUsersInChat(chat, 'message-new', {id: id});
+                    res.status(200).send('OK');
+                    if(settings.dynamicUpdates['message-send'])
+                        notifyAllUsersInChat(chat, 'message-send', {id: id});
+                    if(settings.dynamicUpdates['user-join']) {
+                        notifyAllUsersInChat(chat, 'user-join', {id: request.id, permissionLevel: permissionLevel});
+                        const userSockets = sockets.get(request.id);
+                        if(userSockets == undefined) return;
+                        for(const socket of userSockets)
+                            socket.emit('user-join', {chatId: chat.id, id: request.id, permissionLevel: permissionLevel});
+                    }
                 });
-                if(settings.dynamicUpdates['user-join']) {
-                    notifyAllUsersInChat(chat, 'user-join', {chatId: chat.id, id: request.id, permissionLevel: permissionLevel});
-                    const userSockets = sockets.get(request.id);
-                    if(userSockets == undefined) return;
-                    for(const socket of userSockets)
-                        socket.emit('user-join', {chatId: chat.id, id: request.id, permissionLevel: permissionLevel});
-                }
-                res.status(200).send('OK');
             });
         });
     });
@@ -97,12 +108,12 @@ export function leave(req: Request, res: Response): void {
                     console.log(err);
                     return;
                 }
-                if(settings.dynamicUpdates['message-new'])
-                    notifyAllUsersInChat(chat, 'message-new', {id: id});
+                res.status(200).send('OK');
+                if(settings.dynamicUpdates['user-leave'])
+                    notifyAllUsersInChat(chat, 'user-leave', {id: request.id});
+                if(settings.dynamicUpdates['message-send'])
+                    notifyAllUsersInChat(chat, 'message-send', {id: id});
             });
-            if(settings.dynamicUpdates['user-leave'])
-                notifyAllUsersInChat(chat, 'user-leave', {chatId: chat.id, id: request.id});
-            res.status(200).send('OK');
     });
 }
 

@@ -45,10 +45,12 @@ Frontend made with:
     dynamicUpdates: {
         'user-online': boolean,
         'user-settings': boolean,
-        'message-new': boolean,
-        'chat-settings': boolean,
         'user-join': boolean,
-        'user-leave': boolean
+        'user-leave': boolean,
+        'chat-settings': boolean,
+        'message-send': boolean,
+        'message-edit': boolean,
+        'message-delete': boolean
     },
     tests: {
         run: boolean,
