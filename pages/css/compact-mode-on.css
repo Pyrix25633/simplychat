@@ -128,3 +128,7 @@ div.user-options {
 img.status {
     margin-left: 20px;
 }
+
+canvas {
+    padding: 2px;
+}

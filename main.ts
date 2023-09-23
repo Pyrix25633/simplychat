@@ -17,6 +17,7 @@ import { onConnect } from './lib/socket';
 import { generateChatToken, getChatSettings, setChatLogo, setChatSettings } from './lib/api/chat/settings';
 import { runTests } from './test/test';
 import { settings } from './lib/settings';
+import { initializeStatus } from './lib/status';
 
 const main: Express = express();
 export const port: number = 4443;
@@ -37,7 +38,7 @@ main.use(helmet.contentSecurityPolicy({
         "object-src": ["'none'"],
         "script-src": ["'self'", "https:"],
         "script-src-attr": "'none'",
-        "style-src": ["'self'", "https:", "data:"],
+        "style-src": ["'self'", "https:", "data:", "'unsafe-inline'"],
     }
 }));
 main.use('/css', express.static('./pages/css'));
@@ -142,8 +143,11 @@ export const server = https.createServer(options, main);
 server.listen(port, () => {
     console.log('Server listening on port ' + port);
 });
+
 const io = new Server(server);
 io.on('connect', onConnect);
+
+initializeStatus();
 
 //// pages ////
 

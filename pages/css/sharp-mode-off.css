@@ -43,3 +43,7 @@ span.message-text {
 div#emoji-selector {
     border-radius: 5px;
 }
+
+canvas {
+    border-radius: 10px;
+}

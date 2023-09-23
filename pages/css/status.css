@@ -10,3 +10,8 @@ h3 {
 img.status {
     width: 30px;
 }
+
+canvas {
+    background-color: var(--color-background);
+    height: 200px;
+}

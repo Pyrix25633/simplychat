@@ -1,4 +1,11 @@
-settings/
+#simplychat
+settings/settings.json
 certs/
 pfps/
 chatLogos/
+
+#node
+node_modules/
+
+#bash
+*.sh

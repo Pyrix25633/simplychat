@@ -132,3 +132,7 @@ h3#name {
 img.status {
     margin-left: 20px;
 }
+
+canvas {
+    padding: 5px;
+}

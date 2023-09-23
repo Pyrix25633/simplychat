@@ -1,3 +1,5 @@
+--Start
+
 CREATE DATABASE simplychat;
 
 USE simplychat;
@@ -49,6 +51,8 @@ CREATE TABLE chats (
     chat_logo_type VARCHAR(5) NOT NULL,
     PRIMARY KEY (id)
 );
+
+-- End
 
 CREATE TABLE chat<id> (
     id INT NOT NULL,

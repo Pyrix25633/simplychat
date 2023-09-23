@@ -20,8 +20,9 @@ export const statusCodeActions = {
         console.log('Error 500: Internal Server Error');
     }
 };
+export let settings;
 
-export function loadSettings(callback) {
+export function loadSettings(callback, whenFinished) {
     if(cachedLogin == null || cachedLogin.id == undefined || cachedLogin.token == undefined)
         window.location.href = '/login';
     else {
@@ -32,9 +33,14 @@ export function loadSettings(callback) {
             contentType: 'application/json',
             success: (res) => {
                 if(res.valid) {
-                    getSettings();
-                    if(typeof callback == 'function')
-                        callback();
+                    if(whenFinished) {
+                        getSettings(callback);
+                    }
+                    else {
+                        getSettings();
+                        if(typeof callback == 'function')
+                            callback();
+                    }
                 }
                 else
                     window.location.href = '/login';
@@ -44,19 +50,24 @@ export function loadSettings(callback) {
     }
 }
 
-function getSettings() {
+function getSettings(callback) {
     $.ajax({
         url: '/api/user/get-settings',
         method: 'POST',
         data: JSON.stringify(cachedLogin),
         contentType: 'application/json',
-        success: showSettings,
+        success: (res) => {
+            settings = res.settings;
+            showSettings(res.settings);
+            if(typeof callback == 'function')
+                callback(settings);
+        },
         statusCode: statusCodeActions
     });
 }
 
-function showSettings(res) {
-    compactModeCssLink.href = './css/compact-mode-' + (res.settings.compactMode ? 'on': 'off') + '.css';
-    fontCssLink.href = './css/' + (res.settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed-' + (res.settings.condensedFont ? 'on': 'off') + '.css';
-    sharpModeCssLink.href = './css/sharp-mode-' + (res.settings.sharpMode ? 'on': 'off') + '.css';
+function showSettings(settings) {
+    compactModeCssLink.href = './css/compact-mode-' + (settings.compactMode ? 'on': 'off') + '.css';
+    fontCssLink.href = './css/' + (settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed-' + (settings.condensedFont ? 'on': 'off') + '.css';
+    sharpModeCssLink.href = './css/sharp-mode-' + (settings.sharpMode ? 'on': 'off') + '.css';
 }

@@ -44,13 +44,13 @@ export function register(req: Request, res: Response): void {
                     '<br> If the link above does not work open <a href="https://' + settings.https.hostname + ':' + port + '/confirm">' +
                     'this page</a> and enter username and verification code.'
             };
-            sendEmail(mailOptions, (err: Error | null): void => {
+            insertTempUser(request, verificationCode, (err: MysqlError | null): void => {
                 if(err) {
                     res.status(500).send('Internal Server Error');
                     console.log(err);
                     return;
                 }
-                insertTempUser(request, verificationCode, (err: MysqlError | null): void => {
+                sendEmail(mailOptions, (err: Error | null): void => {
                     if(err) {
                         res.status(500).send('Internal Server Error');
                         console.log(err);

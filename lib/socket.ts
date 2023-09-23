@@ -3,8 +3,10 @@ import { selectChat, selectUser, selectUserToken, updateUserOnline } from "./dat
 import { Socket } from "socket.io";
 import { getTimestamp } from "./timestamp";
 import { settings } from "./settings";
+import { cachedStatusLong, cachedStatusShort } from "./status";
 
 export const sockets: Map<number, Socket[]> = new Map<number, Socket[]>();
+export const statusSockets: Socket[] = [];
 
 export function onConnect(socket: Socket): void {
     socket.once('connect-user', (user: {id: number, token: string}): void => {
@@ -28,6 +30,20 @@ export function onConnect(socket: Socket): void {
                 if(userSockets1.length == 0) {
                     notifyUserOnline(user.id, false);
                 }
+            });
+        });
+    });
+    socket.once('connect-status', (user: {id: number, token: string}): void => {
+        selectUserToken(user.id, (err : MysqlError | null, results: any) => {
+            if(err || results.length == 0 || results[0].token != user.token || results[0].token_expiration < getTimestamp()) {
+                socket.disconnect(true);
+                return;
+            }
+            socket.emit('status-short', cachedStatusShort);
+            socket.emit('status-long', cachedStatusLong);
+            statusSockets.push(socket);
+            socket.on('disconnect', () => {
+                statusSockets.splice(statusSockets.indexOf(socket), 1);
             });
         });
     });

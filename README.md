@@ -15,54 +15,22 @@ Frontend made with:
 - HTML
 - CSS
 
-## Installation (server)
+## Installing the server
 
-### Settings file (`./settings/settings.json`)
+Run `make install`
 
-```ts
-{
-    https: {
-        cert: string,
-        key: string,
-        passphrase: string,
-        suppressRejectUnauthorized: boolean
-    }
-    mysqlConnection: {
-        host: string,
-        user: string,
-        password: string,
-        database: string
-    },
-    nodemailerTransport: {
-        host: string,
-        port: number,
-        secure: boolean,
-        auth: {
-            user: string,
-            pass: string
-        }
-    },
-    dynamicUpdates: {
-        'user-online': boolean,
-        'user-settings': boolean,
-        'user-join': boolean,
-        'user-leave': boolean,
-        'chat-settings': boolean,
-        'message-send': boolean,
-        'message-edit': boolean,
-        'message-delete': boolean
-    },
-    tests: {
-        run: boolean,
-        static: boolean,
-        pages: boolean,
-        api: boolean,
-        database: string
-    }
-}
-```
+## Creating the mysql database
 
-### Required folders:
+Connect to mysql with `mysql -u <user> -p`, insert your password and then copy everything in scripts/create_schema.sql from `-- Start` to `-- End`, you can change `simplychat` with your database name
 
-- `./pfps/`: to store user profile pictures
-- `./chatLogos`: to store chat logos
+## Generating the HTTPS certificates with certbot
+
+Run `make generate-certificates`
+
+## Starting the server
+
+Run `make`
+
+## Fixing mysql not starting after update
+
+Run `make fix-mysql`
