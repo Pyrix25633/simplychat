@@ -3,8 +3,13 @@ import { statusSockets } from "./socket";
 import { query } from "./database";
 import { MysqlError } from "mysql";
 
-export let cachedStatusShort = {cpu: 0, ram: 0, swap: 0};
-export let cachedStatusLong = {users: 0, online: 0, chats: 0};
+export const cachedStatusShortArray: {cpu: number, ram: number, swap: number}[] = [];
+export const cachedStatusLongArray: {users: number, online: number, chats: number}[] = [];
+
+for(let i = 0; i < 11; i++) {
+    cachedStatusShortArray.push({cpu: 0, ram: 0, swap: 0});
+    cachedStatusLongArray.push({users: 0, online: 0, chats: 0});
+}
 
 export function initializeStatus(): void {
     sendStatusShort();
@@ -19,13 +24,15 @@ function sendStatusShort(): void {
             const dataArray: number[] = [];
             for(let match = expr.exec(stdout); match != null; match = expr.exec(stdout))
                 dataArray.push(parseFloat(match[0]));
-            cachedStatusShort = {
+            const data = {
                 cpu: 100 - dataArray[0],
                 ram: 100 * (dataArray[2] / dataArray[1]),
                 swap: 100 * (dataArray[4] / dataArray[3])
             };
+            cachedStatusShortArray.push(data);
+            cachedStatusShortArray.splice(0, 1);
             for(const socket of statusSockets)
-                socket.emit('status-short', cachedStatusShort);
+                socket.emit('status-short', data);
         }
     });
 }
@@ -47,9 +54,11 @@ function sendStatusLong(): void {
                     console.log(errC);
                     return;
                 }
-                cachedStatusLong = {users: users[0].users, online: online[0].online, chats: chats[0].chats};
+                const data = {users: users[0].users, online: online[0].online, chats: chats[0].chats};
+                cachedStatusLongArray.push(data);
+                cachedStatusLongArray.splice(0, 1);
                 for(const socket of statusSockets)
-                    socket.emit('status-long', cachedStatusLong);
+                    socket.emit('status-long', data);
             });
         });
     });

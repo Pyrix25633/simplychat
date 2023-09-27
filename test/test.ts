@@ -5,11 +5,12 @@ import { IncomingMessage } from "http";
 import { port } from "../main";
 import { request } from "https";
 import { settings } from "../lib/settings";
-import { SHA512Hash } from "../lib/hash";
+import { SHA512Hash, createChatToken } from "../lib/hash";
 import { query } from "../lib/database";
 import { MysqlError } from "mysql";
-import { pendingTfa, tfauthenticate } from "../lib/api/user/authentication";
+import { pendingTfa } from "../lib/api/user/authentication";
 import { oneDayTimestamp } from "../lib/timestamp";
+import { ExecException, exec } from "child_process";
 
 if(settings.https.suppressRejectUnauthorized)
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -58,7 +59,7 @@ function runInTestDatabase(callback: () => void) {
             chai.expect(err).to.equal(null);
         });
     });
-    it('USE DATABASE ' + settings.tests.database, () => {
+    it('USE ' + settings.tests.database, () => {
         query('USE ' + settings.tests.database + ';', [], (err: MysqlError | null): void => {
             chai.expect(err).to.equal(null);
         });
@@ -130,14 +131,34 @@ function runInTestDatabase(callback: () => void) {
             chai.expect(err).to.equal(null);
         });
     });
+    it('mv pfps and chatLogos', () => {
+        exec('mv pfps pfps_ && mv chatLogos chatLogos_', (err: ExecException | null): void => {
+            chai.expect(err).to.equal(null);
+        });
+    });
+    it('mkdir pfps and chatLogos', () => {
+        exec('mkdir pfps && mkdir chatLogos', (err: ExecException | null): void => {
+            chai.expect(err).to.equal(null);
+        });
+    });
     callback();
     it('DROP DATABASE ' + settings.tests.database, () => {
         query('DROP DATABASE ' + settings.tests.database + ';', [], (err: MysqlError | null): void => {
             chai.expect(err).to.equal(null);
         });
     });
-    it('USE DATABASE ' + settings.mysqlConnection.database, () => {
+    it('USE ' + settings.mysqlConnection.database, () => {
         query('USE ' + settings.mysqlConnection.database + ';', [], (err: MysqlError | null): void => {
+            chai.expect(err).to.equal(null);
+        });
+    });
+    it('rm pfps and chatLogos', () => {
+        exec('rm -r pfps && rm -r chatLogos', (err: ExecException | null): void => {
+            chai.expect(err).to.equal(null);
+        });
+    });
+    it('mv pfps and chatLogos', () => {
+        exec('mv pfps_ pfps && mv chatLogos_ chatLogos', (err: ExecException | null): void => {
             chai.expect(err).to.equal(null);
         });
     });
@@ -175,6 +196,17 @@ function testApi() {
             id: userTokenId.id,
             name: 'Test Chat',
             description: 'Very Long Description'
+        };
+        const joinChatRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 1,
+            chatToken: ''
+        };
+        const leaveChatRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 1
         };
         describe('USER', () => {
             testPost('REGISTER', '/api/user/register', {
@@ -243,6 +275,8 @@ function testApi() {
                         setSettingsRequest.token = token;
                         setPfpRequest.token = token;
                         createChatRequest.token = token;
+                        joinChatRequest.token = token;
+                        leaveChatRequest.token = token;
                         chai.expect(err).to.equal(null);
                         resolve();
                     });
@@ -259,6 +293,43 @@ function testApi() {
         });
         describe('CHAT', () => {
             testPost('CREATE', '/api/chat/create', createChatRequest, 201);
+            it('INSERT INTO chats', async () => {
+                await new Promise<void>((resolve): void => {
+                    const token = createChatToken('Test Chat', 0);
+                    query('INSERT INTO chats VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
+                        [1, 'Test Chat', '{}', 'Test Description', token, null, 2, 'svg'],
+                        (err: MysqlError | null): void => {
+                            joinChatRequest.chatToken = token;
+                            chai.expect(err).to.equal(null);
+                            resolve();
+                        });
+                });
+            });
+            it('UPDATE ids', () => {
+                query('UPDATE ids SET next_id=2 WHERE table_name=?;', ['chats'], (err: MysqlError | null): void => {
+                    chai.expect(err).to.equal(null);
+                });
+            });
+            it('CREATE TABLE chat1', () => {
+                query(`CREATE TABLE chat1 (
+                        id INT NOT NULL,
+                        timestamp INT NOT NULL,
+                        user_id INT NOT NULL,
+                        message BLOB NOT NULL,
+                        edited BOOLEAN NOT NULL,
+                        PRIMARY KEY (id),
+                        FOREIGN KEY (user_id) REFERENCES users(id)
+                    );`, [], (err: MysqlError | null): void => {
+                        chai.expect(err).to.equal(null);
+                    });
+            });
+            it('INSERT INTO ids', () => {
+                query('INSERT INTO ids VALUES (?, 0);', ['chat1'], (err: MysqlError | null): void => {
+                    chai.expect(err).to.equal(null);
+                });
+            });
+            testPost('JOIN', '/api/chat/join', joinChatRequest, 200);
+            testPost('LEAVE', '/api/chat/leave', leaveChatRequest, 200);
         });
     });
 }

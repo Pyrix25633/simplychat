@@ -2,11 +2,22 @@ import mysql, {Connection, MysqlError, queryCallback} from 'mysql';
 import { RegisterRequest } from './types/api/user';
 import { getTimestamp, twoWeeksTimestamp } from './timestamp';
 import { settings } from './settings';
+import { ExecException, exec } from 'child_process';
 
 process.on('uncaughtException', async (exc: Error) => {
     if(settings.tests.run) {
         await new Promise<void>((resolve): void => {
             query('DROP DATABASE ' + settings.tests.database + ';', [], () => {
+                resolve();
+            });
+        });
+        await new Promise<void>((resolve): void => {
+            exec('rm -r pfps && rm -r chatLogos', (err: ExecException | null): void => {
+                resolve();
+            });
+        });
+        await new Promise<void>((resolve): void => {
+            exec('mv pfps_ pfps && mv chatLogos_ chatLogos', (err: ExecException | null): void => {
                 resolve();
             });
         });

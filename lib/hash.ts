@@ -15,6 +15,6 @@ export function createTfaToken(username: string, id: number): string {
     return SHA512Hash(username + '.' + id + '.' + getTimestamp() + '.' + Math.floor(Math.random() * 1000000));
 }
 
-export function createChatToken(name: string, userId: string): string {
+export function createChatToken(name: string, userId: number): string {
     return SHA512Hash(name + '.' + userId + '.' + getTimestamp() + '.' + Math.floor(Math.random() * 1000000));
 }

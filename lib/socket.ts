@@ -3,7 +3,7 @@ import { selectChat, selectUser, selectUserToken, updateUserOnline } from "./dat
 import { Socket } from "socket.io";
 import { getTimestamp } from "./timestamp";
 import { settings } from "./settings";
-import { cachedStatusLong, cachedStatusShort } from "./status";
+import { cachedStatusLongArray, cachedStatusShortArray } from "./status";
 
 export const sockets: Map<number, Socket[]> = new Map<number, Socket[]>();
 export const statusSockets: Socket[] = [];
@@ -39,8 +39,8 @@ export function onConnect(socket: Socket): void {
                 socket.disconnect(true);
                 return;
             }
-            socket.emit('status-short', cachedStatusShort);
-            socket.emit('status-long', cachedStatusLong);
+            socket.emit('status-short-old', {short: cachedStatusShortArray});
+            socket.emit('status-long-old', {long: cachedStatusLongArray});
             statusSockets.push(socket);
             socket.on('disconnect', () => {
                 statusSockets.splice(statusSockets.indexOf(socket), 1);

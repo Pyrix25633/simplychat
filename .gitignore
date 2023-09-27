@@ -3,6 +3,8 @@ settings/settings.json
 certs/
 pfps/
 chatLogos/
+pfps_/
+chatLogos_/
 
 #node
 node_modules/

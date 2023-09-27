@@ -100,12 +100,35 @@ loadSettings((settings) => {
         statusH3.classList.replace('error', 'success');
         statusH3.innerText = 'Online';
         statusImg.src = './img/online.svg';
-        socket.emit('connect-status', cachedLogin);
     });
     socket.on('disconnect', () => {
         statusH3.classList.replace('success', 'error');
         statusH3.innerText = 'Offline';
         statusImg.src = './img/offline.svg';
+    });
+    socket.on('status-short-old', (data) => {
+        for(const short of data.short) {
+            cpuChart.data.datasets[0].data.push(short.cpu);
+            cpuChart.data.datasets[0].data.splice(0, 1);
+            ramSwapChart.data.datasets[0].data.push(short.ram);
+            ramSwapChart.data.datasets[0].data.splice(0, 1);
+            ramSwapChart.data.datasets[1].data.push(short.swap);
+            ramSwapChart.data.datasets[1].data.splice(0, 1);
+        }
+        cpuChart.update('none');
+        ramSwapChart.update('none');
+    });
+    socket.on('status-long-old', (data) => {
+        for(const long of data.long) {
+            usersChart.data.datasets[0].data.push(long.users);
+            usersChart.data.datasets[0].data.splice(0, 1);
+            usersChart.data.datasets[1].data.push(long.online);
+            usersChart.data.datasets[1].data.splice(0, 1);
+            chatsChart.data.datasets[0].data.push(long.chats);
+            chatsChart.data.datasets[0].data.splice(0, 1);
+        }
+        usersChart.update('none');
+        chatsChart.update('none');
     });
     socket.on('status-short', (data) => {
         cpuChart.data.datasets[0].data.push(data.cpu);
