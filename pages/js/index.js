@@ -11,6 +11,8 @@ const chatNameSpan = document.getElementById('chat-name');
 const chatDescriptionSpan = document.getElementById('chat-description');
 const messagesDiv = document.getElementById('messages');
 const textareaDiv = document.getElementById('textarea');
+const showChatsImg = document.getElementById('show-chats');
+const showUsersImg = document.getElementById('show-users');
 const messageTextarea = document.getElementById('message');
 const messageCharsSpan = document.getElementById('message-chars');
 const sendImg = document.getElementById('send');
@@ -27,7 +29,8 @@ for(let i = 0; i < emojis.length; i++) {
     emojiSelectorDiv.appendChild(emojiSpan);
 }
 const chatsCache = {};
-let messagesCache = [];
+let messagesCacheArray = [];
+let messagesCache = {};
 let selectedChat;
 let usersCache;
 let selectedUser;
@@ -312,7 +315,9 @@ socket.on('message-send', (data) => {
 socket.on('message-edit', (data) => {
     if(switchingChat) return;
     if(data.chatId == selectedChat) {
-        document.getElementById('message-' + data.id).innerText = data.message;
+        messagesCache[data.id].message = data.message;
+        messagesCache[data.id].edited = true;
+        document.getElementById('message-' + data.id).innerHTML = parseMessage(data.message);
         document.getElementById('edited-' + data.id).style.display = '';
     }
 });
@@ -768,11 +773,18 @@ function loadChatLastMessages(selected) {
         }),
         contentType: 'application/json',
         success: (res) => {
-            messagesCache = res.lastMessages;
+            messagesCacheArray = res.lastMessages;
+            createMessagesCache();
             setMessages(res.lastMessages);
         },
         statusCode: statusCodeActions
     });
+}
+
+function createMessagesCache() {
+    messagesCache = {};
+    for(const message of messagesCacheArray)
+        messagesCache[message.id] = message;
 }
 
 function setMessages(messages) {
@@ -783,46 +795,23 @@ function setMessages(messages) {
 }
 
 function addMessage(message) {
-    messagesCache.concat(message);
-    messagesCache.sort((a, b) => {
+    messagesCache[message.id] = message;
+    messagesCacheArray.concat(message);
+    messagesCacheArray.sort((a, b) => {
         return b.id - a.id;
     });
-    const i = messagesCache.indexOf(message);
+    const i = messagesCacheArray.indexOf(message);
     const messageDiv = createMessageDiv(message);
-    if(i == messagesCache.length - 1)
+    if(i == messagesCacheArray.length - 1)
         messagesDiv.appendChild(messageDiv);
     else
         messagesDiv.insertBefore(messageDiv, messagesDiv.childNodes[i]);
 }
 
-function createMessageDiv(message) {
-    const user = usersCache[message.userId];
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('box', 'message');
-    const userDiv = document.createElement('div');
-    userDiv.classList.add('container', 'message-data');
-    const pfpImg = document.createElement('img');
-    pfpImg.classList.add('message-pfp');
-    userDiv.appendChild(pfpImg);
-    const usernameSpan = document.createElement('span');
-    usernameSpan.classList.add('message-username', 'username-' + message.userId);
-    userDiv.appendChild(usernameSpan);
-    const datetimeSpan = document.createElement('span');
-    datetimeSpan.classList.add('message-meta');
-    setReadableDate(datetimeSpan, message.timestamp, '$');
-    userDiv.appendChild(datetimeSpan);
-    const editedSpan = document.createElement('span');
-    editedSpan.id = 'edited-' + message.id;
-    editedSpan.classList.add('message-meta');
-    editedSpan.innerText = '(edited)';
-    userDiv.appendChild(editedSpan);
-    if(!message.edited) editedSpan.style.display = 'none';
-    const messageSpan = document.createElement('span');
-    messageSpan.id = 'message-' + message.id;
-    messageSpan.classList.add('message-text');
+function parseMessage(text) {
     const expr = /@(\d{1,9})/g;
     const matches = [];
-    for(let match = expr.exec(message.message); match != null; match = expr.exec(message.message))
+    for(let match = expr.exec(text); match != null; match = expr.exec(text))
         matches.push(match);
     for(const match of matches) {
         const userTagSpan = document.createElement('span');
@@ -856,9 +845,37 @@ function createMessageDiv(message) {
             userTagSpan.classList.add('permission-level-' + taggedUser.permissionLevel);
             userTagSpan.innerText = '@' + taggedUser.username;
         }
-        message.message = message.message.replace(match[0], userTagSpan.outerHTML);
+        text = text.replace(match[0], userTagSpan.outerHTML);
     }
-    messageSpan.innerHTML = message.message;
+    return text.replaceAll('\n', '<br>');
+}
+
+function createMessageDiv(message) {
+    const user = usersCache[message.userId];
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('box', 'message');
+    const userDiv = document.createElement('div');
+    userDiv.classList.add('container', 'message-data');
+    const pfpImg = document.createElement('img');
+    pfpImg.classList.add('message-pfp');
+    userDiv.appendChild(pfpImg);
+    const usernameSpan = document.createElement('span');
+    usernameSpan.classList.add('message-username', 'username-' + message.userId);
+    userDiv.appendChild(usernameSpan);
+    const datetimeSpan = document.createElement('span');
+    datetimeSpan.classList.add('message-meta');
+    setReadableDate(datetimeSpan, message.timestamp, '$');
+    userDiv.appendChild(datetimeSpan);
+    const editedSpan = document.createElement('span');
+    editedSpan.id = 'edited-' + message.id;
+    editedSpan.classList.add('message-meta');
+    editedSpan.innerText = '(edited)';
+    userDiv.appendChild(editedSpan);
+    if(!message.edited) editedSpan.style.display = 'none';
+    const messageSpan = document.createElement('span');
+    messageSpan.id = 'message-' + message.id;
+    messageSpan.classList.add('message-text');
+    messageSpan.innerHTML = parseMessage(message.message);
     const messageActionsDiv = document.createElement('div');
     messageSpan.addEventListener('click', () => {
         if((message.userId != cachedLogin.id && usersCache[cachedLogin.id].permissionLevel > 1) || usersCache[cachedLogin.id].permissionLevel >= 3) {
@@ -927,7 +944,7 @@ function createMessageDiv(message) {
             if(editingMessage == null) editingMessage = message.id;
             else editingMessage = null;
             if(editingMessage != null)
-                messageTextarea.value = document.getElementById('message-' + message.id).innerText;
+                messageTextarea.value = messagesCache[message.id].message;
             else messageTextarea.value = '';
         });
     }
@@ -959,6 +976,18 @@ function createMessageDiv(message) {
     return messageDiv;
 }
 
+showChatsImg.addEventListener('click', () => {
+    showChatsImg.animate([
+        {transform: 'scale(0.6)'},
+        {transform: 'scale(1.4)'},
+        {transform: 'scale(1)'}
+    ], {duration: 250});
+    if(chatsDiv.style.display != 'flex')
+        chatsDiv.style.display = 'flex';
+    else
+        chatsDiv.style.display = 'none';
+});
+
 messageTextarea.addEventListener('keydown', onMessageTextareaUpdate);
 messageTextarea.addEventListener('keyup', onMessageTextareaUpdate);
 function onMessageTextareaUpdate(e) {
@@ -966,7 +995,7 @@ function onMessageTextareaUpdate(e) {
     let message = '';
     for(let match = expr.exec(messageTextarea.value); match != null; match = expr.exec(messageTextarea.value))
         message += match[1] + '\n';
-    message.replace('\n', '');
+    message = message.replace('\n', '');
     const chars = new Blob([message]).size;
     if(chars > 2048) messageCharsSpan.classList.add('error');
     else messageCharsSpan.classList.remove('error');
@@ -992,7 +1021,7 @@ function sendMessage() {
     let message = '';
     for(let match = expr.exec(messageTextarea.value); match != null; match = expr.exec(messageTextarea.value))
         message += match[1] + '\n';
-    message.replace('\n', '');
+    message = message.replace('\n', '');
     const chars = new Blob([message]).size;
     if(chars > 2048 || chars == 0) return;
     messageTextarea.value = '';

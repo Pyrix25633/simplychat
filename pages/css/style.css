@@ -21,7 +21,7 @@ body {
     justify-content: center;
     align-items: center;
     background-color: var(--color-background);
-    min-height: 100vh;
+    min-height: 100dvh;
     margin: 0;
 }
 body::-webkit-scrollbar-track, body::-webkit-scrollbar, body::-webkit-scrollbar-thumb {
@@ -36,6 +36,7 @@ h3 {
 
 label {
     line-height: 26px;
+    text-align: center;
 }
 input {
     height: 26px;
@@ -78,6 +79,7 @@ button:disabled {
 
 span.text, span.text * {
     font-size: 16px;
+    text-align: center;
 }
 span.title {
     font-size: 25px;
@@ -173,4 +175,14 @@ div.panel > h3 {
 }
 div.section h3 {
     margin-bottom: 0px;
+}
+
+@media screen and (max-width: 600px) {
+    div.label-input {
+        flex-direction: column;
+    }
+    div.label-input label {
+        margin-right: 0;
+        margin-bottom: 2px;
+    }
 }

@@ -1,5 +1,5 @@
 :root {
-    --sidebars-height: calc(100vh - 10px);
+    --sidebars-height: calc(100dvh - 10px);
     --chat-topbar-width: calc(100vw - 277px*2 - 10px);
     --marquee-big-width: calc(var(--chat-topbar-width) - 70px - 5px);
     --messages-width: calc(100% - 10px);
@@ -74,8 +74,11 @@ div.chat-settings, div.user-settings, div.user-actions, span.user-last-online, s
 button {
     padding: 5px 10px 5px 10px;
 }
-img.button:not(:first-child) {
+div.container > img.button:not(:first-child) {
     margin-left: 5px;
+}
+div.box > img.button:not(:first-child) {
+    margin-top: 5px;
 }
 button img.button {
     margin-left: 5px;
@@ -108,8 +111,11 @@ textarea {
     padding: 5px;
 }
 
+div.show-sidebars {
+    margin-right: 5px;
+}
 div.textarea-extras {
-    padding: 5px;
+    margin-left: 5px;
 }
 
 span.char-counter {
@@ -135,4 +141,16 @@ img.status {
 
 canvas {
     padding: 5px;
+}
+
+div.panel.status {
+    margin-top: 20px;
+}
+
+@media screen and (max-width: 850px) {
+    div.panel {
+        padding: 30px;
+        margin-left: 0;
+        margin-right: 0;
+    }
 }

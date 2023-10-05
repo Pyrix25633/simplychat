@@ -1,19 +1,23 @@
 # SIMPLY CHAT
 
-An Open-source Web Chat  
+An Open-source Web Chat
 
 Backend made with:
+- Node.js
 - TypeScript
-- Nodejs
 - Express
-- Bodyparser
+- BodyParser
 - Https
+- Socket.io
 - And more
 
 Frontend made with:
 - JavaScript
 - HTML
 - CSS
+- AJAX
+- Socket.io
+- And more
 
 ## Installing the server
 

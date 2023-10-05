@@ -1,7 +1,3 @@
-div.panel:not(:first-child) {
-    margin-left: 0 !important;
-}
-
 h3 {
     margin-top: 0;
     margin-bottom: 0;
@@ -13,5 +9,29 @@ img.status {
 
 canvas {
     background-color: var(--color-background);
+}
+div.chart {
+    width: 400px;
     height: 200px;
+}
+
+div.container.status {
+    margin-top: 0 !important;
+}
+
+@media screen and (max-width: 1100px) {
+    div.chart {
+        width: 300px;
+        height: 150px;
+    }
+    @media screen and (max-width: 850px) {
+        div.container.status {
+            flex-direction: column;
+        }
+    }
+}
+@media screen and (min-width: 851px) {
+    div.panel:not(:first-child) {
+        margin-left: 0 !important;
+    }
 }

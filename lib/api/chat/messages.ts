@@ -75,7 +75,7 @@ export function sendMessage(req: Request, res: Response): void {
         let message = '';
         for(let match = expr.exec(request.message); match != null; match = expr.exec(request.message))
             message += match[1] + '\n';
-        message.replace('\n', '');
+        message = message.replace('\n', '');
         insertMessage(request.chatId, request.id, message, (err: MysqlError | null, id?: number): void => {
             if(err) {
                 console.log(err);

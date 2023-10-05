@@ -7,7 +7,8 @@ export const settings: {
         key: string,
         passphrase: string,
         suppressRejectUnauthorized: boolean,
-        hostname: string
+        hostname: string,
+        port: number
     },
     mysqlConnection: {
         host: string,

@@ -20,7 +20,7 @@ import { settings } from './lib/settings';
 import { initializeStatus } from './lib/status';
 
 const main: Express = express();
-export const port: number = 4443;
+export const port: number = settings.https.port;
 
 main.set('trust proxy', true)
 main.use(bodyParser.urlencoded({extended: true}));
@@ -191,7 +191,7 @@ main.get('/status', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/status.html'));
 });
 
-//// test ////
+//// tests ////
 
 if(settings.tests.run)
     runTests();

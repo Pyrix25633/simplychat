@@ -4,7 +4,8 @@
         "key": "",
         "passphrase": "",
         "suppressRejectUnauthorized": true,
-        "hostname": ""
+        "hostname": "",
+        "port": 443
     },
     "mysqlConnection": {
         "host": "127.0.0.1",

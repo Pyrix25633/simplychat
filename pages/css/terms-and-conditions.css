@@ -9,8 +9,9 @@ span.spaced {
     margin-top: 20px;
 }
 
-@media screen and ((max-width: 800px) or (max-height: 500px)) {
-    nav#navbar {
-        position: relative !important;
+@media screen and (max-width: 1000px) {
+    div.panel span, div.panel li {
+        font-size: 15px;
+        line-height: 18px;
     }
 }

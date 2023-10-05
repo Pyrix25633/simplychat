@@ -16,7 +16,7 @@ const percentageSettings = {
         scales: {
             y: {
                 beginAtZero: true,
-                max: 100
+                suggestedMax: 100
             }
         }
     }
@@ -37,7 +37,7 @@ const genericSettings = {
 const datasetSettings = {
     borderWidth: 1,
     pointStyle: false,
-    tension: 0.3,
+    tension: 0.3
 };
 const cpuSettings = JSON.parse(JSON.stringify(percentageSettings));
 const cpuDatasetSettings = JSON.parse(JSON.stringify(datasetSettings));

@@ -53,7 +53,7 @@ export function login(req: Request, res: Response): void {
         sendEmail({
             to: user.email,
             subject: 'Simply Chat security notification',
-            text: 'A new login to your Simply Chat account (' + user.username + ') has been detected!\n' +
+            text: 'A new login to your Simply Chat account (' + request.username + ') has been detected!\n' +
                 'If it was you, you don\'t need to do anything. If not, you should take action.\n' +
                 'Either way we suggest you to activate Two Factor Authentication!\n' +
                 'User-agent: ' + req.headers['user-agent'] + '\nIP address: ' + req.ip

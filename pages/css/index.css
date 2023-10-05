@@ -6,6 +6,14 @@
     --color-permission-level-removed: #666666;
 }
 
+body {
+    height: 100dvh;
+}
+div.page {
+    width: 100vw;
+    height: 100dvh;
+}
+
 div#loading {
     position: fixed;
     display: flex;
@@ -80,7 +88,7 @@ span.user-status {
 }
 
 div#main {
-    height: 100vh;
+    height: 100%;
     justify-content: start;
 }
 
@@ -231,6 +239,10 @@ div.message-actions {
     width: 100%;
 }
 
+div.show-sidebars {
+    display: none;
+}
+
 div#emoji-selector {
     display: grid;
     grid-template-columns: auto auto auto auto auto auto auto auto auto auto auto auto auto auto auto auto;
@@ -262,6 +274,9 @@ span.emoji {
     div#chats, div#users {
         display: none;
     }
+    div.show-sidebars {
+        display: flex;
+    }
     div#chat-topbar {
         width: var(--chat-topbar-mobile-width);
     }
@@ -288,6 +303,21 @@ span.emoji {
         width: var(--textarea-mobile-width);
     }
     @media screen and (max-width: 800px){
+        span#chat-name {
+            font-size: 25px;
+            line-height: 27px;
+        }
+        span#chat-description {
+            font-size: 17px;
+            line-height: 22px;
+        }
+        img#chat-logo {
+            height: 50px;
+        }
+        span.message-text, span.user-tag {
+            font-size: 17px;
+            line-height: 18px;
+        }
         div#emoji-selector {
             grid-template-columns: auto auto auto auto auto auto auto auto;
             height: 200px;
