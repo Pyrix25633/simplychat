@@ -60,15 +60,18 @@ div.chat, div.user {
     background-color: var(--color-lighter);
 }
 
-div#chats {
-    border-right: var(--color-lighter) 2px solid;
+div#chats, div#users {
     height: var(--sidebars-height);
     overflow-y: scroll;
+    background-color: var(--color-background);
+}
+div#chats {
+    border-right: var(--color-lighter) 2px solid;
+    left: 0;
 }
 div#users {
     border-left: var(--color-lighter) 2px solid;
-    height: var(--sidebars-height);
-    overflow-y: scroll;
+    right: 0;
 }
 div#chats::-webkit-scrollbar-track, div#chats::-webkit-scrollbar, div#chats::-webkit-scrollbar-thumb,
 div#users::-webkit-scrollbar-track, div#users::-webkit-scrollbar, div#users::-webkit-scrollbar-thumb {
@@ -241,6 +244,8 @@ div.message-actions {
 
 div.show-sidebars {
     display: none;
+    z-index: 200;
+    background-color: var(--color-background);
 }
 
 div#emoji-selector {
@@ -273,6 +278,8 @@ span.emoji {
 @media screen and (max-width: 1200px) {
     div#chats, div#users {
         display: none;
+        position: fixed;
+        z-index: 100;
     }
     div.show-sidebars {
         display: flex;
@@ -302,7 +309,10 @@ span.emoji {
     textarea {
         width: var(--textarea-mobile-width);
     }
-    @media screen and (max-width: 800px){
+    @media screen and (max-width: 800px) {
+        div.marquee-big {
+            width: var(--marquee-big-mobile-small-width);
+        }
         span#chat-name {
             font-size: 25px;
             line-height: 27px;
@@ -311,8 +321,19 @@ span.emoji {
             font-size: 17px;
             line-height: 22px;
         }
+        span.chat-name, span.username {
+            font-size: 20px;
+            line-height: 25px;
+        }
+        span.chat-description, span.status {
+            font-size: 12px;
+            line-height: 17px;
+        }
         img#chat-logo {
             height: 50px;
+        }
+        img.chat-logo, img.pfp {
+            height: 40px;
         }
         span.message-text, span.user-tag {
             font-size: 17px;

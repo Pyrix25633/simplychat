@@ -3,7 +3,7 @@ import { MysqlError } from 'mysql';
 import { addUserToChat, createChat, insertMessage, query, removeUserFromChat, selectChat } from "../../database";
 import { createChatToken } from "../../hash";
 import { generateRandomChatLogo } from "../../random-image";
-import { CreateRequest, JoinChatRequest, LeaveChatRequest, isCreateRequestValid, isJoinChatRequestValid, isLeaveChatRequestValid } from "../../types/api/chat";
+import { CreateRequest, JoinRequest, LeaveRequest, isCreateRequestValid, isJoinRequestValid, isLeaveRequestValid } from "../../types/api/chat";
 import { validateTokenAndProceed } from "../user/authentication";
 import { settings } from '../../settings';
 import { notifyAllUsersInChat, sockets } from '../../socket';
@@ -46,8 +46,8 @@ export function create(req: Request, res: Response): void {
 }
 
 export function join(req: Request, res: Response): void {
-    const request: JoinChatRequest = req.body;
-    if(!isJoinChatRequestValid(request)) {
+    const request: JoinRequest = req.body;
+    if(!isJoinRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }
@@ -96,8 +96,8 @@ export function join(req: Request, res: Response): void {
 }
 
 export function leave(req: Request, res: Response): void {
-    const request: LeaveChatRequest = req.body;
-    if(!isLeaveChatRequestValid(request)) {
+    const request: LeaveRequest = req.body;
+    if(!isLeaveRequestValid(request)) {
         res.status(400).send('Bad Request');
         return;
     }

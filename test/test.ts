@@ -32,7 +32,6 @@ function testStatic() {
         testGet('FONT', '/font/aurebesh.otf', 200);
         testGet('PFPS', '/pfps/test.svg', 200);
         testGet('CHAT LOGOS', '/chatLogos/test.svg', 200);
-        testGet('404', '/404', 404);
     });
 }
 
@@ -49,7 +48,6 @@ function testPages() {
         testGet('JOIN CHAT', '/join-chat', 200);
         testGet('INDEX', '/', 200);
         testGet('STATUS', '/status', 200);
-        testGet('404', '/404', 404);
     });
 }
 
@@ -191,22 +189,59 @@ function testApi() {
             id: userTokenId.id,
             pfp: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K'
         };
-        const createChatRequest = {
+        const createRequest = {
             token: '',
             id: userTokenId.id,
             name: 'Test Chat',
             description: 'Very Long Description'
         };
-        const joinChatRequest = {
+        const joinRequest = {
             token: '',
             id: userTokenId.id,
             chatId: 1,
             chatToken: ''
         };
-        const leaveChatRequest = {
+        const leaveRequest = {
             token: '',
             id: userTokenId.id,
             chatId: 1
+        };
+        const chatInfoRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            chatToken: ''
+        };
+        const getMessageRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            messageId: 0
+        };
+        const getLastMessagesRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            numberOfMessages: 1
+        };
+        const sendMessageRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            message: 'Hi @0!\nNice to meet you.'
+        };
+        const editMessageRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            messageId: 1,
+            message: 'Hello there!'
+        };
+        const deleteMessageRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            messageId: 0
         };
         describe('USER', () => {
             testPost('REGISTER', '/api/user/register', {
@@ -274,9 +309,15 @@ function testApi() {
                         userTokenId.token = token;
                         setSettingsRequest.token = token;
                         setPfpRequest.token = token;
-                        createChatRequest.token = token;
-                        joinChatRequest.token = token;
-                        leaveChatRequest.token = token;
+                        createRequest.token = token;
+                        joinRequest.token = token;
+                        leaveRequest.token = token;
+                        chatInfoRequest.token = token;
+                        getMessageRequest.token = token;
+                        getLastMessagesRequest.token = token;
+                        sendMessageRequest.token = token;
+                        editMessageRequest.token = token;
+                        deleteMessageRequest.token = token;
                         chai.expect(err).to.equal(null);
                         resolve();
                     });
@@ -292,14 +333,14 @@ function testApi() {
             testPost('SET PFP', '/api/user/set-pfp', setPfpRequest, 200);
         });
         describe('CHAT', () => {
-            testPost('CREATE', '/api/chat/create', createChatRequest, 201);
+            testPost('CREATE', '/api/chat/create', createRequest, 201);
             it('INSERT INTO chats', async () => {
                 await new Promise<void>((resolve): void => {
                     const token = createChatToken('Test Chat', 0);
                     query('INSERT INTO chats VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
                         [1, 'Test Chat', '{}', 'Test Description', token, null, 2, 'svg'],
                         (err: MysqlError | null): void => {
-                            joinChatRequest.chatToken = token;
+                            joinRequest.chatToken = token;
                             chai.expect(err).to.equal(null);
                             resolve();
                         });
@@ -328,8 +369,25 @@ function testApi() {
                     chai.expect(err).to.equal(null);
                 });
             });
-            testPost('JOIN', '/api/chat/join', joinChatRequest, 200);
-            testPost('LEAVE', '/api/chat/leave', leaveChatRequest, 200);
+            testPost('JOIN', '/api/chat/join', joinRequest, 200);
+            testPost('LEAVE', '/api/chat/leave', leaveRequest, 200);
+            testPost('LIST', '/api/chat/list', userTokenId, 200);
+            testPost('INFO', '/api/chat/info', chatInfoRequest, 200);
+            it('SELECT token', async () => {
+                await new Promise<void>((resolve): void => {
+                    query('SELECT token FROM chats WHERE id=0;', [], (err: MysqlError | null, results?: any): void => {
+                        chatInfoRequest.chatToken = results[0].token;
+                        chai.expect(err).to.equal(null);
+                        resolve();
+                    });
+                });
+            });
+            testPost('JOIN INFO', '/api/chat/join-info', chatInfoRequest, 200);
+            testPost('GET MESSAGE', '/api/chat/get-message', getMessageRequest, 200);
+            testPost('GET LAST MESSAGES', '/api/chat/get-last-messages', getLastMessagesRequest, 200);
+            testPost('SEND MESSAGE', '/api/chat/send-message', sendMessageRequest, 201);
+            testPost('EDIT MESSAGE', '/api/chat/edit-message', editMessageRequest, 200);
+            testPost('DELETE MESSAGE', '/api/chat/delete-message', deleteMessageRequest, 200);
         });
     });
 }

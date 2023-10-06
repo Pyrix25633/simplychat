@@ -4,11 +4,12 @@
     --marquee-big-width: calc(var(--chat-topbar-width) - 70px - 5px);
     --messages-width: calc(100% - 10px);
     --message-max-width: calc(var(--chat-topbar-width) - 100px);
-    --textarea-width: calc(var(--chat-topbar-width) - 200px);
+    --textarea-width: calc(var(--chat-topbar-width) - 70px);
     --chat-topbar-mobile-width: calc(100vw - 10px);
     --marquee-big-mobile-width: calc(var(--chat-topbar-mobile-width) - 70px - 5px);
     --message-mobile-max-width: calc(var(--chat-topbar-mobile-width) - 100px);
-    --textarea-mobile-width: calc(var(--chat-topbar-mobile-width) - 200px);
+    --textarea-mobile-width: calc(var(--chat-topbar-mobile-width) - 100px);
+    --marquee-big-mobile-small-width: calc(var(--chat-topbar-mobile-width) - 50px - 5px);
 }
 
 nav#navbar {
@@ -149,8 +150,8 @@ div.panel.status {
 
 @media screen and (max-width: 850px) {
     div.panel {
-        padding: 30px;
-        margin-left: 0;
-        margin-right: 0;
+        padding: 25px;
+        margin-left: 5px;
+        margin-right: 5px;
     }
 }

@@ -982,10 +982,30 @@ showChatsImg.addEventListener('click', () => {
         {transform: 'scale(1.4)'},
         {transform: 'scale(1)'}
     ], {duration: 250});
-    if(chatsDiv.style.display != 'flex')
+    if(chatsDiv.style.display != 'flex') {
         chatsDiv.style.display = 'flex';
-    else
-        chatsDiv.style.display = 'none';
+        usersDiv.style.display = '';
+        emojiSelectorDiv.style.display = 'none';
+    }
+    else {
+        chatsDiv.style.display = '';
+    }
+});
+
+showUsersImg.addEventListener('click', () => {
+    showUsersImg.animate([
+        {transform: 'scale(0.6)'},
+        {transform: 'scale(1.4)'},
+        {transform: 'scale(1)'}
+    ], {duration: 250});
+    if(usersDiv.style.display != 'flex') {
+        usersDiv.style.display = 'flex';
+        chatsDiv.style.display = '';
+        emojiSelectorDiv.style.display = 'none';
+    }
+    else {
+        usersDiv.style.display = '';
+    }
 });
 
 messageTextarea.addEventListener('keydown', onMessageTextareaUpdate);

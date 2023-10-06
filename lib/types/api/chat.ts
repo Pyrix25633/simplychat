@@ -21,14 +21,14 @@ export function isCreateRequestValid(req: CreateRequest) {
 
 // join
 
-export type JoinChatRequest = {
+export type JoinRequest = {
     token: string,
     id: number,
     chatId: number,
     chatToken: string
 };
 
-export function isJoinChatRequestValid(req: JoinChatRequest): boolean {
+export function isJoinRequestValid(req: JoinRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number'
@@ -39,13 +39,13 @@ export function isJoinChatRequestValid(req: JoinChatRequest): boolean {
 
 // leave
 
-export type LeaveChatRequest = {
+export type LeaveRequest = {
     token: string,
     id: number,
     chatId: number
 };
 
-export function isLeaveChatRequestValid(req: LeaveChatRequest): boolean {
+export function isLeaveRequestValid(req: LeaveRequest): boolean {
     return req.token != undefined && typeof req.token == 'string'
         && req.token.length == 128
         && req.id != undefined && typeof req.id == 'number'

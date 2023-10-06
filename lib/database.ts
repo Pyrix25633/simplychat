@@ -3,9 +3,10 @@ import { RegisterRequest } from './types/api/user';
 import { getTimestamp, twoWeeksTimestamp } from './timestamp';
 import { settings } from './settings';
 import { ExecException, exec } from 'child_process';
+import * as fs from 'fs';
 
 process.on('uncaughtException', async (exc: Error) => {
-    if(settings.tests.run) {
+    if(settings.tests.run && fs.existsSync('./pfps_') && fs.existsSync('./chatLogos_')) {
         await new Promise<void>((resolve): void => {
             query('DROP DATABASE ' + settings.tests.database + ';', [], () => {
                 resolve();
@@ -13,11 +14,13 @@ process.on('uncaughtException', async (exc: Error) => {
         });
         await new Promise<void>((resolve): void => {
             exec('rm -r pfps && rm -r chatLogos', (err: ExecException | null): void => {
+                if(err) console.log(err);
                 resolve();
             });
         });
         await new Promise<void>((resolve): void => {
             exec('mv pfps_ pfps && mv chatLogos_ chatLogos', (err: ExecException | null): void => {
+                if(err) console.log(err);
                 resolve();
             });
         });

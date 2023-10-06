@@ -4,11 +4,12 @@
     --marquee-big-width: calc(var(--chat-topbar-width) - 70px - 2px);
     --messages-width: calc(100% - 4px);
     --message-max-width: calc(var(--chat-topbar-width) - 50px);
-    --textarea-width: calc(var(--chat-topbar-width) - 150px);
+    --textarea-width: calc(var(--chat-topbar-width) - 60px);
     --chat-topbar-mobile-width: calc(100vw - 4px);
     --marquee-big-mobile-width: calc(var(--chat-topbar-mobile-width) - 70px - 2px);
     --message-mobile-max-width: calc(var(--chat-topbar-mobile-width) - 50px);
-    --textarea-mobile-width: calc(var(--chat-topbar-mobile-width) - 150px);
+    --textarea-mobile-width: calc(var(--chat-topbar-mobile-width) - 90px);
+    --marquee-big-mobile-small-width: calc(var(--chat-topbar-mobile-width) - 50px - 2px);
 }
 
 nav#navbar {
@@ -104,7 +105,7 @@ div.message-actions {
 }
 
 div#textarea {
-    margin: 5px 0;
+    margin: 2px 0;
 }
 
 textarea {
@@ -141,4 +142,12 @@ canvas {
 
 div.panel.status {
     margin-top: 10px;
+}
+
+@media screen and (max-width: 850px) {
+    div.panel {
+        padding: 15px;
+        margin-left: 2px;
+        margin-right: 2px;
+    }
 }
