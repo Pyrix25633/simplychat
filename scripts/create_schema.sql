@@ -60,6 +60,7 @@ CREATE TABLE chat<id> (
     user_id INT NOT NULL,
     message BLOB NOT NULL,
     edited BOOLEAN NOT NULL,
+    deleted BOOLEAN NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

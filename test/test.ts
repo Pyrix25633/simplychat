@@ -9,7 +9,7 @@ import { SHA512Hash, createChatToken } from "../lib/hash";
 import { query } from "../lib/database";
 import { MysqlError } from "mysql";
 import { pendingTfa } from "../lib/api/user/authentication";
-import { oneDayTimestamp } from "../lib/timestamp";
+import { getTimestamp, oneDayTimestamp } from "../lib/timestamp";
 import { ExecException, exec } from "child_process";
 
 if(settings.https.suppressRejectUnauthorized)
@@ -243,6 +243,29 @@ function testApi() {
             chatId: 0,
             messageId: 0
         };
+        const getChatSettingsRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0
+        };
+        const setChatSettingsRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            name: 'Changed Name',
+            description: 'Changed Description',
+            chatToken: SHA512Hash('Fake token'),
+            tokenExpiration: getTimestamp() + oneDayTimestamp,
+            defaultPermissionLevel: 3,
+            removedUsers: [],
+            modifiedUsers: {}
+        };
+        const setChatLogoRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            chatLogo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K'
+        };
         describe('USER', () => {
             testPost('REGISTER', '/api/user/register', {
                 username: 'Test',
@@ -318,6 +341,9 @@ function testApi() {
                         sendMessageRequest.token = token;
                         editMessageRequest.token = token;
                         deleteMessageRequest.token = token;
+                        getChatSettingsRequest.token = token;
+                        setChatSettingsRequest.token = token;
+                        setChatLogoRequest.token = token;
                         chai.expect(err).to.equal(null);
                         resolve();
                     });
@@ -358,6 +384,7 @@ function testApi() {
                         user_id INT NOT NULL,
                         message BLOB NOT NULL,
                         edited BOOLEAN NOT NULL,
+                        deleted BOOLEAN NOT NULL,
                         PRIMARY KEY (id),
                         FOREIGN KEY (user_id) REFERENCES users(id)
                     );`, [], (err: MysqlError | null): void => {
@@ -388,6 +415,10 @@ function testApi() {
             testPost('SEND MESSAGE', '/api/chat/send-message', sendMessageRequest, 201);
             testPost('EDIT MESSAGE', '/api/chat/edit-message', editMessageRequest, 200);
             testPost('DELETE MESSAGE', '/api/chat/delete-message', deleteMessageRequest, 200);
+            testPost('GET SETTINGS', '/api/chat/get-settings', getChatSettingsRequest, 200);
+            testPost('GENERATE TOKEN', '/api/chat/generate-token', getChatSettingsRequest, 200);
+            testPost('SET SETTINGS', '/api/chat/generate-token', setChatSettingsRequest, 200);
+            testPost('SET CHAT LOGO', '/api/chat/set-chat-logo', setChatLogoRequest, 200);
         });
     });
 }

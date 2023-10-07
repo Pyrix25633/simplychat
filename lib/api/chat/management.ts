@@ -117,7 +117,8 @@ export function leave(req: Request, res: Response): void {
     });
 }
 
-export function validatePermissionLevelAndProceed(id: number, token: string, chatId: number, permissionLevel: number, res: Response, callback: (user: any, chat: any) => void) {
+export function validatePermissionLevelAndProceed(id: number, token: string, chatId: number, permissionLevel: number, res: Response,
+    callback: (user: any, chat: any) => void, forbidden?: (user: any, chat: any) => void) {
     validateTokenAndProceed(id, token, res, (user) => {
         selectChat(chatId, (err: MysqlError | null, results: any): void => {
             if(err) {
@@ -130,9 +131,13 @@ export function validatePermissionLevelAndProceed(id: number, token: string, cha
                 return;
             }
             const chat = results[0];
-            const chatUser = JSON.parse(chat.users)[id.toString()];
+            const chatUser = JSON.parse(chat.users)[id];
             if(chatUser != undefined && chatUser.permissionLevel <= permissionLevel) {
                 callback(user, chat);
+                return;
+            }
+            if(forbidden != undefined) {
+                forbidden(user, chat);
                 return;
             }
             res.status(403).send('Forbidden');

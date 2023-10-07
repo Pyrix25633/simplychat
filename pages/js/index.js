@@ -323,8 +323,12 @@ socket.on('message-edit', (data) => {
 });
 socket.on('message-delete', (data) => {
     if(switchingChat) return;
-    if(data.chatId == selectedChat)
-        messagesDiv.removeChild(document.getElementById('message-' + data.id).parentElement);
+    if(data.chatId == selectedChat) {
+        messagesCache[data.id].message = 'Message deleted by @' + data.userId;
+        messagesCache[data.id].deleted = true;
+        document.getElementById('message-' + data.id).innerHTML = parseMessage(messagesCache[data.id].message);
+        document.getElementById('deleted-' + data.id).style.display = '';
+    }
 });
 
 onMessageTextareaUpdate(null);
@@ -862,16 +866,25 @@ function createMessageDiv(message) {
     const usernameSpan = document.createElement('span');
     usernameSpan.classList.add('message-username', 'username-' + message.userId);
     userDiv.appendChild(usernameSpan);
+    const messageMetasDiv = document.createElement('div');
+    messageMetasDiv.classList.add('message-metas');
     const datetimeSpan = document.createElement('span');
     datetimeSpan.classList.add('message-meta');
     setReadableDate(datetimeSpan, message.timestamp, '$');
-    userDiv.appendChild(datetimeSpan);
+    messageMetasDiv.appendChild(datetimeSpan);
     const editedSpan = document.createElement('span');
     editedSpan.id = 'edited-' + message.id;
     editedSpan.classList.add('message-meta');
     editedSpan.innerText = '(edited)';
-    userDiv.appendChild(editedSpan);
+    messageMetasDiv.appendChild(editedSpan);
     if(!message.edited) editedSpan.style.display = 'none';
+    const deletedSpan = document.createElement('span');
+    deletedSpan.id = 'deleted-' + message.id;
+    deletedSpan.classList.add('message-meta');
+    deletedSpan.innerText = '(deleted)';
+    messageMetasDiv.appendChild(deletedSpan);
+    userDiv.appendChild(messageMetasDiv);
+    if(!message.deleted) deletedSpan.style.display = 'none';
     const messageSpan = document.createElement('span');
     messageSpan.id = 'message-' + message.id;
     messageSpan.classList.add('message-text');
@@ -982,9 +995,13 @@ showChatsImg.addEventListener('click', () => {
         {transform: 'scale(1.4)'},
         {transform: 'scale(1)'}
     ], {duration: 250});
-    if(chatsDiv.style.display != 'flex') {
-        chatsDiv.style.display = 'flex';
+    if(usersDiv.style.display == 'flex') {
         usersDiv.style.display = '';
+        showChatsImg.src = './img/expand-right.svg';
+    }
+    else if(chatsDiv.style.display != 'flex') {
+        chatsDiv.style.display = 'flex';
+        showUsersImg.src = './img/collapse.svg';
         emojiSelectorDiv.style.display = 'none';
     }
     else {
@@ -998,9 +1015,13 @@ showUsersImg.addEventListener('click', () => {
         {transform: 'scale(1.4)'},
         {transform: 'scale(1)'}
     ], {duration: 250});
-    if(usersDiv.style.display != 'flex') {
-        usersDiv.style.display = 'flex';
+    if(chatsDiv.style.display == 'flex') {
         chatsDiv.style.display = '';
+        showUsersImg.src = './img/expand-left.svg';
+    }
+    else if(usersDiv.style.display != 'flex') {
+        usersDiv.style.display = 'flex';
+        showChatsImg.src = './img/collapse.svg';
         emojiSelectorDiv.style.display = 'none';
     }
     else {

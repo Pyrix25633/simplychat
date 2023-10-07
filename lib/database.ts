@@ -170,6 +170,7 @@ export function createChat(userId: number, name: string, description: string, to
                         'user_id INT NOT NULL,' +
                         'message BLOB NOT NULL,' +
                         'edited BOOLEAN NOT NULL,' +
+                        'deleted BOOLEAN NOT NULL,' +
                         'PRIMARY KEY (id),' +
                         'FOREIGN KEY (user_id) REFERENCES users(id)' +
                         ');', [], (err1: MysqlError | null): void => {
@@ -227,7 +228,7 @@ export function insertMessage(id: number, userId: number, message: string, callb
             return;
         }
         const messageId = results[0].next_id;
-        query('INSERT INTO chat? VALUES (?, ?, ?, ?, ?);', [id, messageId, getTimestamp(), userId, message, false],
+        query('INSERT INTO chat? VALUES (?, ?, ?, ?, ?, ?);', [id, messageId, getTimestamp(), userId, message, false, false],
             (err: MysqlError | null): void => {
                 if(err) {
                     callback(err);
@@ -240,12 +241,12 @@ export function insertMessage(id: number, userId: number, message: string, callb
     });
 }
 
-export function updateMessage(id: number, messageId: number, message: string, callback: queryCallback): void {
+export function updateEditMessage(id: number, messageId: number, message: string, callback: queryCallback): void {
     query('UPDATE chat' + id + ' SET message=?, edited=true WHERE id=?;', [message, messageId], callback);
 }
 
-export function deleteMessageFromChat(id: number, messageId: number, callback: queryCallback): void {
-    query('DELETE FROM chat' + id + ' WHERE id=?;', [messageId], callback);
+export function updateDeleteMessage(id: number, messageId: number, userId: number, callback: queryCallback): void {
+    query('UPDATE chat' + id + ' SET message=?, deleted=true WHERE id=?;', ['Message deleted by @' + userId, messageId], callback);
 }
 
 export function updateChatLogoType(id: number, chatLogoType: string): void {

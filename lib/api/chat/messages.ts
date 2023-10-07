@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
-import { deleteMessageFromChat, insertMessage, selectLastMessages, selectMessage, updateMessage } from "../../database";
+import { insertMessage, selectLastMessages, selectMessage, updateDeleteMessage, updateEditMessage } from "../../database";
 import { DeleteMessageRequest, EditMessageRequest, GetLastMessagesRequest, GetMessageRequest, SendMessageRequest, isDeleteMessageRequestValid, isEditMessageRequestValid, isGetLastMessagesRequestValid, isGetMessageRequestValid, isSendMessageRequestValid } from "../../types/api/chat";
 import { validatePermissionLevelAndProceed } from './management';
 import { notifyAllUsersInChat } from '../../socket';
@@ -30,7 +30,8 @@ export function getMessage(req: Request, res: Response): void {
                 timestamp: message.timestamp,
                 userId: message.user_id,
                 message: new String(message.message),
-                edited: message.edited
+                edited: message.edited,
+                deleted: message.deleted
             });
         });
     });
@@ -56,7 +57,8 @@ export function getLastMessages(req: Request, res: Response): void {
                     timestamp: message.timestamp,
                     userId: message.user_id,
                     message: new String(message.message),
-                    edited: message.edited
+                    edited: message.edited,
+                    deleted: message.deleted
                 });
             }
             res.status(200).send(lastMessages);
@@ -111,7 +113,7 @@ export function editMessage(req: Request, res: Response): void {
                 res.status(403).send('Forbidden');
                 return;
             }
-            updateMessage(request.chatId, request.messageId, request.message, (err: MysqlError | null) => {
+            updateEditMessage(request.chatId, request.messageId, request.message, (err: MysqlError | null) => {
                 if(err) {
                     console.log(err);
                     res.status(500).send('Internal Server Error');
@@ -132,15 +134,32 @@ export function deleteMessage(req: Request, res: Response): void {
         return;
     }
     validatePermissionLevelAndProceed(request.id, request.token, request.chatId, 1, res, (user, chat) => {
-        deleteMessageFromChat(request.chatId, request.messageId, (err: MysqlError | null): void => {
-            if(err) {
+        callDeleteMessage(request, res, chat);
+    }, (user, chat) => {
+        selectMessage(request.chatId, request.messageId, (err: MysqlError | null, results?: any): void => {
+            if(err || results.length == 0) {
                 console.log(err);
                 res.status(500).send('Internal Server Error');
                 return;
             }
-            res.status(200).send('Created');
-            if(settings.dynamicUpdates['message-delete'])
-                notifyAllUsersInChat(chat, 'message-delete', {id: request.messageId});
+            if(results[0].user_id != request.id) {
+                res.status(403).send('Forbidden');
+                return;
+            }
+            callDeleteMessage(request, res, chat);
         });
+    });
+}
+
+function callDeleteMessage(request: DeleteMessageRequest, res: Response, chat: any) {
+    updateDeleteMessage(request.chatId, request.messageId, request.id, (err: MysqlError | null): void => {
+        if(err) {
+            console.log(err);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+        res.status(200).send('OK');
+        if(settings.dynamicUpdates['message-delete'])
+            notifyAllUsersInChat(chat, 'message-delete', {id: request.messageId, userId: request.id});
     });
 }
