@@ -109,7 +109,7 @@ export function editMessage(req: Request, res: Response): void {
                 res.status(500).send('Internal Server Error');
                 return;
             }
-            if(results[0].user_id != request.id) {
+            if(results[0].user_id != request.id || results[0].deleted) {
                 res.status(403).send('Forbidden');
                 return;
             }
@@ -134,7 +134,14 @@ export function deleteMessage(req: Request, res: Response): void {
         return;
     }
     validatePermissionLevelAndProceed(request.id, request.token, request.chatId, 1, res, (user, chat) => {
-        callDeleteMessage(request, res, chat);
+        selectMessage(request.chatId, request.messageId, (err: MysqlError | null, results?: any): void => {
+            if(err || results.length == 0) {
+                console.log(err);
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+            callDeleteMessage(request, res, chat, results[0]);
+        });
     }, (user, chat) => {
         selectMessage(request.chatId, request.messageId, (err: MysqlError | null, results?: any): void => {
             if(err || results.length == 0) {
@@ -146,16 +153,20 @@ export function deleteMessage(req: Request, res: Response): void {
                 res.status(403).send('Forbidden');
                 return;
             }
-            callDeleteMessage(request, res, chat);
+            callDeleteMessage(request, res, chat, results[0]);
         });
     });
 }
 
-function callDeleteMessage(request: DeleteMessageRequest, res: Response, chat: any) {
+function callDeleteMessage(request: DeleteMessageRequest, res: Response, chat: any, message: any) {
     updateDeleteMessage(request.chatId, request.messageId, request.id, (err: MysqlError | null): void => {
         if(err) {
             console.log(err);
             res.status(500).send('Internal Server Error');
+            return;
+        }
+        if(message.deleted) {
+            res.status(403).send('Forbidden');
             return;
         }
         res.status(200).send('OK');

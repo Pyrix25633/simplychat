@@ -20,7 +20,8 @@ export const statusCodeActions = {
         console.log('Error 500: Internal Server Error');
     }
 };
-export let settings;
+
+let settings;
 
 export function loadSettings(callback, whenFinished) {
     if(cachedLogin == null || cachedLogin.id == undefined || cachedLogin.token == undefined)

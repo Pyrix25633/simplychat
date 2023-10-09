@@ -32,13 +32,18 @@ div.chat-logo, div.pfp {
     position: relative;
 }
 
-div.online, div.offline {
+div.read, div.unread, div.online, div.offline {
     position: absolute;
     bottom: 0;
-    background-color: var(--color-success);
     width: 10px;
     height: 10px;
     border-radius: 50%;
+}
+div.read {
+    background-color: #00000000;
+}
+div.unread {
+    background-color: var(--color-simplychat);
 }
 div.online {
     background-color: var(--color-success);
@@ -248,6 +253,16 @@ div.message div.container {
 }
 div.message-actions {
     width: 100%;
+}
+
+div#unread-messages {
+    height: 10px;
+    border-bottom: 1px solid var(--color-simplychat);
+    text-align: center;
+}
+div#unread-messages span {
+    color: var(--color-simplychat);
+    background-color: var(--color-background);
 }
 
 div#emoji-selector {

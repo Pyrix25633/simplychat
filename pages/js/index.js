@@ -348,7 +348,7 @@ loadSettings(() => {
         },
         statusCode: statusCodeActions
     });
-});
+}, true);
 
 function enableLoadingDiv() {
     switchingChat = true;
@@ -385,7 +385,7 @@ function loadChatsInfo(chats, chatsObject) {
             contentType: 'application/json',
             success: (res) => {
                 res.id = parseInt(chatId);
-                res.lastReadMessageId = chatsObject[chatId].lastReadMessageId;
+                res.lastReadMessageId = JSON.parse(chatsObject[chatId]).lastReadMessageId;
                 chatsCache[chatId] = res;
                 if(Object.keys(chatsCache).length == chats.length)
                     loadChatsLastMessage();
@@ -411,11 +411,8 @@ function loadChatsLastMessage() {
             contentType: 'application/json',
             success: (res) => {
                 numOfReceivedResponses++;
-                if(res.lastMessages.length > 0)
-                    chat.lastMessageTimestamp = res.lastMessages[0].timestamp;
-                else
-                    chat.lastMessageTimestamp = 0;
-                chatsCache[chat.id].lastMessageTimestamp = chat.lastMessageTimestamp;
+                chatsCache[chat.id].lastMessageTimestamp = res.lastMessages[0].timestamp;
+                chatsCache[chat.id].lastMessageId = res.lastMessages[0].id;
                 if(numOfReceivedResponses == chatsCacheArray.length) {
                     chatsCacheArray.sort((a, b) => {
                         return b.lastMessageTimestamp - a.lastMessageTimestamp;
@@ -449,6 +446,10 @@ function setChatInfo(chat) {
     chatLogoImg.classList.add('chat-logo', 'chat-logo-' + chat.id);
     chatLogoImg.src = './chatLogos/' + chat.id + '.' + chat.chatLogoType;
     chatLogoDiv.appendChild(chatLogoImg);
+    const unreadDiv = document.createElement('div');
+    unreadDiv.id = 'unread-' + chat.id;
+    unreadDiv.classList.add(chat.lastMessageId > chat.lastReadMessageId ? 'unread' : 'read');
+    chatLogoDiv.appendChild(unreadDiv);
     chatInfoDiv.appendChild(chatLogoDiv);
     const chatNameSpan = document.createElement('span');
     chatNameSpan.classList.add('chat-name', 'chat-name-' + chat.id);
@@ -796,20 +797,48 @@ function setMessages(messages) {
     for(let message of messages) {
         messagesDiv.appendChild(createMessageDiv(message));
     }
+    setUnreadMessages();
+}
+
+function setUnreadMessages() {
+    let unreadMessagesDiv = document.getElementById('unread-messages');
+    if(unreadMessagesDiv != null)
+        messagesDiv.removeChild(unreadMessagesDiv)
+    unreadMessagesDiv = document.createElement('div');
+    unreadMessagesDiv.id = 'unread-messages';
+    const unreadMessagesSpan = document.createElement('span');
+    unreadMessagesSpan.innerText = 'Unread Messages';
+    if(chatsCache[selectedChat].lastReadMessageId < messagesCacheArray[0].id) {
+        unreadMessagesSpan.innerText += ' (' + (messagesCacheArray[0].id - chatsCache[selectedChat].lastReadMessageId - 1) +
+        ' more)';
+    }
+    unreadMessagesDiv.appendChild(unreadMessagesSpan);
+    if(chatsCache[selectedChat].lastReadMessageId < messagesCacheArray[0].id) {
+        messagesDiv.insertBefore(unreadMessagesDiv,
+            document.getElementById('message-' + messagesCacheArray[0].id).parentNode);
+    }
+    else if(chatsCache[selectedChat].lastReadMessageId < chatsCache[selectedChat].lastMessageId) {
+        messagesDiv.insertBefore(unreadMessagesDiv,
+            document.getElementById('message-' + chatsCache[selectedChat].lastReadMessageId + 1).parentNode);
+    }
 }
 
 function addMessage(message) {
     messagesCache[message.id] = message;
-    messagesCacheArray.concat(message);
+    messagesCacheArray.push(message);
     messagesCacheArray.sort((a, b) => {
-        return b.id - a.id;
+        return a.id - b.id;
     });
     const i = messagesCacheArray.indexOf(message);
+    console.log(i, messagesCacheArray);
     const messageDiv = createMessageDiv(message);
-    if(i == messagesCacheArray.length - 1)
+    if(i == messagesCacheArray.length - 1) {
         messagesDiv.appendChild(messageDiv);
+        chatsCache[selectedChat].lastMessageId = message.id;
+    }
     else
-        messagesDiv.insertBefore(messageDiv, messagesDiv.childNodes[i]);
+        messagesDiv.insertBefore(messageDiv,
+            document.getElementById('message-' + messagesCacheArray[i + 1].id).parentNode);
 }
 
 function parseMessage(text) {
@@ -891,7 +920,7 @@ function createMessageDiv(message) {
     messageSpan.innerHTML = parseMessage(message.message);
     const messageActionsDiv = document.createElement('div');
     messageSpan.addEventListener('click', () => {
-        if((message.userId != cachedLogin.id && usersCache[cachedLogin.id].permissionLevel > 1) || usersCache[cachedLogin.id].permissionLevel >= 3) {
+        if((message.userId != cachedLogin.id && usersCache[cachedLogin.id].permissionLevel > 1) || usersCache[cachedLogin.id].permissionLevel >= 3 || message.deleted) {
             messageSpan.classList.remove('selected');
             messageActionsDiv.style.display = 'none';
             selectedMessage = undefined;
@@ -941,9 +970,9 @@ function createMessageDiv(message) {
             statusCode: statusCodeActions
         });
     });
-    if(usersCache[cachedLogin.id].permissionLevel > 1 && message.userId != cachedLogin.id)
+    if(usersCache[cachedLogin.id].permissionLevel > 1 && message.userId != cachedLogin.id || message.deleted)
         deleteImg.style.display = 'none';
-    if(message.userId == cachedLogin.id) {
+    if(message.userId == cachedLogin.id && !message.deleted) {
         const editImg = document.createElement('img');
         editImg.src = './img/edit.svg';
         editImg.classList.add('button');
