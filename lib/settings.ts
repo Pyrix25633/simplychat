@@ -33,7 +33,8 @@ export const settings: {
         'chat-settings': boolean,
         'message-send': boolean,
         'message-edit': boolean,
-        'message-delete': boolean
+        'message-delete': boolean,
+        'mark-as-read': boolean
     },
     tests: {
         run: boolean,

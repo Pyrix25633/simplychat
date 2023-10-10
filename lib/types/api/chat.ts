@@ -112,6 +112,26 @@ export function isGetMessageRequestValid(req: GetMessageRequest): boolean {
         && req.messageId != undefined && typeof req.messageId == 'number';
 }
 
+// get-messages
+
+export type GetMessagesRequest = {
+    token: string,
+    id: number,
+    chatId: number,
+    startMessageId: number,
+    endMessageId: number
+};
+
+export function isGetMessagesRequestValid(req: GetMessagesRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number'
+        && req.startMessageId != undefined && typeof req.startMessageId == 'number'
+        && req.endMessageId != undefined && typeof req.endMessageId == 'number'
+        && req.startMessageId < req.endMessageId;
+}
+
 // get-last-messages
 
 export type GetLastMessagesRequest = {

@@ -30,7 +30,8 @@
         "chat-settings": true,
         "message-send": true,
         "message-edit": true,
-        "message-delete": true
+        "message-delete": true,
+        "mark-as-read": true
     },
     "tests": {
         "run": true,

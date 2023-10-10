@@ -2,13 +2,13 @@ import { Request, Response } from 'express';
 import { MysqlError } from 'mysql';
 import imageSize from 'image-size';
 import * as fs from 'fs';
-import { GetUserSettingsRequest, SetPfpRequest, SetUserSettingsRequest, isGetUserSettingsRequestValid, isSetPfpRequestValid, isSetUserSettingsRequestValid } from '../../types/api/user';
+import { GetUserSettingsRequest, MarkAsReadRequest, SetPfpRequest, SetUserSettingsRequest, isGetUserSettingsRequestValid, isMarkAsReadRequest, isSetPfpRequestValid, isSetUserSettingsRequestValid } from '../../types/api/user';
 import { validateTokenAndProceed } from './authentication';
-import { selectFromEmail, selectFromUsername, updateUser, updateUserPfpType, updateUserToken } from '../../database';
+import { selectFromEmail, selectFromUsername, updateUser, updateUserLastReadMessageId, updateUserPfpType, updateUserToken } from '../../database';
 import { createUserToken } from '../../hash';
 import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 import { sendEmail } from '../../email';
-import { notifyAllRelatedUsers } from '../../socket';
+import { notifyAllRelatedUsers, sockets } from '../../socket';
 import { settings } from '../../settings';
 
 export function getUserSettings(req: Request, res: Response): void {
@@ -143,5 +143,26 @@ export function setPfp(req: Request, res: Response): void {
             else
                 res.status(200).send('OK');
         });
+    });
+}
+
+export function markAsRead(req: Request, res: Response): void {
+    const request: MarkAsReadRequest = req.body;
+    if(!isMarkAsReadRequest(request)) {
+        res.status(400).send('Bad Request');
+        return;
+    }
+    validateTokenAndProceed(request.id, request.token, res, (user: any): void => {
+        if(JSON.parse(user.chats)[request.chatId] == undefined) {
+            res.status(404).send('Not Found');
+            return;
+        }
+        updateUserLastReadMessageId(request.id, request.chatId, request.lastReadMessageId);
+        const userSockets = sockets.get(request.id);
+        if(userSockets != undefined && settings.dynamicUpdates['mark-as-read']) {
+            for(const socket of userSockets)
+                socket.emit('mark-as-read', {chatId: request.chatId, lastReadMessageId: request.lastReadMessageId});
+        }
+        res.status(200).send('OK');
     });
 }

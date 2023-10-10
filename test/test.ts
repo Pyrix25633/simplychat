@@ -189,6 +189,12 @@ function testApi() {
             id: userTokenId.id,
             pfp: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K'
         };
+        const markAsReadRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            lastReadMessageId: 0
+        };
         const createRequest = {
             token: '',
             id: userTokenId.id,
@@ -217,6 +223,13 @@ function testApi() {
             id: userTokenId.id,
             chatId: 0,
             messageId: 0
+        };
+        const getMessagesRequest = {
+            token: '',
+            id: userTokenId.id,
+            chatId: 0,
+            startMessageId: 0,
+            endMessageId: 1
         };
         const getLastMessagesRequest = {
             token: '',
@@ -332,11 +345,13 @@ function testApi() {
                         userTokenId.token = token;
                         setSettingsRequest.token = token;
                         setPfpRequest.token = token;
+                        markAsReadRequest.token = token;
                         createRequest.token = token;
                         joinRequest.token = token;
                         leaveRequest.token = token;
                         chatInfoRequest.token = token;
                         getMessageRequest.token = token;
+                        getMessagesRequest.token = token;
                         getLastMessagesRequest.token = token;
                         sendMessageRequest.token = token;
                         editMessageRequest.token = token;
@@ -357,6 +372,7 @@ function testApi() {
             testPost('GET SETTINGS', '/api/user/get-settings', userTokenId, 200);
             testPost('SET SETTINGS', '/api/user/set-settings', setSettingsRequest, 200);
             testPost('SET PFP', '/api/user/set-pfp', setPfpRequest, 200);
+            testPost('MARK AS READ', '/api/user/mark-as-read', markAsReadRequest, 200);
         });
         describe('CHAT', () => {
             testPost('CREATE', '/api/chat/create', createRequest, 201);
@@ -411,6 +427,7 @@ function testApi() {
             });
             testPost('JOIN INFO', '/api/chat/join-info', chatInfoRequest, 200);
             testPost('GET MESSAGE', '/api/chat/get-message', getMessageRequest, 200);
+            testPost('GET MESSAGES', '/api/chat/get-messages', getMessagesRequest, 200);
             testPost('GET LAST MESSAGES', '/api/chat/get-last-messages', getLastMessagesRequest, 200);
             testPost('SEND MESSAGE', '/api/chat/send-message', sendMessageRequest, 201);
             testPost('EDIT MESSAGE', '/api/chat/edit-message', editMessageRequest, 200);

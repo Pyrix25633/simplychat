@@ -219,3 +219,20 @@ export function isSetPfpRequestValid(req: SetPfpRequest): boolean {
         && req.id != undefined && typeof req.id == 'number'
         && req.pfp != undefined && typeof req.pfp == 'string';
 }
+
+// mark-as-read
+
+export type MarkAsReadRequest = {
+    token: string,
+    id: number,
+    chatId: number,
+    lastReadMessageId: number
+};
+
+export function isMarkAsReadRequest(req: MarkAsReadRequest): boolean {
+    return req.token != undefined && typeof req.token == 'string'
+        && req.token.length == 128
+        && req.id != undefined && typeof req.id == 'number'
+        && req.chatId != undefined && typeof req.chatId == 'number'
+        && req.lastReadMessageId != undefined && typeof req.lastReadMessageId == 'number';
+}

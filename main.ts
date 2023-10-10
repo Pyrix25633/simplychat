@@ -9,10 +9,10 @@ import { Server } from 'socket.io';
 import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeedback } from './lib/api/user/registration';
 import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, verifyTfaCode } from './lib/api/user/authentication';
 import { userInfo } from './lib/api/user/info';
-import { getUserSettings, setPfp, setUserSettings } from './lib/api/user/settings';
+import { getUserSettings, markAsRead, setPfp, setUserSettings } from './lib/api/user/settings';
 import { create, join, leave } from './lib/api/chat/management';
 import { chatInfo, chatJoinInfo, list } from './lib/api/chat/info';
-import { deleteMessage, editMessage, getLastMessages, getMessage, sendMessage } from './lib/api/chat/messages';
+import { deleteMessage, editMessage, getLastMessages, getMessage, getMessages, sendMessage } from './lib/api/chat/messages';
 import { onConnect } from './lib/socket';
 import { generateChatToken, getChatSettings, setChatLogo, setChatSettings } from './lib/api/chat/settings';
 import { runTests } from './test/test';
@@ -92,6 +92,8 @@ main.post('/api/user/set-settings', setUserSettings);
 
 main.post('/api/user/set-pfp', setPfp);
 
+main.post('/api/user/mark-as-read', markAsRead);
+
 // chat //
 
 // management
@@ -113,6 +115,8 @@ main.post('/api/chat/join-info', chatJoinInfo)
 // messages
 
 main.post('/api/chat/get-message', getMessage);
+
+main.post('/api/chat/get-messages', getMessages);
 
 main.post('/api/chat/get-last-messages', getLastMessages);
 

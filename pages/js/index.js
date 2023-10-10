@@ -299,15 +299,28 @@ socket.on('message-send', (data) => {
         }),
         contentType: 'application/json',
         success: (res) => {
-            if(data.chatId == chatsCache[selectedChat].id) addMessage(res);
-            chatsCache[data.chatId].lastMessageTimestamp = res.timestamp;
+            if(chatsCache[data.chatId].lastMessageId < res.id) {
+                chatsCache[data.chatId].lastMessageId = res.id;
+                chatsCache[data.chatId].lastMessageTimestamp = res.timestamp;
+                const unreadDiv = document.getElementById('unread-' + data.chatId);
+                if(res.userId == cachedLogin.id) {
+                    chatsCache[data.chatId].lastReadMessageId = res.id;
+                    unreadDiv.classList.replace('unread', 'read');
+                }
+                else unreadDiv.classList.replace('read', 'unread');
+            }
+            if(data.chatId == chatsCache[selectedChat].id)
+                addMessage(res);
             const chatsCacheArray = Object.values(chatsCache);
             chatsCacheArray.sort((a, b) => {
                 return b.lastMessageTimestamp - a.lastMessageTimestamp;
             });
-            chatsDiv.innerHTML = '';
-            for(const chat of chatsCacheArray)
-                setChatInfo(chat);
+            const i = chatsCacheArray.indexOf(chatsCache[data.chatId]);
+            if(parseInt(chatsDiv.childNodes[i].id.replace('chat-', '')) != data.chatId) {
+                const chatDiv = document.getElementById('chat-' + data.chatId);
+                chatsDiv.removeChild(chatDiv);
+                chatsDiv.insertBefore(chatDiv, chatsDiv.childNodes[i]);
+            }
         },
         statusCode: () => {}
     });
@@ -329,6 +342,14 @@ socket.on('message-delete', (data) => {
         document.getElementById('message-' + data.id).innerHTML = parseMessage(messagesCache[data.id].message);
         document.getElementById('deleted-' + data.id).style.display = '';
     }
+});
+socket.on('mark-as-read', (data) => {
+    console.log(data);
+    if(chatsCache[data.chatId].lastMessageId <= data.lastReadMessageId) {
+        chatsCache[data.chatId].lastReadMessageId = data.lastReadMessageId;
+        document.getElementById('unread-' + data.chatId).classList.replace('unread', 'read');
+    }
+    if(selectedChat == data.chatId) setUnreadMessages();
 });
 
 onMessageTextareaUpdate(null);
@@ -385,7 +406,7 @@ function loadChatsInfo(chats, chatsObject) {
             contentType: 'application/json',
             success: (res) => {
                 res.id = parseInt(chatId);
-                res.lastReadMessageId = JSON.parse(chatsObject[chatId]).lastReadMessageId;
+                res.lastReadMessageId = chatsObject[chatId].lastReadMessageId;
                 chatsCache[chatId] = res;
                 if(Object.keys(chatsCache).length == chats.length)
                     loadChatsLastMessage();
@@ -510,7 +531,19 @@ function setChatInfo(chat) {
             {transform: 'scale(1.4)'},
             {transform: 'scale(1)'}
         ], {duration: 250});
-        console.log(chat.id);
+        $.ajax({
+            url: '/api/user/mark-as-read',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                chatId: chat.id,
+                lastReadMessageId: chatsCache[chat.id].lastMessageId
+            }),
+            contentType: 'application/json',
+            success: () => {},
+            error: () => {}
+        });
     });
     if(chat.id != selectedChat) chatSettingsDiv.style.display = 'none';
     boxDiv.appendChild(chatSettingsDiv);
@@ -794,6 +827,35 @@ function createMessagesCache() {
 
 function setMessages(messages) {
     messagesDiv.innerHTML = '';
+    const loadMoreDiv = document.createElement('div');
+    loadMoreDiv.classList.add('load-more');
+    const loadMoreButton = document.createElement('button');
+    loadMoreButton.addEventListener('click', () => {
+        $.ajax({
+            url: '/api/chat/get-messages',
+            method: 'POST',
+            data: JSON.stringify({
+                token: cachedLogin.token,
+                id: cachedLogin.id,
+                chatId: selectedChat,
+                startMessageId: messagesCacheArray[0].id - 16,
+                endMessageId: messagesCacheArray[0].id - 1
+            }),
+            contentType: 'application/json',
+            success: (res) => {
+                for(let i = res.messages.length - 1; i >= 0; i--)
+                    addMessage(res.messages[i]);
+            },
+            statusCode: () => {}
+        });
+    });
+    loadMoreButton.innerText = 'Load More';
+    const loadMoreImg = document.createElement('img');
+    loadMoreImg.src = './img/load-more.svg';
+    loadMoreImg.classList.add('button');
+    loadMoreButton.appendChild(loadMoreImg);
+    loadMoreDiv.appendChild(loadMoreButton)
+    messagesDiv.appendChild(loadMoreDiv);
     for(let message of messages) {
         messagesDiv.appendChild(createMessageDiv(message));
     }
@@ -808,10 +870,9 @@ function setUnreadMessages() {
     unreadMessagesDiv.id = 'unread-messages';
     const unreadMessagesSpan = document.createElement('span');
     unreadMessagesSpan.innerText = 'Unread Messages';
-    if(chatsCache[selectedChat].lastReadMessageId < messagesCacheArray[0].id) {
-        unreadMessagesSpan.innerText += ' (' + (messagesCacheArray[0].id - chatsCache[selectedChat].lastReadMessageId - 1) +
-        ' more)';
-    }
+    const moreUnreadMessages = messagesCacheArray[0].id - chatsCache[selectedChat].lastReadMessageId - 1;
+    if(moreUnreadMessages > 0)
+        unreadMessagesSpan.innerText += ' (' + moreUnreadMessages + ' more)';
     unreadMessagesDiv.appendChild(unreadMessagesSpan);
     if(chatsCache[selectedChat].lastReadMessageId < messagesCacheArray[0].id) {
         messagesDiv.insertBefore(unreadMessagesDiv,
@@ -819,7 +880,7 @@ function setUnreadMessages() {
     }
     else if(chatsCache[selectedChat].lastReadMessageId < chatsCache[selectedChat].lastMessageId) {
         messagesDiv.insertBefore(unreadMessagesDiv,
-            document.getElementById('message-' + chatsCache[selectedChat].lastReadMessageId + 1).parentNode);
+            document.getElementById('message-' + (chatsCache[selectedChat].lastReadMessageId + 1)).parentNode);
     }
 }
 
@@ -830,7 +891,6 @@ function addMessage(message) {
         return a.id - b.id;
     });
     const i = messagesCacheArray.indexOf(message);
-    console.log(i, messagesCacheArray);
     const messageDiv = createMessageDiv(message);
     if(i == messagesCacheArray.length - 1) {
         messagesDiv.appendChild(messageDiv);
@@ -839,6 +899,7 @@ function addMessage(message) {
     else
         messagesDiv.insertBefore(messageDiv,
             document.getElementById('message-' + messagesCacheArray[i + 1].id).parentNode);
+    setUnreadMessages();
 }
 
 function parseMessage(text) {
