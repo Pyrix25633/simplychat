@@ -1,6 +1,7 @@
 import { loadSettings, cachedLogin, statusCodeActions } from "./load-settings.js";
 import { emojis } from "./emoji.js";
 
+let settings;
 let switchingChat = false;
 enableLoadingDiv();
 
@@ -309,8 +310,20 @@ socket.on('message-send', (data) => {
                 }
                 else unreadDiv.classList.replace('read', 'unread');
             }
-            if(data.chatId == chatsCache[selectedChat].id)
-                addMessage(res);
+            if(data.chatId == chatsCache[selectedChat].id) {
+                if(res.userId == cachedLogin.id){
+                    const scrolledToBottom = isScrolledToBottom();
+                    addMessage(res);
+                    scrollMessagesToBottom(scrolledToBottom);
+                } 
+                else {
+                    const scrolledToBottom = isScrolledToBottom();
+                    const scrolledToUnread = isScrolledToUnread();
+                    addMessage(res);
+                    scrollMessagesToUnread(scrolledToUnread);
+                    if(!scrolledToUnread) scrollMessagesToBottom(scrolledToBottom);
+                }
+            }
             const chatsCacheArray = Object.values(chatsCache);
             chatsCacheArray.sort((a, b) => {
                 return b.lastMessageTimestamp - a.lastMessageTimestamp;
@@ -344,7 +357,6 @@ socket.on('message-delete', (data) => {
     }
 });
 socket.on('mark-as-read', (data) => {
-    console.log(data);
     if(chatsCache[data.chatId].lastMessageId <= data.lastReadMessageId) {
         chatsCache[data.chatId].lastReadMessageId = data.lastReadMessageId;
         document.getElementById('unread-' + data.chatId).classList.replace('unread', 'read');
@@ -352,9 +364,36 @@ socket.on('mark-as-read', (data) => {
     if(selectedChat == data.chatId) setUnreadMessages();
 });
 
+function isScrolledToBottom() {
+    return messagesDiv.scrollTop >= messages.scrollHeight - (messages.clientHeight * 1.1);
+}
+
+function scrollMessagesToBottom(wasScrolledToBottom) {
+    if(wasScrolledToBottom)
+        messagesDiv.scrollTo(0, messagesDiv.scrollHeight - messagesDiv.clientHeight);
+}
+
+function isScrolledToUnread() {
+    const unreadMessagesDiv = document.getElementById('unread-messages');
+    if(unreadMessagesDiv == null) return isScrolledToBottom();
+    const margin = settings.compactMode ? 15 : 2;
+    let scroll = unreadMessagesDiv.offsetTop - unreadMessagesDiv.clientHeight * 4 - margin;
+    const maxScroll = messagesDiv.scrollHeight - messagesDiv.clientHeight;
+    if(scroll > maxScroll) scroll = maxScroll;
+    return messagesDiv.scrollTop == scroll;
+}
+
+function scrollMessagesToUnread(wasScrolledToUnread) {
+    if(!wasScrolledToUnread) return;
+    const unreadMessagesDiv = document.getElementById('unread-messages');
+    const margin = settings.compactMode ? 15 : 2;
+    messagesDiv.scrollTo(0, unreadMessagesDiv.offsetTop - unreadMessagesDiv.clientHeight * 4 - margin);
+}
+
 onMessageTextareaUpdate(null);
 
-loadSettings(() => {
+loadSettings((sett) => {
+    settings = sett;
     $.ajax({
         url: '/api/chat/list',
         method: 'POST',
@@ -860,6 +899,8 @@ function setMessages(messages) {
         messagesDiv.appendChild(createMessageDiv(message));
     }
     setUnreadMessages();
+    if(document.getElementById('unread-messages') == null) scrollMessagesToBottom(true);
+    else scrollMessagesToUnread(true);
 }
 
 function setUnreadMessages() {
