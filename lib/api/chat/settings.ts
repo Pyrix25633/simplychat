@@ -110,7 +110,7 @@ export function setChatLogo(req: Request, res: Response): void {
                 return;
             }
             updateChatLogoType(chat.id, chatLogoType);
-            if(chat.chatl_logo_type != chatLogoType) {
+            if(chat.chat_logo_type != chatLogoType) {
                 fs.unlink('./chatLogos/' + chat.id + '.' + chat.chat_logo_type, (err) => {
                     if(err) res.status(500).send('Internal Server Error');
                     else res.status(200).send('OK');
