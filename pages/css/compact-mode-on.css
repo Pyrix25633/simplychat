@@ -110,6 +110,10 @@ div.message-actions {
     margin-top: 2px !important;
 }
 
+div.load-more {
+    margin-bottom: 2px;
+}
+
 div#unread-messages {
     width: calc(100% - 4px);
     height: 15px;

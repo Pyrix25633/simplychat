@@ -150,15 +150,26 @@ socket.on('user-join', (data) => {
                     contentType: 'application/json',
                     success: (res) => {
                         chatsCache[data.chatId].lastMessageTimestamp = res.lastMessages[0].timestamp;
-                        chatsDiv.innerHTML = '';
+                        chatsCache[data.chatId].lastMessageId = res.lastMessages[0].id;
+                        chatsCache[data.chatId].lastReadMessageId = -1;
                         const chatsCacheArray = Object.values(chatsCache);
                         chatsCacheArray.sort((a, b) => {
                             return b.lastMessageTimestamp - a.lastMessageTimestamp;
                         });
                         loadChatUsers(chatsCache[data.chatId], () => {
-                            chatsDiv.innerHTML = '';
-                            for(const chat of chatsCacheArray)
-                                setChatInfo(chat);
+                            for(const chatDiv of document.getElementsByClassName('chat')) {
+                                chatDiv.classList.remove('selected');
+                            }
+                            for(const chatSettingsDiv of document.getElementsByClassName('chat-settings')) {
+                                chatSettingsDiv.style.display = 'none';
+                            }
+                            setChatInfo(chatsCache[data.chatId]);
+                            const i = chatsCacheArray.indexOf(chatsCache[data.chatId]);
+                            if(i < chatsCacheArray.length - 1) {
+                                const chatDiv = document.getElementById('chat-' + data.chatId);
+                                chatsDiv.removeChild(chatDiv);
+                                chatsDiv.insertBefore(chatDiv, chatsDiv.childNodes[i]);
+                            }
                         });
                     },
                     statusCode: statusCodeActions

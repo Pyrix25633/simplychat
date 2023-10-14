@@ -111,7 +111,6 @@ div.message-actions {
 }
 
 div.load-more {
-    width: calc(100% - 10px);
     margin-bottom: 5px;
 }
 

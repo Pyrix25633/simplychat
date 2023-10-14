@@ -162,8 +162,8 @@ export function createChat(userId: number, name: string, description: string, to
                     callback(err, null);
                     return;
                 }
-                query('UPDATE users SET chats=JSON_SET(chats, \'$."?"\', ?) WHERE id=?;',
-                    [id, '{"lastReadMessageId":-1}', userId], (err0: MysqlError | null): void => {
+                query('UPDATE users SET chats=JSON_SET(chats, \'$."?"\', JSON_SET("{}", \'$."lastReadMessageId"\', -1)) WHERE id=?;',
+                    [id, userId], (err0: MysqlError | null): void => {
                     if(err0) {
                         callback(err0, null);
                         return;
