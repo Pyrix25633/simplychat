@@ -1111,7 +1111,7 @@ function createMessageDiv(message) {
             data: JSON.stringify({
                 token: cachedLogin.token,
                 id: cachedLogin.id,
-                userId: parseInt(message.userId)
+                userId: message.userId
             }),
             contentType: 'application/json',
             success: (res) => {
