@@ -845,7 +845,7 @@ function setReadableDate(element, timestamp, text) {
             clearInterval(element.timer);
             element.timer = undefined;
         }
-        element.innerText = new Date(timestamp).toLocaleString();
+        element.innerText = new Date(timestamp * 1000).toLocaleString();
     }
 }
 
