@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:passwd@localhost:3306/simplychat"
+}
+
+model TempUser {
+  username         String @id @db.VarChar(32)
+  email            String @db.VarChar(64)
+  passwordHash     String @db.Char(128)
+  verificationCode Int
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  username     String         @unique @db.VarChar(32)
+  email        String         @unique @db.VarChar(64)
+  passwordHash String         @db.Char(128)
+  token        String         @db.Char(128)
+  tfaKey       String?        @db.Char(52)
+  online       Boolean        @default(true)
+  lastOnline   DateTime       @default(now())
+  status       String         @db.VarChar(64)
+  settings     String         @db.VarChar(256)
+  pfp          Bytes          @db.Blob
+  chats        UsersOnChats[]
+}
+
+model UsersOnChats {
+  chat              Chat            @relation(fields: [chatId], references: [id])
+  chatId            Int
+  user              User            @relation(fields: [userId], references: [id])
+  userId            Int
+  lastReadMessage   Message?        @relation(fields: [lastReadMessageId], references: [id])
+  lastReadMessageId Int?
+  permissionLevel   PermissionLevel
+
+  @@id([chatId, userId])
+}
+
+model Chat {
+  id                     Int             @id @default(autoincrement())
+  name                   String          @db.VarChar(64)
+  description            String          @db.VarChar(128)
+  token                  String          @db.VarChar(128)
+  tokenExpiration        DateTime?
+  defaultPermissionLevel PermissionLevel @default(USER)
+  logo                   Bytes           @db.Blob
+  users                  UsersOnChats[]
+  messages               Message[]
+}
+
+model Message {
+  id           Int            @id @default(autoincrement())
+  createdAt    DateTime       @default(now())
+  editedAt     DateTime
+  deletedAt    DateTime
+  message      Bytes          @db.Blob
+  chat         Chat           @relation(fields: [chatId], references: [id])
+  chatId       Int
+  UsersOnChats UsersOnChats[]
+}
+
+enum PermissionLevel {
+  ADMINISTRATOR
+  MODERATOR
+  USER
+  VIEWER
+}
