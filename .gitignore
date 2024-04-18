@@ -1,10 +1,6 @@
 #simplychat
-settings/settings.json
+lib/settings.ts
 certs/
-pfps/
-chatLogos/
-pfps_/
-chatLogos_/
 
 #node
 node_modules/
