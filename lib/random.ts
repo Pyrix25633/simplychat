@@ -1,4 +1,9 @@
+import { randomInt } from 'crypto';
 import * as fs from 'fs';
+
+export function generateVerificationCode(): number {
+    return randomInt(100000, 1000000);
+}
 
 function generateRandomColor(): string {
     var letters = '0123456789ABCDEF';

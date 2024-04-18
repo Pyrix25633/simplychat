@@ -6,25 +6,15 @@ import cors from 'cors';
 import * as https from 'https';
 import * as fs from 'fs';
 import { Server } from 'socket.io';
-import { confirm, emailFeedback, register, usernameConfirmFeedback, usernameFeedback } from './lib/api/user/registration';
-import { generateTfaKey, login, regenerateToken, tfauthenticate, usernameLoginFeedback, validateToken, verifyTfaCode } from './lib/api/user/authentication';
-import { userInfo } from './lib/api/user/info';
-import { getUserSettings, markAsRead, setPfp, setUserSettings } from './lib/api/user/settings';
-import { create, join, leave } from './lib/api/chat/management';
-import { chatInfo, chatJoinInfo, list } from './lib/api/chat/info';
-import { deleteMessage, editMessage, getLastMessages, getMessage, getMessages, sendMessage } from './lib/api/chat/messages';
-import { onConnect } from './lib/socket';
-import { generateChatToken, getChatSettings, setChatLogo, setChatSettings } from './lib/api/chat/settings';
-import { runTests } from './test/test';
 import { settings } from './lib/settings';
-import { initializeStatus } from './lib/status';
+import { getRegisterEmailFeedback, getRegisterUsernameFeedback, postTempUser } from './lib/api/temp-users';
 
 const main: Express = express();
 export const port: number = settings.https.port;
 
 main.set('trust proxy', true)
-main.use(bodyParser.urlencoded({extended: true}));
-main.use(bodyParser.json({limit: '6mb'}));
+main.use(bodyParser.urlencoded({ extended: true }));
+main.use(bodyParser.json({ limit: '6mb' }));
 main.use(cors());
 main.use(helmet());
 main.use(helmet.contentSecurityPolicy({
@@ -50,91 +40,13 @@ main.use('/chatLogos', express.static('./chatLogos'));
 
 //// api ////
 
-// user //
+// temp-users //
 
-// registration
+main.post('/temp-users', postTempUser);
 
-main.post('/api/user/register', register);
+main.post('/register-username-feedback', getRegisterUsernameFeedback);
 
-main.get('/api/user/username-feedback', usernameFeedback);
-
-main.get('/api/user/email-feedback', emailFeedback);
-
-main.post('/api/user/confirm', confirm);
-
-main.get('/api/user/username-confirm-feedback', usernameConfirmFeedback);
-
-// authentication
-
-main.post('/api/user/login', login);
-
-main.get('/api/user/username-login-feedback', usernameLoginFeedback);
-
-main.post('/api/user/tfauthenticate', tfauthenticate);
-
-main.post('/api/user/validate-token', validateToken);
-
-main.post('/api/user/regenerate-token', regenerateToken);
-
-main.get('/api/user/generate-tfa-key', generateTfaKey);
-
-main.post('/api/user/verify-tfa-code', verifyTfaCode);
-
-// info
-
-main.post('/api/user/info', userInfo);
-
-// settings
-
-main.post('/api/user/get-settings', getUserSettings);
-
-main.post('/api/user/set-settings', setUserSettings);
-
-main.post('/api/user/set-pfp', setPfp);
-
-main.post('/api/user/mark-as-read', markAsRead);
-
-// chat //
-
-// management
-
-main.post('/api/chat/create', create);
-
-main.post('/api/chat/join', join);
-
-main.post('/api/chat/leave', leave);
-
-// info
-
-main.post('/api/chat/list', list);
-
-main.post('/api/chat/info', chatInfo);
-
-main.post('/api/chat/join-info', chatJoinInfo)
-
-// messages
-
-main.post('/api/chat/get-message', getMessage);
-
-main.post('/api/chat/get-messages', getMessages);
-
-main.post('/api/chat/get-last-messages', getLastMessages);
-
-main.post('/api/chat/send-message', sendMessage);
-
-main.post('/api/chat/edit-message', editMessage);
-
-main.post('/api/chat/delete-message', deleteMessage);
-
-// settings
-
-main.post('/api/chat/get-settings', getChatSettings);
-
-main.post('/api/chat/generate-token', generateChatToken)
-
-main.post('/api/chat/set-settings', setChatSettings);
-
-main.post('/api/chat/set-chat-logo', setChatLogo);
+main.post('/register-email-feedback', getRegisterEmailFeedback);
 
 //// server ////
 
@@ -149,9 +61,9 @@ server.listen(port, () => {
 });
 
 const io = new Server(server);
-io.on('connect', onConnect);
+//io.on('connect', onConnect);
 
-initializeStatus();
+//initializeStatus();
 
 //// pages ////
 
@@ -163,6 +75,9 @@ main.get('/terms-and-conditions', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/terms-and-conditions.html'));
 });
 
+main.get('/temp-users/:username/confirm', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/confirm.html'));
+});
 main.get('/confirm', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/confirm.html'));
 });
@@ -197,5 +112,5 @@ main.get('/status', (req: Request, res: Response): void => {
 
 //// tests ////
 
-if(settings.tests.run)
-    runTests();
+//if(settings.tests.run)
+    //runTests();

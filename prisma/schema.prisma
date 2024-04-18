@@ -9,8 +9,8 @@ datasource db {
 
 model TempUser {
   username         String @id @db.VarChar(32)
-  email            String @db.VarChar(64)
-  passwordHash     String @db.Char(128)
+  email            String @unique @db.VarChar(64)
+  passwordHash     String @db.Char(60)
   verificationCode Int
 }
 
@@ -18,7 +18,7 @@ model User {
   id           Int            @id @default(autoincrement())
   username     String         @unique @db.VarChar(32)
   email        String         @unique @db.VarChar(64)
-  passwordHash String         @db.Char(128)
+  passwordHash String         @db.Char(60)
   token        String         @db.Char(128)
   tfaKey       String?        @db.Char(52)
   online       Boolean        @default(true)
