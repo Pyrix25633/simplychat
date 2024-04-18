@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://root:passwd@localhost:3306/simplychat"
+  url      = env("DATABASE_URL")
 }
 
 model TempUser {

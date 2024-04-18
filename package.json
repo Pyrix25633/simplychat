@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/Pyrix25633/opentasks-server#readme",
   "dependencies": {
+    "@prisma/client": "^5.12.1",
     "@types/chai": "^4.3.6",
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.17",
