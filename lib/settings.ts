@@ -1,46 +1,37 @@
-import path from 'path';
-import * as fs from 'fs';
-
-export const settings: {
+export const settings = {
     https: {
-        cert: string,
-        key: string,
-        passphrase: string,
-        suppressRejectUnauthorized: boolean,
-        hostname: string,
-        port: number
-    },
-    mysqlConnection: {
-        host: string,
-        user: string,
-        password: string,
-        database: string
+        cert: "certs/cert.pem",
+        key: "certs/key.pem",
+        passphrase: "",
+        suppressRejectUnauthorized: true,
+        hostname: "",
+        port: 4443
     },
     nodemailerTransport: {
-        host: string,
-        port: number,
-        secure: boolean,
+        host: "",
+        port: 465,
+        secure: true,
         auth: {
-            user: string,
-            pass: string
+            user: "",
+            pass: ""
         }
     },
     dynamicUpdates: {
-        'user-online': boolean,
-        'user-settings': boolean,
-        'user-join': boolean,
-        'user-leave': boolean,
-        'chat-settings': boolean,
-        'message-send': boolean,
-        'message-edit': boolean,
-        'message-delete': boolean,
-        'mark-as-read': boolean
+        'user-online': true,
+        'user-settings': true,
+        'user-join': true,
+        'user-leave': true,
+        'chat-settings': true,
+        'message-send': true,
+        'message-edit': true,
+        'message-delete': true,
+        'mark-as-read': true
     },
     tests: {
-        run: boolean,
-        static: boolean,
-        pages: boolean,
-        api: boolean,
-        database: string
+        run: false,
+        static: false,
+        pages: false,
+        api: false,
+        database: "test"
     }
-} = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../settings/settings.json')).toString());
+};

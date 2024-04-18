@@ -1,4 +1,3 @@
-import path from 'path';
 import nodemailer from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
 import { settings } from './settings';
