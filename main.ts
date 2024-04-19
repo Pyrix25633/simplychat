@@ -44,9 +44,9 @@ main.use('/chatLogos', express.static('./chatLogos'));
 
 main.post('/temp-users', postTempUser);
 
-main.post('/register-username-feedback', getRegisterUsernameFeedback);
+main.get('/register-username-feedback', getRegisterUsernameFeedback);
 
-main.post('/register-email-feedback', getRegisterEmailFeedback);
+main.get('/register-email-feedback', getRegisterEmailFeedback);
 
 //// server ////
 

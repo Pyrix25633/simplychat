@@ -1,0 +1,122 @@
+openapi: 3.0.2
+info:
+    description: Simple instant messaging application
+    version: 2.0.0
+    title: Simply Chat
+    contact:
+        email: biral.mattia@gmail.com
+    license:
+        name: GPL-3.0
+        url: https://www.gnu.org/licenses/gpl-3.0.en.html
+tags:
+    - name: temp-users
+      description: Handles registration and confirmation requests
+components:
+    securitySchemes:
+        cookieAuth:
+            type: apiKey
+            in: cookie
+            name: token
+    schemas:
+        username:
+            type: string
+            example: Pyrix25633
+        email:
+            type: string
+            format: email
+            example: name.surname@domain.com
+        password:
+            type: string
+            example: passwd1234@
+paths:
+    /temp-users:
+        post:
+            tags:
+                - temp-users
+            summary: Adds a new temporary user
+            description: First step of the registration process
+            operationId: temp-users
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                username:
+                                    $ref: "#/components/schemas/username"
+                                email:
+                                    $ref: "#/components/schemas/email"
+                                password:
+                                    $ref: "#/components/schemas/password"
+            responses:
+                "201":
+                    description: The first step of the registration succeded
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    username:
+                                        $ref: "#/components/schemas/username"
+                "400":
+                    description: Bad Request
+                "422":
+                    description: "Unprocessable Content: no schools found with specified schoolId or temporary user cannot be created"
+    /register-username-feedback:
+        get:
+            tags:
+                - temp-users
+            summary: Username feedback for the registration form
+            description: Returns a user friendly username feedback
+            operationId: register-username-feedback
+            requestBody:
+                content:
+                  application/json:
+                    schema:
+                        type: object
+                        properties:
+                            username:
+                                $ref: "#/components/schemas/username"
+            responses:
+                "200":
+                    description: Username feedback
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    feedback:
+                                        type: string
+                                        example: Valid Username
+                "400":
+                    description: Bad Request
+    /register-email-feedback:
+        get:
+            tags:
+                - temp-users
+            summary: Email feedback for the registration form
+            description: Returns a user friendly email feedback
+            operationId: register-email-feedback
+            requestBody:
+                content:
+                  application/json:
+                    schema:
+                        type: object
+                        properties:
+                            email:
+                                $ref: "#/components/schemas/email"
+            responses:
+                "200":
+                    description: Email feedback
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    feedback:
+                                        type: string
+                                        example: Valid Email
+                "400":
+                    description: Bad Request
+servers:
+    - url: https://simplychat.ddns.net/api/
