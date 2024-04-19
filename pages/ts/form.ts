@@ -1,7 +1,7 @@
 import { RequireNonNull, StatusCode, Success } from './utils.js';
 
 export abstract class Form {
-    private readonly url: string;
+    protected readonly url: string;
     private readonly method: string;
     private readonly form: HTMLElement;
     private readonly inputs: Input[];
@@ -35,15 +35,22 @@ export abstract class Form {
         this.submitButton.setDisabled(!this.valid);
     }
 
-    async submit(): Promise<void> {
-        if(this.submitButton.isDisabled()) return;
-        const data: { [index: string]: any; } = {};
+    async getUrl(): Promise<string> {
+        return this.url;
+    }
+
+    async getData(): Promise<string | { [index: string]: any }> {
+        const data: { [index: string]: any } = {};
         for(const input of this.inputs)
             data[input.id] = await input.parse();
+        return this.method == 'GET' ? data : JSON.stringify(data);
+    }
+
+    async submit(): Promise<void> {
         $.ajax({
-            url: this.url,
+            url: await this.getUrl(),
             method: this.method,
-            data: JSON.stringify(data),
+            data: await this.getData(),
             contentType: 'application/json',
             success: this.success,
             statusCode: this.statusCode
@@ -88,11 +95,11 @@ export abstract class SubmitButton {
 export abstract class Input {
     public readonly id: string;
     private form: Form | undefined = undefined;
-    protected input: HTMLInputElement;
+    public input: HTMLInputElement;
     private feedback: HTMLSpanElement;
     private labelText: string;
     private timeout: NodeJS.Timeout | undefined = undefined;
-    private error: boolean = false;
+    private error: boolean = true;
 
     constructor(id: string, type: string, labelText: string, feedbackText: string) {
         this.id = id;

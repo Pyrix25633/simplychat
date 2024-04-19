@@ -26,7 +26,7 @@ class PasswordInput extends Input {
 
     async parse(): Promise<string | void> {
         if(this.input.value.length < 8) {
-            this.setError(true, 'At least 8 Characters needed!')
+            this.setError(true, 'At least 8 Characters needed!');
             return;
         }
         let digits = 0, symbols = 0;
@@ -53,7 +53,6 @@ class PasswordInput extends Input {
     }
 }
 
-
 const usernameInput = new UsernameInput();
 const emailInput = new EmailInput();
 const passwordInput = new PasswordInput();
@@ -64,8 +63,10 @@ class LoginForm extends Form {
     constructor() {
         super('register-form', '/api/temp-users', 'POST', [
             usernameInput, emailInput, passwordInput
-        ], new LoginButton(), (): void => {
-            window.location.href = '/temp-users/' + usernameInput.parse() + '/confirm';
+        ], new LoginButton(), async (): Promise<void> => {
+            const username = usernameInput.input.value;
+            localStorage.setItem('pendingConfirmUsername', username)
+            window.location.href = '/temp-users/' + username + '/confirm';
         }, loginStatusCode);
     }
 }

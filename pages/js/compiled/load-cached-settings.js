@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const utils_js_1 = require("./utils.js");
-const cssManager = new utils_js_1.CssManager();
-cssManager.applyStyle(utils_js_1.CssSettings.loadCached());
+import { CssManager, CssSettings } from "./utils.js";
+const cssManager = new CssManager();
+cssManager.applyStyle(CssSettings.loadCached());

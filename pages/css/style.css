@@ -51,9 +51,11 @@ button {
     color: var(--color-background);
     font-weight: bold;
     align-items: center;
+    cursor: pointer;
 }
 img.button {
     height: 25px;
+    cursor: pointer;
 }
 input:focus {
     border-color: var(--color-simplychat);
@@ -61,6 +63,7 @@ input:focus {
 }
 input:-webkit-autofill {
     background-color: transparent !important;
+    -webkit-text-fill-color: var(--color-foreground);
     -webkit-box-shadow: 0 0 0 50px var(--color-background) inset;
 }
 input.medium {
@@ -69,12 +72,17 @@ input.medium {
 input.small {
     width: 40px;
 }
+input[type=number] {
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
 button:active {
-    color: var(--color-simplychat);
     background-color: var(--color-foreground);
 }
 button:disabled {
     filter: brightness(70%);
+    cursor: not-allowed;
 }
 
 span.text, span.text * {

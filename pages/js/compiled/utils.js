@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CssManager = exports.CssSettings = exports.Auth = exports.RequireNonNull = exports.defaultStatusCode = void 0;
-exports.defaultStatusCode = {
+export const defaultStatusCode = {
     400: () => {
         window.location.href = '/400.html';
     },
@@ -24,7 +21,7 @@ exports.defaultStatusCode = {
         window.location.href = '/500.html';
     }
 };
-class RequireNonNull {
+export class RequireNonNull {
     static getElementById(id) {
         const element = document.getElementById(id);
         if (element != null)
@@ -37,8 +34,7 @@ class RequireNonNull {
         return value;
     }
 }
-exports.RequireNonNull = RequireNonNull;
-class Auth {
+export class Auth {
     static async validateToken() {
         return new Promise((resolve) => {
             $.ajax({
@@ -50,18 +46,18 @@ class Auth {
                     else
                         window.location.href = '/login';
                 },
-                statusCode: exports.defaultStatusCode
+                statusCode: defaultStatusCode
             });
         });
     }
 }
-exports.Auth = Auth;
-class CssSettings {
+export class CssSettings {
     constructor(json) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         this.compactMode = (_a = json === null || json === void 0 ? void 0 : json.compactMode) !== null && _a !== void 0 ? _a : false;
         this.condensedFont = (_b = json === null || json === void 0 ? void 0 : json.condensedFont) !== null && _b !== void 0 ? _b : false;
-        this.sharpMode = (_c = json === null || json === void 0 ? void 0 : json.sharpMode) !== null && _c !== void 0 ? _c : false;
+        this.aurebeshFont = (_c = json === null || json === void 0 ? void 0 : json.aurebeshFont) !== null && _c !== void 0 ? _c : false;
+        this.sharpMode = (_d = json === null || json === void 0 ? void 0 : json.sharpMode) !== null && _d !== void 0 ? _d : false;
     }
     static loadCached() {
         var _a;
@@ -75,7 +71,7 @@ class CssSettings {
                 success: (res) => {
                     resolve(new CssSettings(res));
                 },
-                statusCode: exports.defaultStatusCode
+                statusCode: defaultStatusCode
             });
         });
     }
@@ -83,8 +79,7 @@ class CssSettings {
         localStorage.setItem('cachedSettings', JSON.stringify(settings));
     }
 }
-exports.CssSettings = CssSettings;
-class CssManager {
+export class CssManager {
     constructor() {
         this.compactModeCssLink = RequireNonNull.getElementById('compact-mode-css');
         this.sharpModeCssLink = RequireNonNull.getElementById('sharp-mode-css');
@@ -93,10 +88,9 @@ class CssManager {
     applyStyle(settings) {
         this.compactModeCssLink.href = CssManager.buildLink('compact-mode', settings.compactMode);
         this.sharpModeCssLink.href = CssManager.buildLink('sharp-mode', settings.sharpMode);
-        this.fontCssLink.href = CssManager.buildLink('roboto-condensed', settings.condensedFont);
+        this.fontCssLink.href = CssManager.buildLink((settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed', settings.condensedFont);
     }
     static buildLink(name, on) {
         return '/css/' + name + '-' + (on ? 'on' : 'off') + '.css';
     }
 }
-exports.CssManager = CssManager;

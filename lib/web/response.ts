@@ -16,7 +16,7 @@ abstract class HttpResponse {
 }
 
 abstract class JsonResponse extends HttpResponse {
-    private readonly body: Json;
+    protected readonly body: Json;
 
     public constructor(body: Json) {
         super();
@@ -26,13 +26,13 @@ abstract class JsonResponse extends HttpResponse {
 
 export class Ok extends JsonResponse {
     public send(res: Response): void {
-        res.sendStatus(200);
+        res.status(200).send(this.body);
     }
 }
 
 export class Created extends JsonResponse {
     public send(res: Response): void {
-        res.sendStatus(201);
+        res.status(201).send(this.body);
     }
 }
 

@@ -59,11 +59,13 @@ export class Auth {
 export class CssSettings {
     readonly compactMode: boolean;
     readonly condensedFont: boolean;
+    readonly aurebeshFont: boolean;
     readonly sharpMode: boolean;
 
     constructor(json: { [index: string]: any; } | null) {
         this.compactMode = json?.compactMode ?? false;
         this.condensedFont = json?.condensedFont ?? false;
+        this.aurebeshFont = json?.aurebeshFont ?? false;
         this.sharpMode = json?.sharpMode ?? false;
     }
 
@@ -103,7 +105,7 @@ export class CssManager {
     applyStyle(settings: CssSettings): void {
         this.compactModeCssLink.href = CssManager.buildLink('compact-mode', settings.compactMode);
         this.sharpModeCssLink.href = CssManager.buildLink('sharp-mode', settings.sharpMode);
-        this.fontCssLink.href = CssManager.buildLink('roboto-condensed', settings.condensedFont);
+        this.fontCssLink.href = CssManager.buildLink((settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed', settings.condensedFont);
     }
 
     private static buildLink(name: string, on: boolean): string {

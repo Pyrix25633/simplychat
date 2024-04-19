@@ -1,23 +1,21 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const form_js_1 = require("./form.js");
-const utils_js_1 = require("./utils.js");
-class LoginButton extends form_js_1.SubmitButton {
+import { ApiFeedbackInput, Form, Input, SubmitButton } from './form.js';
+import { defaultStatusCode } from './utils.js';
+class LoginButton extends SubmitButton {
     constructor() {
         super('Register', '/img/register.svg');
     }
 }
-class UsernameInput extends form_js_1.ApiFeedbackInput {
+class UsernameInput extends ApiFeedbackInput {
     constructor() {
         super('username', 'text', 'Username:', 'Input Username', '/api/register-username-feedback');
     }
 }
-class EmailInput extends form_js_1.ApiFeedbackInput {
+class EmailInput extends ApiFeedbackInput {
     constructor() {
         super('email', 'text', 'Email:', 'Input Email', '/api/register-email-feedback');
     }
 }
-class PasswordInput extends form_js_1.Input {
+class PasswordInput extends Input {
     constructor() {
         super('password', 'password', 'Password:', 'Input Password');
     }
@@ -55,13 +53,15 @@ class PasswordInput extends form_js_1.Input {
 const usernameInput = new UsernameInput();
 const emailInput = new EmailInput();
 const passwordInput = new PasswordInput();
-const loginStatusCode = Object.assign({}, utils_js_1.defaultStatusCode);
-class LoginForm extends form_js_1.Form {
+const loginStatusCode = Object.assign({}, defaultStatusCode);
+class LoginForm extends Form {
     constructor() {
         super('register-form', '/api/temp-users', 'POST', [
             usernameInput, emailInput, passwordInput
-        ], new LoginButton(), () => {
-            window.location.href = '/temp-users/' + usernameInput.parse() + '/confirm';
+        ], new LoginButton(), async () => {
+            const username = usernameInput.input.value;
+            localStorage.setItem('pendingConfirmUsername', username);
+            window.location.href = '/temp-users/' + username + '/confirm';
         }, loginStatusCode);
     }
 }

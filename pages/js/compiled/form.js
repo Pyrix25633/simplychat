@@ -1,13 +1,10 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiFeedbackInput = exports.Input = exports.SubmitButton = exports.Form = void 0;
-const utils_js_1 = require("./utils.js");
-class Form {
+import { RequireNonNull } from './utils.js';
+export class Form {
     constructor(id, url, method, inputs, submitButton, success, statusCode) {
         this.valid = false;
         this.url = url;
         this.method = method;
-        this.form = utils_js_1.RequireNonNull.getElementById(id);
+        this.form = RequireNonNull.getElementById(id);
         this.inputs = inputs;
         for (const input of inputs)
             input.appendTo(this);
@@ -26,24 +23,27 @@ class Form {
             this.valid = this.valid && !input.getError();
         this.submitButton.setDisabled(!this.valid);
     }
-    async submit() {
-        if (this.submitButton.isDisabled())
-            return;
+    async getUrl() {
+        return this.url;
+    }
+    async getData() {
         const data = {};
         for (const input of this.inputs)
             data[input.id] = await input.parse();
+        return this.method == 'GET' ? data : JSON.stringify(data);
+    }
+    async submit() {
         $.ajax({
-            url: this.url,
+            url: await this.getUrl(),
             method: this.method,
-            data: JSON.stringify(data),
+            data: await this.getData(),
             contentType: 'application/json',
             success: this.success,
             statusCode: this.statusCode
         });
     }
 }
-exports.Form = Form;
-class SubmitButton {
+export class SubmitButton {
     constructor(text, iconSrc) {
         this.button = document.createElement('button');
         this.button.innerText = text;
@@ -70,12 +70,11 @@ class SubmitButton {
         return this.button.disabled;
     }
 }
-exports.SubmitButton = SubmitButton;
-class Input {
+export class Input {
     constructor(id, type, labelText, feedbackText) {
         this.form = undefined;
         this.timeout = undefined;
-        this.error = false;
+        this.error = true;
         this.id = id;
         this.input = document.createElement('input');
         this.input.id = id;
@@ -130,8 +129,7 @@ class Input {
         return this.error;
     }
 }
-exports.Input = Input;
-class ApiFeedbackInput extends Input {
+export class ApiFeedbackInput extends Input {
     constructor(id, type, labelText, feedbackText, url) {
         super(id, type, labelText, feedbackText);
         this.url = url;
@@ -160,4 +158,3 @@ class ApiFeedbackInput extends Input {
         });
     }
 }
-exports.ApiFeedbackInput = ApiFeedbackInput;
