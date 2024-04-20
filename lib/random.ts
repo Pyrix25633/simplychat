@@ -1,11 +1,21 @@
-import { randomInt } from 'crypto';
+import { randomInt, createHash } from 'crypto';
 import * as fs from 'fs';
 
 export function generateVerificationCode(): number {
     return randomInt(100000, 1000000);
 }
 
-function generateRandomColor(): string {
+function hash(data: string): string {
+    const hash = createHash('sha3-512');
+    hash.update(data);
+    return hash.digest('hex');
+}
+
+export function generateToken(username: string, email: string, passwordHash: string): string {
+    return hash(username + '.' + email + '@' + passwordHash + '#' + Date.now() + '&' + randomInt(1000000));
+}
+
+function generateColor(): string {
     var letters = '0123456789ABCDEF';
     var color = '#';
     for (var i = 0; i < 6; i++) {
@@ -14,9 +24,13 @@ function generateRandomColor(): string {
     return color;
 }
 
-export function generateRandomPfp(id: number): void {
+function encodeSvgToBase64(svg: string): string {
+    return 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
+}
+
+export function generatePfp(): string {
     let svg: string = '<svg xmlns="http://www.w3.org/2000/svg" height="9" width="9">';
-    const color: string = generateRandomColor();
+    const color: string = generateColor();
     for(let x = 1; x < 5; x++) {
         for(let y = 1; y < 8; y++) {
             if(Math.random() < 0.5) {
@@ -27,12 +41,12 @@ export function generateRandomPfp(id: number): void {
         }
     }
     svg += '</svg>';
-    fs.writeFileSync('./pfps/' + id + '.svg', svg);
+    return encodeSvgToBase64(svg);
 }
 
-export function generateRandomChatLogo(id: number): void {
+export function generateChatLogo(): string {
     let svg: string = '<svg xmlns="http://www.w3.org/2000/svg" height="9" width="9">';
-    const color: string = generateRandomColor();
+    const color: string = generateColor();
     for(let y = 1; y < 5; y++) {
         for(let x = 1; x < 8; x++) {
             if(Math.random() < 0.5) {
@@ -43,5 +57,5 @@ export function generateRandomChatLogo(id: number): void {
         }
     }
     svg += '</svg>';
-    fs.writeFileSync('./chatLogos/' + id + '.svg', svg);
+    return encodeSvgToBase64(svg);
 }

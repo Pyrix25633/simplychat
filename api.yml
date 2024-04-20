@@ -21,6 +21,8 @@ components:
         username:
             type: string
             example: Pyrix25633
+            minLength: 3
+            maxLength: 32
         email:
             type: string
             format: email
@@ -29,6 +31,56 @@ components:
             type: string
             example: passwd1234@
 paths:
+    /register-username-feedback:
+        get:
+            tags:
+                - temp-users
+            summary: Username feedback for the registration form
+            description: Returns a user friendly username feedback
+            operationId: register-username-feedback
+            parameters:
+              - in: query
+                name: username
+                schema:
+                    $ref: "#/components/schemas/username"
+                description: The username, it can be invalid
+                required: true
+            responses:
+                "200":
+                    description: Username feedback
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    feedback:
+                                        type: string
+                                        example: Valid Username
+    /register-email-feedback:
+        get:
+            tags:
+                - temp-users
+            summary: Email feedback for the registration form
+            description: Returns a user friendly email feedback
+            operationId: register-email-feedback
+            parameters:
+              - in: query
+                name: email
+                schema:
+                    $ref: "#/components/schemas/email"
+                description: The email, it can be invalid
+                required: true
+            responses:
+                "200":
+                    description: Email feedback
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    feedback:
+                                        type: string
+                                        example: Valid Email
     /temp-users:
         post:
             tags:
@@ -61,22 +113,21 @@ paths:
                 "400":
                     description: Bad Request
                 "422":
-                    description: "Unprocessable Content: no schools found with specified schoolId or temporary user cannot be created"
-    /register-username-feedback:
+                    description: "Unprocessable Content: Temporary user cannot be created because of duplicate username or email"
+    /confirm-username-feedback:
         get:
             tags:
                 - temp-users
-            summary: Username feedback for the registration form
+            summary: Username feedback for the confirmation form
             description: Returns a user friendly username feedback
-            operationId: register-username-feedback
-            requestBody:
-                content:
-                  application/json:
-                    schema:
-                        type: object
-                        properties:
-                            username:
-                                $ref: "#/components/schemas/username"
+            operationId: confirm-username-feedback
+            parameters:
+              - in: query
+                name: username
+                schema:
+                    $ref: "#/components/schemas/username"
+                description: The username
+                required: true
             responses:
                 "200":
                     description: Username feedback
@@ -90,33 +141,45 @@ paths:
                                         example: Valid Username
                 "400":
                     description: Bad Request
-    /register-email-feedback:
-        get:
+    /temp-users/{username}/confirm:
+        post:
             tags:
                 - temp-users
-            summary: Email feedback for the registration form
-            description: Returns a user friendly email feedback
-            operationId: register-email-feedback
+            summary: Confirms a temporary user
+            description: Sencond and last step of the registration process
+            operationId: temp-users/[username]/confirm
+            parameters:
+              - in: path
+                name: username
+                schema:
+                    $ref: "#/components/schemas/username"
+                required: true
             requestBody:
                 content:
-                  application/json:
-                    schema:
-                        type: object
-                        properties:
-                            email:
-                                $ref: "#/components/schemas/email"
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                verificationCode:
+                                    type: integer
+                                    minimum: 100000
+                                    maximum: 999999
+                                    example: 190347
             responses:
-                "200":
-                    description: Email feedback
+                "201":
+                    description: The second step of the registration succeded, user created
                     content:
                         application/json:
                             schema:
                                 type: object
                                 properties:
-                                    feedback:
-                                        type: string
-                                        example: Valid Email
+                                    userId:
+                                        type: integer
+                                        example: 10
                 "400":
                     description: Bad Request
+                "422":
+                    description: "Unprocessable Content: User cannot be created"
+
 servers:
     - url: https://simplychat.ddns.net/api/

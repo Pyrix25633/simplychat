@@ -24,6 +24,7 @@ class VerificationCodeInput extends Input {
             this.setError(true, '6 Digits needed!');
             return;
         }
+        this.setError(false, 'Valid Verification Code');
         return parsed;
     }
 }
@@ -39,7 +40,19 @@ if (username != null) {
     usernameInput.input.value = username;
     usernameInput.parse();
 }
+const params = new URLSearchParams(window.location.search);
+const verificationCode = params.get('verificationCode');
+if (verificationCode != null) {
+    const parsed = parseInt(verificationCode);
+    if (parsed >= 100000 && parsed <= 999999) {
+        verificationCodeInput.input.value = verificationCode;
+        verificationCodeInput.parse();
+    }
+}
 const loginStatusCode = Object.assign({}, defaultStatusCode);
+loginStatusCode[422] = () => {
+    verificationCodeInput.setError(true, 'Wrong Verification Code!');
+};
 class LoginForm extends Form {
     constructor() {
         super('confirm-form', '/api/temp-users/{username}/confirm', 'POST', [
