@@ -7,7 +7,8 @@ import * as https from 'https';
 import * as fs from 'fs';
 import { Server } from 'socket.io';
 import { settings } from './lib/settings';
-import { getConfirmUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback, postTempUser, postTempUserConfirm } from './lib/api/temp-users';
+import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
+import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
 
 const main: Express = express();
 export const port: number = settings.https.port;
@@ -40,15 +41,19 @@ main.use('/chatLogos', express.static('./chatLogos'));
 
 //// api ////
 
+// feedbacks //
+
+main.get('/api/feedbacks/register-username', getRegisterUsernameFeedback);
+
+main.get('/api/feedbacks/register-email', getRegisterEmailFeedback);
+
+main.get('/api/feedbacks/confirm-username', getConfirmUsernameFeedback);
+
+main.get('/api/feedbacks/login-username', getLoginUsernameFeedback);
+
 // temp-users //
 
-main.get('/api/register-username-feedback', getRegisterUsernameFeedback);
-
-main.get('/api/register-email-feedback', getRegisterEmailFeedback);
-
 main.post('/api/temp-users', postTempUser);
-
-main.get('/api/confirm-username-feedback', getConfirmUsernameFeedback);
 
 main.post('/api/temp-users/:username/confirm', postTempUserConfirm);
 

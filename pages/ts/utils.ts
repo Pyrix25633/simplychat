@@ -1,4 +1,5 @@
-export type Success = (res: object) => void;
+export type Response = { [index: string]: any; };
+export type Success = (res: Response) => void;
 export type StatusCode = { [index: number]: () => void; };
 
 export const defaultStatusCode: StatusCode = {

@@ -24,20 +24,7 @@
         </nav>
         <div class="box panel bottom-margin" id="username-password">
             <h3>Login with your Username and Password</h3>
-            <div class="box">
-                <div class="container label-input">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username">
-                </div>
-                <span class="text" id="username-feedback">Input Username</span>
-                <div class="container label-input">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password">
-                </div>
-                <span class="text" id="password-feedback">Input Password</span>
-                <div class="container">
-                    <button id="login">Login <img src="./img/login.svg" class="button"></button>
-                </div>
+            <div class="box" id="login-form">
             </div>
             <div class="box margin-top">
                 <span class="text">Not registered yet? <a href="/register">Register here!</a></span>
@@ -46,13 +33,7 @@
         <div class="box panel bottom-margin" id="tfa">
             <h3>Two Factor Authentication Code</h3>
             <div class="box">
-                <div class="container label-input">
-                    <label for="tfa-code">2FA Code:</label>
-                    <input type="text" id="tfa-code">
-                </div>
-                <span class="text" id="tfa-code-feedback">Input 2FA Code</span>
-                <div class="container">
-                    <button id="verify">Verify <img src="./img/confirm.svg" class="button"></button>
+                <div class="box" id="login-tfa-form">
                 </div>
             </div>
         </div>

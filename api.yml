@@ -9,6 +9,8 @@ info:
         name: GPL-3.0
         url: https://www.gnu.org/licenses/gpl-3.0.en.html
 tags:
+    - name: feedbacks
+      description: Handles form feedbacks
     - name: temp-users
       description: Handles registration and confirmation requests
 components:
@@ -31,13 +33,13 @@ components:
             type: string
             example: passwd1234@
 paths:
-    /register-username-feedback:
+    /feedbacks/register-username:
         get:
             tags:
-                - temp-users
+                - feedbacks
             summary: Username feedback for the registration form
             description: Returns a user friendly username feedback
-            operationId: register-username-feedback
+            operationId: feedbacks/register-username
             parameters:
               - in: query
                 name: username
@@ -56,13 +58,13 @@ paths:
                                     feedback:
                                         type: string
                                         example: Valid Username
-    /register-email-feedback:
+    /feedbacks/register-email:
         get:
             tags:
-                - temp-users
+                - feedbacks
             summary: Email feedback for the registration form
             description: Returns a user friendly email feedback
-            operationId: register-email-feedback
+            operationId: feedbacks/register-email
             parameters:
               - in: query
                 name: email
@@ -81,6 +83,60 @@ paths:
                                     feedback:
                                         type: string
                                         example: Valid Email
+    /feedbacks/confirm-username:
+        get:
+            tags:
+                - feedbacks
+            summary: Username feedback for the confirmation form
+            description: Returns a user friendly username feedback
+            operationId: feedbacks/confirm-username
+            parameters:
+              - in: query
+                name: username
+                schema:
+                    $ref: "#/components/schemas/username"
+                description: The username
+                required: true
+            responses:
+                "200":
+                    description: Username feedback
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    feedback:
+                                        type: string
+                                        example: Valid Username
+                "400":
+                    description: Bad Request
+    /feedbacks/login-username:
+        get:
+            tags:
+                - feedbacks
+            summary: Username feedback for the login form
+            description: Returns a user friendly username feedback
+            operationId: feedbacks/login-username
+            parameters:
+              - in: query
+                name: username
+                schema:
+                    $ref: "#/components/schemas/username"
+                description: The username
+                required: true
+            responses:
+                "200":
+                    description: Username feedback
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    feedback:
+                                        type: string
+                                        example: Valid Username
+                "400":
+                    description: Bad Request
     /temp-users:
         post:
             tags:
@@ -114,33 +170,6 @@ paths:
                     description: Bad Request
                 "422":
                     description: "Unprocessable Content: Temporary user cannot be created because of duplicate username or email"
-    /confirm-username-feedback:
-        get:
-            tags:
-                - temp-users
-            summary: Username feedback for the confirmation form
-            description: Returns a user friendly username feedback
-            operationId: confirm-username-feedback
-            parameters:
-              - in: query
-                name: username
-                schema:
-                    $ref: "#/components/schemas/username"
-                description: The username
-                required: true
-            responses:
-                "200":
-                    description: Username feedback
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    feedback:
-                                        type: string
-                                        example: Valid Username
-                "400":
-                    description: Bad Request
     /temp-users/{username}/confirm:
         post:
             tags:
