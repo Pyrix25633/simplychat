@@ -59,3 +59,19 @@ export function generateChatLogo(): string {
     svg += '</svg>';
     return encodeSvgToBase64(svg);
 }
+
+export function generateTfaToken(userId: number, pendingTfas: { [index: string]: number; }): string {
+    const pendingTfaKeys = Object.keys(pendingTfas);
+    for(const t of pendingTfaKeys)
+        if(pendingTfas[t] == userId) return t;
+    function alreadyInUse(tfaToken: string): boolean {
+        for(const t of pendingTfaKeys)
+            if(tfaToken == t) return true;
+        return false;
+    }
+    let tfaToken: string;
+    do {
+        tfaToken = hash('2FAToken:' + userId + '.' + Date.now() + '&' + randomInt(1000000));
+    } while(alreadyInUse(tfaToken));
+    return tfaToken;
+}

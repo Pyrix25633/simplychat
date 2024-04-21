@@ -57,6 +57,12 @@ main.post('/api/temp-users', postTempUser);
 
 main.post('/api/temp-users/:username/confirm', postTempUserConfirm);
 
+// auth //
+
+main.post('/api/auth/login', );
+
+main.post('/api/auth/login-tfa', );
+
 //// server ////
 
 const options = {

@@ -1,6 +1,6 @@
 import { TempUser, User } from "@prisma/client";
 import { prisma } from "./prisma";
-import { UnprocessableContent } from "../web/response";
+import { NotFound, UnprocessableContent } from "../web/response";
 import { generatePfp, generateToken } from "../random";
 
 export async function createUserFromTempUser(tempUser: TempUser): Promise<User> {
@@ -40,4 +40,15 @@ export async function isUserEmailInUse(email: string): Promise<boolean> {
             email: email
         }
     })).length != 0;
+}
+
+export async function findUserWhereUsername(username: string): Promise<User> {
+    const user: User | null = await prisma.user.findUnique({
+        where: {
+            username: username
+        }
+    });
+    if(user == null)
+        throw new NotFound();
+    return user;
 }
