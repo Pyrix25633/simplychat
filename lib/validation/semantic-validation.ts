@@ -18,9 +18,16 @@ export function getEmail(raw: any): string {
     throw new BadRequest();
 }
 
-export function getVerificationCode(raw: any): number {
+export function getSixDigitsCode(raw: any): number {
     const parsed = getInt(raw);
     if(parsed >= 100000 && parsed <= 999999)
+        return parsed;
+    throw new BadRequest();
+}
+
+export function getTfaToken(raw: any): string {
+    const parsed = getNonEmptyString(raw);
+    if(parsed.length == 128)
         return parsed;
     throw new BadRequest();
 }

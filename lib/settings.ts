@@ -7,6 +7,11 @@ export const settings = {
         hostname: "",
         port: 4443
     },
+    jwt: {
+        cookieName: "simplychat-auth",
+        password: "",
+        algorithm: "HS512"
+    },
     nodemailerTransport: {
         host: "",
         port: 465,

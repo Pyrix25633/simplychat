@@ -42,6 +42,17 @@ export async function isUserEmailInUse(email: string): Promise<boolean> {
     })).length != 0;
 }
 
+export async function findUser(id: number): Promise<User> {
+    const user: User | null = await prisma.user.findUnique({
+        where: {
+            id: id
+        }
+    });
+    if(user == null)
+        throw new NotFound();
+    return user;
+}
+
 export async function findUserWhereUsername(username: string): Promise<User> {
     const user: User | null = await prisma.user.findUnique({
         where: {

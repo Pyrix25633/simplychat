@@ -65,9 +65,7 @@ export function generateTfaToken(userId: number, pendingTfas: { [index: string]:
     for(const t of pendingTfaKeys)
         if(pendingTfas[t] == userId) return t;
     function alreadyInUse(tfaToken: string): boolean {
-        for(const t of pendingTfaKeys)
-            if(tfaToken == t) return true;
-        return false;
+        return pendingTfas[tfaToken] != undefined;
     }
     let tfaToken: string;
     do {

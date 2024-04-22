@@ -1,214 +1,320 @@
 openapi: 3.0.2
 info:
-    description: Simple instant messaging application
-    version: 2.0.0
-    title: Simply Chat
-    contact:
-        email: biral.mattia@gmail.com
-    license:
-        name: GPL-3.0
-        url: https://www.gnu.org/licenses/gpl-3.0.en.html
+  description: Simple instant messaging application
+  version: 2.0.0
+  title: Simply Chat
+  contact:
+    email: biral.mattia@gmail.com
+  license:
+    name: GPL-3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.en.html
 tags:
-    - name: feedbacks
-      description: Handles form feedbacks
-    - name: temp-users
-      description: Handles registration and confirmation requests
+  - name: feedbacks
+    description: Handles form feedbacks
+  - name: temp-users
+    description: Handles registration and confirmation requests
+  - name: auth
+    description: Handles user authentication
 components:
-    securitySchemes:
-        cookieAuth:
-            type: apiKey
-            in: cookie
-            name: token
-    schemas:
-        username:
-            type: string
-            example: Pyrix25633
-            minLength: 3
-            maxLength: 32
-        email:
-            type: string
-            format: email
-            example: name.surname@domain.com
-        password:
-            type: string
-            example: passwd1234@
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: simplychat-token
+  schemas:
+    username:
+      type: string
+      example: Pyrix25633
+      minLength: 3
+      maxLength: 32
+    email:
+      type: string
+      format: email
+      example: name.surname@domain.com
+    password:
+      type: string
+      example: passwd1234@
+      minLength: 8
+    tfaToken:
+      type: string
+      example: 4b135f35634c8f34258551d907f179a1d2847a2e6a55f54d399b3a0928294a5f30c842bf2ebcf2aad96769d6c3e50f216d386c15b3caebc07ec72696577a1d01
+      minLength: 128
+      maxLength: 128
 paths:
-    /feedbacks/register-username:
-        get:
-            tags:
-                - feedbacks
-            summary: Username feedback for the registration form
-            description: Returns a user friendly username feedback
-            operationId: feedbacks/register-username
-            parameters:
-              - in: query
-                name: username
-                schema:
+  /feedbacks/register-username:
+    get:
+      tags:
+        - feedbacks
+      summary: Username feedback for the registration form
+      description: Returns a user friendly username feedback
+      operationId: feedbacks/register-username
+      parameters:
+        - in: query
+          name: username
+          schema:
+            $ref: "#/components/schemas/username"
+          description: The username, it can be invalid
+          required: true
+      responses:
+        "200":
+          description: Username feedback
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feedback:
+                    type: string
+                    example: Valid Username
+  /feedbacks/register-email:
+    get:
+      tags:
+        - feedbacks
+      summary: Email feedback for the registration form
+      description: Returns a user friendly email feedback
+      operationId: feedbacks/register-email
+      parameters:
+        - in: query
+          name: email
+          schema:
+            $ref: "#/components/schemas/email"
+          description: The email, it can be invalid
+          required: true
+      responses:
+        "200":
+          description: Email feedback
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feedback:
+                    type: string
+                    example: Valid Email
+  /feedbacks/confirm-username:
+    get:
+      tags:
+        - feedbacks
+      summary: Username feedback for the confirmation form
+      description: Returns a user friendly username feedback
+      operationId: feedbacks/confirm-username
+      parameters:
+        - in: query
+          name: username
+          schema:
+            $ref: "#/components/schemas/username"
+          description: The username
+          required: true
+      responses:
+        "200":
+          description: Username feedback
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feedback:
+                    type: string
+                    example: Valid Username
+        "400":
+          description: Bad Request
+  /feedbacks/login-username:
+    get:
+      tags:
+        - feedbacks
+      summary: Username feedback for the login form
+      description: Returns a user friendly username feedback
+      operationId: feedbacks/login-username
+      parameters:
+        - in: query
+          name: username
+          schema:
+            $ref: "#/components/schemas/username"
+          description: The username
+          required: true
+      responses:
+        "200":
+          description: Username feedback
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feedback:
+                    type: string
+                    example: Valid Username
+        "400":
+          description: Bad Request
+  /temp-users:
+    post:
+      tags:
+        - temp-users
+      summary: Adds a new temporary user
+      description: First step of the registration process
+      operationId: temp-users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  $ref: "#/components/schemas/username"
+                email:
+                  $ref: "#/components/schemas/email"
+                password:
+                  $ref: "#/components/schemas/password"
+      responses:
+        "201":
+          description: The first step of the registration succeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
                     $ref: "#/components/schemas/username"
-                description: The username, it can be invalid
-                required: true
-            responses:
-                "200":
-                    description: Username feedback
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    feedback:
-                                        type: string
-                                        example: Valid Username
-    /feedbacks/register-email:
-        get:
-            tags:
-                - feedbacks
-            summary: Email feedback for the registration form
-            description: Returns a user friendly email feedback
-            operationId: feedbacks/register-email
-            parameters:
-              - in: query
-                name: email
-                schema:
-                    $ref: "#/components/schemas/email"
-                description: The email, it can be invalid
-                required: true
-            responses:
-                "200":
-                    description: Email feedback
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    feedback:
-                                        type: string
-                                        example: Valid Email
-    /feedbacks/confirm-username:
-        get:
-            tags:
-                - feedbacks
-            summary: Username feedback for the confirmation form
-            description: Returns a user friendly username feedback
-            operationId: feedbacks/confirm-username
-            parameters:
-              - in: query
-                name: username
-                schema:
-                    $ref: "#/components/schemas/username"
-                description: The username
-                required: true
-            responses:
-                "200":
-                    description: Username feedback
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    feedback:
-                                        type: string
-                                        example: Valid Username
-                "400":
-                    description: Bad Request
-    /feedbacks/login-username:
-        get:
-            tags:
-                - feedbacks
-            summary: Username feedback for the login form
-            description: Returns a user friendly username feedback
-            operationId: feedbacks/login-username
-            parameters:
-              - in: query
-                name: username
-                schema:
-                    $ref: "#/components/schemas/username"
-                description: The username
-                required: true
-            responses:
-                "200":
-                    description: Username feedback
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    feedback:
-                                        type: string
-                                        example: Valid Username
-                "400":
-                    description: Bad Request
-    /temp-users:
-        post:
-            tags:
-                - temp-users
-            summary: Adds a new temporary user
-            description: First step of the registration process
-            operationId: temp-users
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            type: object
-                            properties:
-                                username:
-                                    $ref: "#/components/schemas/username"
-                                email:
-                                    $ref: "#/components/schemas/email"
-                                password:
-                                    $ref: "#/components/schemas/password"
-            responses:
-                "201":
-                    description: The first step of the registration succeded
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    username:
-                                        $ref: "#/components/schemas/username"
-                "400":
-                    description: Bad Request
-                "422":
-                    description: "Unprocessable Content: Temporary user cannot be created because of duplicate username or email"
-    /temp-users/{username}/confirm:
-        post:
-            tags:
-                - temp-users
-            summary: Confirms a temporary user
-            description: Sencond and last step of the registration process
-            operationId: temp-users/[username]/confirm
-            parameters:
-              - in: path
-                name: username
-                schema:
-                    $ref: "#/components/schemas/username"
-                required: true
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            type: object
-                            properties:
-                                verificationCode:
-                                    type: integer
-                                    minimum: 100000
-                                    maximum: 999999
-                                    example: 190347
-            responses:
-                "201":
-                    description: The second step of the registration succeded, user created
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    userId:
-                                        type: integer
-                                        example: 10
-                "400":
-                    description: Bad Request
-                "422":
-                    description: "Unprocessable Content: User cannot be created"
-
+        "400":
+          description: Bad Request
+        "422":
+          description: "Unprocessable Content: Temporary user cannot be created because of duplicate username or email"
+  /temp-users/{username}/confirm:
+    post:
+      tags:
+        - temp-users
+      summary: Confirms a temporary user
+      description: Sencond and last step of the registration process
+      operationId: temp-users/[username]/confirm
+      parameters:
+        - in: path
+          name: username
+          schema:
+            $ref: "#/components/schemas/username"
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verificationCode:
+                  type: integer
+                  minimum: 100000
+                  maximum: 999999
+                  example: 190347
+      responses:
+        "201":
+          description: The second step of the registration succeded, user created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: integer
+                    example: 10
+        "400":
+          description: Bad Request
+        "404":
+          description: "Not Found: no temporary users found with specified username"
+        "422":
+          description: "Unprocessable Content: User cannot be created"
+  /auth/validate-token:
+    get:
+      tags:
+        - auth
+      summary: Used by client to check whether the user needs to log in
+      description: Gets a boolean feedback
+      operationId: auth/validate-token
+      responses:
+        "200":
+          description: Feedback
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Logs the user in if 2FA is not needed
+      description: Sets the authentication cookie if 2FA is not needed
+      operationId: auth/login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  $ref: "#/components/schemas/username"
+                password:
+                  $ref: "#/components/schemas/password"
+      responses:
+        "200":
+          description: First authentication step succeded, 2FA is needed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tfaToken:
+                    $ref: "#/components/schemas/tfaToken"
+        "204":
+          description: Authentication succeded
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: >
+                  Set-Cookie: simplychat-token=...; Path=/; SameSite=Strict; Expires=Tue 09 Apr 2024 11:39:56 GMT
+              description: Sets authentication cookie
+        "400":
+          description: Bad Request
+        "401":
+          description: "Unauthorized: wrong password"
+        "404":
+          description: "Not Found: no users found with specified username"
+  /auth/login-tfa:
+    post:
+      tags:
+        - auth
+      summary: Logs the user in
+      description: Sets the authentication cookie
+      operationId: auth/login-tfa
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tfaToken:
+                  $ref: "#/components/schemas/tfaToken"
+                tfaCode:
+                  type: integer
+                  minimum: 100000
+                  maximum: 999999
+                  example: 190347
+      responses:
+        "204":
+          description: Authentication succeded
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: >
+                  Set-Cookie: simplychat-token=...; Path=/; SameSite=Strict; Expires=Tue 09 Apr 2024 11:39:56 GMT
+              description: Sets authentication cookie
+        "400":
+          description: Bad Request
+        "401":
+          description: "Unauthorized: wrong tfaCode"
+        "404":
+          description: "Not Found: no pending 2FA actions found with specified tfaToken"
+        "422":
+          description: "Unprocessable Content: user disabled 2FA and this step is not needed"
 servers:
-    - url: https://simplychat.ddns.net/api/
+  - url: https://simplychat.ddns.net/api/

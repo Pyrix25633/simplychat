@@ -15,18 +15,19 @@ model TempUser {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  username     String         @unique @db.VarChar(32)
-  email        String         @unique @db.VarChar(64)
-  passwordHash String         @db.Char(60)
-  token        String         @db.Char(128)
-  tfaKey       String?        @db.Char(52)
-  online       Boolean        @default(true)
-  lastOnline   DateTime       @default(now())
-  status       String         @db.VarChar(64)
-  settings     String         @db.VarChar(256)
-  pfp          Bytes          @db.Blob
-  chats        UsersOnChats[]
+  id            Int            @id @default(autoincrement())
+  username      String         @unique @db.VarChar(32)
+  email         String         @unique @db.VarChar(64)
+  passwordHash  String         @db.Char(60)
+  token         String         @db.Char(128)
+  tokenDuration Int            @db.TinyInt @default(14)
+  tfaKey        String?        @db.Char(52)
+  online        Boolean        @default(true)
+  lastOnline    DateTime       @default(now())
+  status        String         @db.VarChar(64)
+  settings      String         @db.VarChar(256)
+  pfp           Bytes          @db.Blob
+  chats         UsersOnChats[]
 }
 
 model UsersOnChats {

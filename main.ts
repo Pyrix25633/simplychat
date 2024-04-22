@@ -9,11 +9,14 @@ import { Server } from 'socket.io';
 import { settings } from './lib/settings';
 import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
 import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
+import { getValidateToken, postLogin, postLoginTfa } from './lib/api/auth';
+import cookieParser from "cookie-parser";
 
 const main: Express = express();
 export const port: number = settings.https.port;
 
-main.set('trust proxy', true)
+main.set('trust proxy', true);
+main.use(cookieParser());
 main.use(bodyParser.urlencoded({ extended: true }));
 main.use(bodyParser.json({ limit: '6mb' }));
 main.use(cors());
@@ -59,9 +62,11 @@ main.post('/api/temp-users/:username/confirm', postTempUserConfirm);
 
 // auth //
 
-main.post('/api/auth/login', );
+main.get('/api/auth/validate-token', getValidateToken);
 
-main.post('/api/auth/login-tfa', );
+main.post('/api/auth/login', postLogin);
+
+main.post('/api/auth/login-tfa', postLoginTfa);
 
 //// server ////
 
