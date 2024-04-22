@@ -18,7 +18,7 @@ export function getEmail(raw: any): string {
     throw new BadRequest();
 }
 
-export function getSixDigitsCode(raw: any): number {
+export function getSixDigitCode(raw: any): number {
     const parsed = getInt(raw);
     if(parsed >= 100000 && parsed <= 999999)
         return parsed;

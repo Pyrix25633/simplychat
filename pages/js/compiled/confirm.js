@@ -1,13 +1,13 @@
 import { ApiFeedbackInput, Form, Input, SubmitButton } from './form.js';
 import { defaultStatusCode } from './utils.js';
-class LoginButton extends SubmitButton {
+class ConfirmButton extends SubmitButton {
     constructor() {
         super('Confirm', '/img/confirm.svg');
     }
 }
 class UsernameInput extends ApiFeedbackInput {
     constructor() {
-        super('username', 'text', 'Username:', 'Input Username', '/api/confirm-username-feedback');
+        super('username', 'text', 'Username:', 'Input Username', '/api/feedbacks/confirm-username');
     }
 }
 class VerificationCodeInput extends Input {
@@ -49,17 +49,17 @@ if (verificationCode != null) {
         verificationCodeInput.parse();
     }
 }
-const loginStatusCode = Object.assign({}, defaultStatusCode);
-loginStatusCode[422] = () => {
+const confirmStatusCode = Object.assign({}, defaultStatusCode);
+confirmStatusCode[422] = () => {
     verificationCodeInput.setError(true, 'Wrong Verification Code!');
 };
-class LoginForm extends Form {
+class ConfirmForm extends Form {
     constructor() {
         super('confirm-form', '/api/temp-users/{username}/confirm', 'POST', [
             usernameInput, verificationCodeInput
-        ], new LoginButton(), async () => {
+        ], new ConfirmButton(), () => {
             window.location.href = '/login';
-        }, loginStatusCode);
+        }, confirmStatusCode);
     }
     async getUrl() {
         return this.url.replace('{username}', await usernameInput.parse());
@@ -68,4 +68,4 @@ class LoginForm extends Form {
         return JSON.stringify({ verificationCode: await verificationCodeInput.parse() });
     }
 }
-const loginForm = new LoginForm();
+const confirmForm = new ConfirmForm();

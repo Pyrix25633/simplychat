@@ -110,17 +110,20 @@ export abstract class Input {
         this.feedback.classList.add('text');
         this.feedback.innerText = feedbackText;
         this.labelText = labelText;
-        this.input.addEventListener('keyup', () => {
+        this.input.addEventListener('keyup', (): void => {
             clearTimeout(this.timeout);
             this.timeout = setTimeout((): void => {
                 this.parse();
             }, 1000);
         });
-        this.input.addEventListener('keydown', () => {
+        this.input.addEventListener('keydown', (): void => {
             clearTimeout(this.timeout);
         });
-        this.input.addEventListener('focusout', () => {
+        this.input.addEventListener('focusout', (): void => {
             clearTimeout(this.timeout);
+            this.parse();
+        });
+        this.input.addEventListener('change', (): void => {
             this.parse();
         });
     }

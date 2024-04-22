@@ -22,7 +22,7 @@ model User {
   token         String         @db.Char(128)
   tokenDuration Int            @db.TinyInt @default(14)
   tfaKey        String?        @db.Char(52)
-  online        Boolean        @default(true)
+  online        Boolean        @default(false)
   lastOnline    DateTime       @default(now())
   status        String         @db.VarChar(64)
   settings      String         @db.VarChar(256)

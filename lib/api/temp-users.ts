@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Created, UnprocessableContent, handleException } from "../web/response";
-import { getEmail, getUsername, getVerificationCode } from "../validation/semantic-validation";
+import { getEmail, getSixDigitCode, getUsername } from "../validation/semantic-validation";
 import { getNonEmptyString, getObject } from "../validation/type-validation";
 import { generateVerificationCode } from "../random";
 import { createTempUser, deleteTempUser, findTempUser } from "../database/temp-user";
@@ -35,7 +35,7 @@ export async function postTempUserConfirm(req: Request, res: Response): Promise<
     try {
         const body = getObject(req.body);
         const username = getUsername(req.params.username);
-        const verificationCode = getVerificationCode(body.verificationCode);
+        const verificationCode = getSixDigitCode(body.verificationCode);
         const tempUser = await findTempUser(username);
         if(verificationCode != tempUser.verificationCode)
             throw new UnprocessableContent();

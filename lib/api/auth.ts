@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleException } from "../web/response";
 import { getNonEmptyString, getObject } from "../validation/type-validation";
-import { getSixDigitsCode, getTfaToken, getUsername } from "../validation/semantic-validation";
+import { getSixDigitCode, getTfaToken, getUsername } from "../validation/semantic-validation";
 import bcrypt from "bcrypt";
 import { findUser, findUserWhereUsername } from "../database/user";
 import { generateTfaToken } from "../random";
@@ -70,7 +70,7 @@ export async function postLoginTfa(req: Request, res: Response): Promise<void> {
     try {
         const body = getObject(req.body);
         const tfaToken = getTfaToken(body.tfaToken);
-        const tfaCode = getSixDigitsCode(body.tfaCode);
+        const tfaCode = getSixDigitCode(body.tfaCode);
         const userId = pendingTfas[tfaToken];
         if(userId == undefined)
             throw new NotFound();
