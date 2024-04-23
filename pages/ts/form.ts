@@ -39,7 +39,7 @@ export abstract class Form {
         return this.url;
     }
 
-    async getData(): Promise<string | { [index: string]: any }> {
+    async getData(): Promise<string | { [index: string]: any; }> {
         const data: { [index: string]: any } = {};
         for(const input of this.inputs)
             data[input.id] = await input.parse();

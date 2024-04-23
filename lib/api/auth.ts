@@ -9,7 +9,6 @@ import { settings } from "../settings";
 import { User } from "@prisma/client";
 import jwt, { Algorithm } from "jsonwebtoken";
 import tfa from "speakeasy";
-import { prisma } from "../database/prisma";
 
 const pendingTfas: { [index: string]: number; } = {};
 

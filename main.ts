@@ -11,6 +11,7 @@ import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
 import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
 import { getValidateToken, postLogin, postLoginTfa } from './lib/api/auth';
 import cookieParser from "cookie-parser";
+import { getSettings, patchSettings } from './lib/api/settings';
 
 const main: Express = express();
 export const port: number = settings.https.port;
@@ -67,6 +68,12 @@ main.get('/api/auth/validate-token', getValidateToken);
 main.post('/api/auth/login', postLogin);
 
 main.post('/api/auth/login-tfa', postLoginTfa);
+
+// settings //
+
+main.get('/api/settings', getSettings);
+
+main.patch('/api/settings', patchSettings);
 
 //// server ////
 

@@ -12,23 +12,10 @@ export function getBoolean(raw: any): boolean {
     return raw;
 }
 
-export function getBooleanOrUndefined(raw: any): boolean | undefined {
-    if(raw === undefined) return undefined;
-    return getBoolean(raw);
-}
-
 export function getInt(raw: any): number {
     raw = parseInt(raw);
     if(raw == undefined || typeof raw != "number")
         throw new BadRequest();
-    if(!Number.isSafeInteger(raw)) throw new BadRequest();
-    return raw;
-}
-
-export function getIntOrNull(raw: any): number | null {
-    if(raw !== null && (raw === undefined || typeof raw != "number"))
-        throw new BadRequest();
-    if(raw == null) return null;
     if(!Number.isSafeInteger(raw)) throw new BadRequest();
     return raw;
 }
@@ -52,9 +39,16 @@ export function getNonEmptyString(raw: any): string {
     return raw;
 }
 
-export function getNonEmptyStringOrUndefined(raw: any): string | undefined {
-    if(raw == undefined) return undefined;
-    if(typeof raw != "string") throw new BadRequest();
-    if(raw.length == 0) throw new BadRequest();
-    return raw;
+type ParseFunction<R> = (raw: any) => R;
+
+export function getOrNull<T>(raw: any, parseFunction: ParseFunction<T>): T | null {
+    if(raw === null)
+        return null;
+    return parseFunction(raw);
+}
+
+export function getOrUndefined<T>(raw: any, parseFunction: ParseFunction<T>): T | undefined {
+    if(raw === undefined)
+        return undefined;
+    return parseFunction(raw);
 }
