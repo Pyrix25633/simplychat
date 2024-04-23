@@ -12,12 +12,12 @@ export async function createUserFromTempUser(tempUser: TempUser): Promise<User> 
                 passwordHash: tempUser.passwordHash,
                 token: generateToken(tempUser.username, tempUser.email, tempUser.passwordHash),
                 status: 'Just joined Simply Chat!',
-                settings: JSON.stringify({
+                settings: {
                     compactMode: false,
                     condensedFont: false,
                     aurebeshFont: false,
                     sharpMode: false
-                }),
+                },
                 pfp: Buffer.from(generatePfp())
             }
         });
@@ -62,4 +62,18 @@ export async function findUserWhereUsername(username: string): Promise<User> {
     if(user == null)
         throw new NotFound();
     return user;
+}
+
+export async function findUserToken(id: number): Promise<{ token: string; }> {
+    const partialUser = await prisma.user.findUnique({
+        select: {
+            token: true
+        },
+        where: {
+            id: id
+        }
+    });
+    if(partialUser == null)
+        throw new NotFound();
+    return partialUser;
 }

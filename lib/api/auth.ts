@@ -3,7 +3,7 @@ import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleExce
 import { getNonEmptyString, getObject } from "../validation/type-validation";
 import { getSixDigitCode, getTfaToken, getUsername } from "../validation/semantic-validation";
 import bcrypt from "bcrypt";
-import { findUser, findUserWhereUsername } from "../database/user";
+import { findUser, findUserToken, findUserWhereUsername } from "../database/user";
 import { generateTfaToken } from "../random";
 import { settings } from "../settings";
 import { User } from "@prisma/client";
@@ -29,7 +29,7 @@ function authenticate(user: User, res: Response): void {
     });
     res.cookie(settings.jwt.cookieName, authToken, {
         expires: new Date(Date.now() + (user.tokenDuration * 24 * 60 * 60 * 1000)),
-        sameSite: "strict"
+        sameSite: 'strict'
     });
     new NoContent().send(res);
 }
@@ -85,23 +85,16 @@ export async function postLoginTfa(req: Request, res: Response): Promise<void> {
     }
 }
 
-export async function validateToken(req: Request): Promise<number> {
+type FindFunction<R> = (id: number) => Promise<R>;
+
+export async function validateToken<T extends { token: string; }>(req: Request, findFunction: FindFunction<T> = findUserToken as FindFunction<T>): Promise<T & { id: number; }> {
     const authToken: string = req.cookies[settings.jwt.cookieName];
     try {
         const payload = jwt.verify(authToken, settings.jwt.password) as AuthTokenPayload;
-        const partialUser = await prisma.user.findUnique({
-            select: {
-                token: true
-            },
-            where: {
-                id: payload.userId
-            }
-        });
-        if(partialUser == null)
-            throw new Unauthorized();
+        const partialUser = await findFunction(payload.userId);
         if(payload.token != partialUser.token)
             throw new Unauthorized();
-        return payload.userId;
+        return { id: payload.userId, ...partialUser };
     } catch(e: any) {
         throw new Unauthorized();
     }
