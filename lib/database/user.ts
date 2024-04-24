@@ -2,6 +2,8 @@ import { TempUser, User } from "@prisma/client";
 import { prisma } from "./prisma";
 import { NotFound, UnprocessableContent } from "../web/response";
 import { generatePfp, generateToken } from "../random";
+import * as bcrypt from "bcrypt";
+import { settings } from "../settings";
 
 export async function createUserFromTempUser(tempUser: TempUser): Promise<User> {
     try {
@@ -76,4 +78,89 @@ export async function findUserToken(id: number): Promise<{ token: string; }> {
     if(partialUser == null)
         throw new NotFound();
     return partialUser;
+}
+
+export async function findUserTokenAndPasswordHash(id: number): Promise<{ token: string; passwordHash: string; }> {
+    const partialUser = await prisma.user.findUnique({
+        select: {
+            token: true,
+            passwordHash: true
+        },
+        where: {
+            id: id
+        }
+    });
+    if(partialUser == null)
+        throw new NotFound();
+    return partialUser;
+}
+
+export async function findUserTokenAndUsername(id: number): Promise<{ token: string; username: string; }> {
+    const partialUser = await prisma.user.findUnique({
+        select: {
+            token: true,
+            username: true
+        },
+        where: {
+            id: id
+        }
+    });
+    if(partialUser == null)
+        throw new NotFound();
+    return partialUser;
+}
+
+export type Settings = {
+    compactMode: boolean;
+    condensedFont: boolean;
+    aurebeshFont: boolean;
+    sharpMode: boolean;
+};
+
+export async function updateUserSettings(id: number, username: string, email: string, status: string, settings: Settings, tokenDuration: number): Promise<User> {
+    return await prisma.user.update({
+        data: {
+            username: username,
+            email: email,
+            status: status,
+            settings: settings,
+            tokenDuration: tokenDuration
+        },
+        where: {
+            id: id
+        }
+    });
+}
+
+export async function updateUserPassword(id: number, password: string): Promise<User> {
+    return prisma.user.update({
+        data: {
+            passwordHash: bcrypt.hashSync(password, settings.bcrypt.rounds)
+        },
+        where: {
+            id: id
+        }
+    });
+}
+
+export async function updateUserPfp(id: number, pfp: Buffer): Promise<User> {
+    return prisma.user.update({
+        data: {
+            pfp: pfp
+        },
+        where: {
+            id: id
+        }
+    });
+}
+
+export async function updateUserTfaKey(id: number, tfaKey: string | null): Promise<User> {
+    return prisma.user.update({
+        data: {
+            tfaKey: tfaKey
+        },
+        where: {
+            id: id
+        }
+    });
 }

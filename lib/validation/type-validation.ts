@@ -12,6 +12,13 @@ export function getBoolean(raw: any): boolean {
     return raw;
 }
 
+export function parseInt(raw: string): number {
+    const parsed = Number.parseInt(raw);
+    if(!Number.isSafeInteger(parsed))
+        throw new BadRequest();
+    return parsed;
+}
+
 export function getInt(raw: any): number {
     raw = parseInt(raw);
     if(raw == undefined || typeof raw != "number")

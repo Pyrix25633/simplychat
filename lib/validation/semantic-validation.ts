@@ -1,3 +1,4 @@
+import { Settings } from "../database/user";
 import { BadRequest } from "../web/response";
 import { getBoolean, getInt, getNonEmptyString } from "./type-validation";
 
@@ -38,13 +39,6 @@ export function getTfaToken(raw: any): string {
         return parsed;
     throw new BadRequest();
 }
-
-type Settings = {
-    compactMode: boolean;
-    condensedFont: boolean;
-    aurebeshFont: boolean;
-    sharpMode: boolean;
-};
 
 export function getSettings(raw: any): Settings {
     if(typeof raw != 'object')

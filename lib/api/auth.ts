@@ -1,14 +1,15 @@
 import { Request, Response } from "express";
 import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleException } from "../web/response";
-import { getNonEmptyString, getObject } from "../validation/type-validation";
-import { getSixDigitCode, getTfaToken, getUsername } from "../validation/semantic-validation";
+import { getNonEmptyString, getObject, parseInt } from "../validation/type-validation";
+import { getSixDigitCode, getTfaKey, getTfaToken, getUsername } from "../validation/semantic-validation";
 import bcrypt from "bcrypt";
-import { findUser, findUserToken, findUserWhereUsername } from "../database/user";
+import { findUser, findUserToken, findUserTokenAndUsername, findUserWhereUsername } from "../database/user";
 import { generateTfaToken } from "../random";
 import { settings } from "../settings";
 import { User } from "@prisma/client";
-import jwt, { Algorithm } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import tfa from "speakeasy";
+import qrcode from "qrcode";
 
 const pendingTfas: { [index: string]: number; } = {};
 
@@ -23,7 +24,7 @@ function authenticate(user: User, res: Response): void {
         token: user.token
     };
     const authToken = jwt.sign(payload, settings.jwt.password, {
-        algorithm: settings.jwt.algorithm as unknown as Algorithm,
+        algorithm: settings.jwt.algorithm as unknown as jwt.Algorithm,
         expiresIn: user.tokenDuration + 'd'
     });
     res.cookie(settings.jwt.cookieName, authToken, {
@@ -65,6 +66,16 @@ export async function postLogin(req: Request, res: Response): Promise<void> {
     }
 }
 
+function verify(key: string, code: number): boolean {
+    return tfa.totp.verify({
+        secret: key,
+        encoding: 'base32',
+        token: code.toString(),
+        algorithm: settings.tfa.algorithm as tfa.Algorithm,
+        window: 2
+    });
+}
+
 export async function postLoginTfa(req: Request, res: Response): Promise<void> {
     try {
         const body = getObject(req.body);
@@ -76,7 +87,7 @@ export async function postLoginTfa(req: Request, res: Response): Promise<void> {
         const user = await findUser(userId);
         if(user.tfaKey == null)
             throw new UnprocessableContent();
-        if(!tfa.totp.verify({ secret: user.tfaKey, encoding: 'base32', token: tfaCode.toString(), window: 2 }))
+        if(!verify(user.tfaKey, tfaCode))
             throw new Unauthorized();
         authenticate(user, res);
     } catch(e: any) {
@@ -96,5 +107,34 @@ export async function validateToken<T extends { token: string; }>(req: Request, 
         return { id: payload.userId, ...partialUser };
     } catch(e: any) {
         throw new Unauthorized();
+    }
+}
+
+export async function getTfaGenerateKey(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req, findUserTokenAndUsername);
+        const tfaKey = tfa.generateSecret().base32;
+        const tfaQr = await qrcode.toString(
+            'optauth://totp/' + partialUser.username + '?secret=' + tfaKey + '&issuer=SimplyChat&algorithm=' + settings.tfa.algorithm,
+            { type: 'svg' }
+        );
+        new Ok({
+            tfaKey: tfaKey,
+            tfaQr: tfaQr
+        }).send(res);
+    } catch(e: any) {
+        handleException(res, e);
+    }
+}
+
+export async function getTfaValidateCode(req: Request, res: Response): Promise<void> {
+    try {
+        const tfaKey = getTfaKey(req.params.tfaKey);
+        const tfaCode = getSixDigitCode(parseInt(req.params.tfaCode));
+        new Ok({
+            valid: verify(tfaKey, tfaCode)
+        }).send(res);
+    } catch(e: any) {
+        handleException(res, e);
     }
 }

@@ -15,6 +15,8 @@ tags:
     description: Handles registration and confirmation requests
   - name: auth
     description: Handles user authentication
+  - name: settings
+    description: Handles user settings
 components:
   securitySchemes:
     cookieAuth:
@@ -40,6 +42,53 @@ components:
       example: 4b135f35634c8f34258551d907f179a1d2847a2e6a55f54d399b3a0928294a5f30c842bf2ebcf2aad96769d6c3e50f216d386c15b3caebc07ec72696577a1d01
       minLength: 128
       maxLength: 128
+    tfaKey:
+      type: string
+      example: MF3WIMJZN53GE2LONFQT
+      minLength: 20
+      maxLength: 20
+    tfaCode:
+      type: integer
+      minimum: 100000
+      maximum: 999999
+      example: 190347
+    id:
+      type: integer
+      example: 26
+      minimum: 1
+    status:
+      type: string
+      example: "Just joined Simply Chat!"
+      minLength: 1
+      maxLength: 64
+    settings:
+      type: object
+      properties:
+        compactMode:
+          type: boolean
+          example: false
+        condensedFont:
+          type: boolean
+          example: false
+        aurebeshFont:
+          type: boolean
+          example: false
+        sharpMode:
+          type: boolean
+          example: false
+      required:
+        - compactMode
+        - condensedFont
+        - aurebeshFont
+        - sharpMode
+    tokenDuration:
+      type: integer
+      example: 14
+      minimum: 5
+      maximum: 90
+    base64Image:
+      type: string
+      example: "data:image/svg+xml;base64,czY0OGI0bmcxNjViMjYrc3NjNDF2ZjJhKzR3ZjF2Y2EyYSsx..."
 paths:
   /feedbacks/register-username:
     get:
@@ -153,6 +202,7 @@ paths:
       description: First step of the registration process
       operationId: temp-users
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -164,6 +214,10 @@ paths:
                   $ref: "#/components/schemas/email"
                 password:
                   $ref: "#/components/schemas/password"
+              required:
+                - username
+                - email
+                - password
       responses:
         "201":
           description: The first step of the registration succeded
@@ -192,6 +246,7 @@ paths:
             $ref: "#/components/schemas/username"
           required: true
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -202,6 +257,8 @@ paths:
                   minimum: 100000
                   maximum: 999999
                   example: 190347
+              required:
+                - verificationCode
       responses:
         "201":
           description: The second step of the registration succeded, user created
@@ -228,7 +285,7 @@ paths:
       operationId: auth/validate-token
       responses:
         "200":
-          description: Feedback
+          description: If true the cookie token is valid
           content:
             application/json:
               schema:
@@ -244,6 +301,7 @@ paths:
       description: Sets the authentication cookie if 2FA is not needed
       operationId: auth/login
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -253,6 +311,9 @@ paths:
                   $ref: "#/components/schemas/username"
                 password:
                   $ref: "#/components/schemas/password"
+              required:
+                - username
+                - password
       responses:
         "200":
           description: First authentication step succeded, 2FA is needed
@@ -286,6 +347,7 @@ paths:
       description: Sets the authentication cookie
       operationId: auth/login-tfa
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -294,10 +356,10 @@ paths:
                 tfaToken:
                   $ref: "#/components/schemas/tfaToken"
                 tfaCode:
-                  type: integer
-                  minimum: 100000
-                  maximum: 999999
-                  example: 190347
+                  $ref: "#/components/schemas/tfaCode"
+              required:
+                - tfaToken
+                - tfaCode
       responses:
         "204":
           description: Authentication succeded
@@ -316,5 +378,134 @@ paths:
           description: "Not Found: no pending 2FA actions found with specified tfaToken"
         "422":
           description: "Unprocessable Content: user disabled 2FA and this step is not needed"
+  /auth/tfa/generate-key:
+    get:
+      tags:
+        - auth
+      summary: Used by client to generate a new 2FA key
+      description: Called when activating 2FA in user settings
+      operationId: auth/tfa/generate-key
+      responses:
+        "200":
+          description: New 2FA key and QR
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tfaKey:
+                    $ref: "#/components/schemas/tfaKey"
+                  tfaQr:
+                    $ref: "#/components/schemas/base64Image"
+        "401":
+          description: Unauthorized
+  /auth/tfa/validate-code:
+    get:
+      tags:
+        - auth
+      summary: Used by the client to verify that the user correctly scanned the QR
+      description: Gets a boolean feedbacks
+      operationId: auth/tfa/validate-code
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tfaKey:
+                  $ref: "#/components/schemas/tfaKey"
+                tfaCode:
+                  $ref: "#/components/schemas/tfaCode"
+      responses:
+        "200":
+          description: If true the user has correctly scanned the QR and saved a new totp
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+        "400":
+          description: Bad Request
+  /settings:
+    get:
+      tags:
+        - settings
+      summary: Gets the user settings
+      description: Returns an object with all user settings
+      operationId: settings(get)
+      responses:
+        "200":
+          description: User settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: "#/components/schemas/id"
+                  username:
+                    $ref: "#/components/schemas/username"
+                  email:
+                    $ref: "#/components/schemas/email"
+                  status:
+                    $ref: "#/components/schemas/status"
+                  settings:
+                    $ref: "#/components/schemas/settings"
+                  tokenDuration:
+                    $ref: "#/components/schemas/tokenDuration"
+                  tfa:
+                    type: boolean
+        "401":
+          description: Unauthorized
+    patch:
+      tags:
+        - settings
+      summary: Modifies the user settings
+      description: Allows the user to modifies its settings, username, password, ...
+      operationId: settings(patch)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  $ref: "#/components/schemas/username"
+                email:
+                  $ref: "#/components/schemas/email"
+                status:
+                  $ref: "#/components/schemas/status"
+                settings:
+                  $ref: "#/components/schemas/settings"
+                password:
+                  $ref: "#/components/schemas/password"
+                oldPassword:
+                  $ref: "#/components/schemas/password"
+                pfp:
+                  $ref: "#/components/schemas/base64Image"
+                tokenDuration:
+                  $ref: "#/components/schemas/tokenDuration"
+                tfaKey:
+                  $ref: "#/components/schemas/tfaKey"
+                  nullable: true
+              required:
+                - username
+                - email
+                - status
+                - settings
+                - oldPassword
+                - tokenDuration
+      responses:
+        "204":
+          description: Settings update succeded
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: wrong oldPassword"
 servers:
   - url: https://simplychat.ddns.net/api/

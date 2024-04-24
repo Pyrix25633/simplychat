@@ -2,6 +2,7 @@ import { TempUser } from "@prisma/client";
 import { prisma } from "./prisma";
 import { NotFound, UnprocessableContent } from "../web/response";
 import * as bcrypt from "bcrypt";
+import { settings } from "../settings";
 
 export async function isTempUserUsernameInUse(username: string): Promise<boolean> {
     return (await prisma.tempUser.findMany({
@@ -25,7 +26,7 @@ export async function createTempUser(username: string, email: string, password: 
             data: {
                 username: username,
                 email: email,
-                passwordHash: bcrypt.hashSync(password, 12),
+                passwordHash: bcrypt.hashSync(password, settings.bcrypt.rounds),
                 verificationCode: verificationCode
             }
         });

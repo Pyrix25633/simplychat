@@ -12,6 +12,13 @@ export const settings = {
         password: "",
         algorithm: "HS512"
     },
+    bcrypt: {
+        rounds: 12
+    },
+    tfa: {
+        algorithm: 'sha512',
+        window: 2
+    },
     nodemailerTransport: {
         host: "",
         port: 465,

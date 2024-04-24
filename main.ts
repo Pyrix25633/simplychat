@@ -9,7 +9,7 @@ import { Server } from 'socket.io';
 import { settings } from './lib/settings';
 import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
 import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
-import { getValidateToken, postLogin, postLoginTfa } from './lib/api/auth';
+import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa } from './lib/api/auth';
 import cookieParser from "cookie-parser";
 import { getSettings, patchSettings } from './lib/api/settings';
 
@@ -68,6 +68,10 @@ main.get('/api/auth/validate-token', getValidateToken);
 main.post('/api/auth/login', postLogin);
 
 main.post('/api/auth/login-tfa', postLoginTfa);
+
+main.get('/api/auth/tfa/generate-key', getTfaGenerateKey);
+
+main.get('/api/auth/tfa/validate-code', getTfaValidateCode);
 
 // settings //
 
