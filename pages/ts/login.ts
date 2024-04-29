@@ -1,11 +1,7 @@
-import { ApiFeedbackInput, Form, Input, PasswordInput, SubmitButton } from './form.js';
+import { ApiFeedbackInput, Form, Input, PasswordInput, Button } from './form.js';
 import { RequireNonNull, Response, defaultStatusCode } from './utils.js';
 
-const usernamePasswordDiv: HTMLElement = RequireNonNull.getElementById('username-password');
-const tfaDiv: HTMLElement = RequireNonNull.getElementById('tfa');
-tfaDiv.style.display = 'none';
-
-class LoginButton extends SubmitButton {
+class LoginButton extends Button {
     constructor() {
         super('Login', '/img/login.svg');
     }
@@ -22,8 +18,13 @@ const passwordInput = new PasswordInput();
 
 const loginStatusCode = Object.assign({}, defaultStatusCode);
 loginStatusCode[401] = (): void => {
-    
+    passwordInput.setError(true, 'Wrong Password!');
 };
+loginStatusCode[404] = (): void => {
+    passwordInput.setError(true, 'No Users found with specified Username!');
+};
+
+let loginResponse: Response | undefined = undefined;
 
 class LoginForm extends Form {
     constructor() {
@@ -31,60 +32,9 @@ class LoginForm extends Form {
             usernameInput, passwordInput
         ], new LoginButton(), (res: Response): void => {
             if(res != undefined) {
-                class LoginTfaButton extends SubmitButton {
-                    constructor() {
-                        super('Verify', '/img/confirm.svg');
-                    }
-                }
-
-                class TfaCodeInput extends Input {
-                    constructor() {
-                        super('tfaCode', 'number', '2FA Code:', 'Input 2FA Code');
-                    }
-                
-                    async parse(): Promise<number | void> {
-                        const parsed: number = parseInt(this.input.value);
-                        if(!Number.isSafeInteger(parsed)) {
-                            this.setError(true, 'Invalid 2FA Code!');
-                            return;
-                        }
-                        if(parsed < 100000 || parsed > 999999) {
-                            this.setError(true, '6 Digits needed!');
-                            return;
-                        }
-                        this.setError(false, 'Valid 2FA Code');
-                        return parsed;
-                    }
-                }
-
-                const tfaCodeInput = new TfaCodeInput();
-
-                const loginTfaStatusCode = Object.assign({}, defaultStatusCode);
-                loginTfaStatusCode[401] = (): void => {
-                    
-                };
-
-                class LoginTfaForm extends Form {
-                    constructor() {
-                        super('login-tfa-form', '/api/auth/login-tfa', 'POST', [
-                            tfaCodeInput
-                        ], new LoginTfaButton(), (): void => {
-                            window.location.href = '/';
-                        }, loginTfaStatusCode);
-                    }
-
-                    async getData(): Promise<string> {
-                        return JSON.stringify({
-                            tfaToken: res.tfaToken,
-                            tfaCode: await tfaCodeInput.parse()
-                        });
-                    }
-                }
-
-                const loginTfaForm = new LoginTfaForm();
-
-                usernamePasswordDiv.style.display = 'none';
-                tfaDiv.style.display = '';
+                loginResponse = res;
+                loginTfaForm.show(true);
+                this.show(false);
             }
             else
                 window.location.href = '/';
@@ -93,3 +43,64 @@ class LoginForm extends Form {
 }
 
 const loginForm = new LoginForm();
+
+class LoginTfaButton extends Button {
+    constructor() {
+        super('Verify', '/img/confirm.svg');
+    }
+}
+
+class TfaCodeInput extends Input<number> {
+    constructor() {
+        super('tfaCode', 'number', '2FA Code:', 'Input 2FA Code');
+    }
+
+    async parse(): Promise<number | undefined> {
+        const parsed: number = parseInt(this.input.value);
+        if(!Number.isSafeInteger(parsed)) {
+            this.setError(true, 'Invalid 2FA Code!');
+            return undefined;
+        }
+        if(parsed < 100000 || parsed > 999999) {
+            this.setError(true, '6 Digits needed!');
+            return undefined;
+        }
+        this.setError(false, 'Valid 2FA Code');
+        return parsed;
+    }
+}
+
+const tfaCodeInput = new TfaCodeInput();
+
+const loginTfaStatusCode = Object.assign({}, defaultStatusCode);
+loginTfaStatusCode[401] = (): void => {
+    tfaCodeInput.setError(true, 'Wrong 2FA Code!');
+};
+loginTfaStatusCode[404] = (): void => {
+    tfaCodeInput.setError(true, 'No pending 2FA Actions!');
+};
+loginTfaStatusCode[422] = (): void => {
+    tfaCodeInput.setError(true, '2FA has been disabled!');
+};
+
+class LoginTfaForm extends Form {
+    constructor() {
+        super('login-tfa-form', '/api/auth/login-tfa', 'POST', [
+            tfaCodeInput
+        ], new LoginTfaButton(), (): void => {
+            window.location.href = '/';
+        }, loginTfaStatusCode);
+    }
+
+    async getData(): Promise<string> {
+        if(loginResponse == undefined)
+            throw new Error('Login not executed, or does not require 2FA!');
+        return JSON.stringify({
+            tfaToken: loginResponse.tfaToken,
+            tfaCode: await tfaCodeInput.parse()
+        });
+    }
+}
+
+const loginTfaForm = new LoginTfaForm();
+loginTfaForm.show(false);

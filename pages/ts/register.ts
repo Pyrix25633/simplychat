@@ -1,7 +1,7 @@
-import { ApiFeedbackInput, Form, Input, PasswordInput, SubmitButton } from './form.js';
+import { ApiFeedbackInput, Form, Input, PasswordInput, Button } from './form.js';
 import { Response, defaultStatusCode } from './utils.js';
 
-class RegisterButton extends SubmitButton {
+class RegisterButton extends Button {
     constructor() {
         super('Register', '/img/register.svg');
     }

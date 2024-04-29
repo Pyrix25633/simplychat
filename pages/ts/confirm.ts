@@ -1,7 +1,7 @@
-import { ApiFeedbackInput, Form, Input, SubmitButton } from './form.js';
+import { ApiFeedbackInput, Form, Input, Button } from './form.js';
 import { defaultStatusCode } from './utils.js';
 
-class ConfirmButton extends SubmitButton {
+class ConfirmButton extends Button {
     constructor() {
         super('Confirm', '/img/confirm.svg');
     }
@@ -13,20 +13,20 @@ class UsernameInput extends ApiFeedbackInput {
     }
 }
 
-class VerificationCodeInput extends Input {
+class VerificationCodeInput extends Input<number> {
     constructor() {
         super('verificationCode', 'number', 'Verification Code:', 'Input Verification Code');
     }
 
-    async parse(): Promise<number | void> {
+    async parse(): Promise<number | undefined> {
         const parsed: number = parseInt(this.input.value);
         if(!Number.isSafeInteger(parsed)) {
             this.setError(true, 'Invalid Verification Code!');
-            return;
+            return undefined;
         }
         if(parsed < 100000 || parsed > 999999) {
             this.setError(true, '6 Digits needed!');
-            return;
+            return undefined;
         }
         this.setError(false, 'Valid Verification Code');
         return parsed;
@@ -43,8 +43,7 @@ if(username == null) {
         username = usernameParameterMatch[1];
 }
 if(username != null) {
-    usernameInput.input.value = username;
-    usernameInput.parse();
+    usernameInput.set('username');
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -72,7 +71,10 @@ class ConfirmForm extends Form {
     }
 
     async getUrl(): Promise<string> {
-        return this.url.replace('{username}', await usernameInput.parse());
+        const username = await usernameInput.parse();
+        if(username === undefined)
+            throw new Error('Username not valid!');
+        return this.url.replace('{username}', username);
     }
 
     async getData(): Promise<string> {

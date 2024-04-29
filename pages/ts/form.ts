@@ -1,16 +1,18 @@
 import { RequireNonNull, StatusCode, Success } from './utils.js';
 
+type JsonObject = { [index: string]: any; };
+
 export abstract class Form {
     protected readonly url: string;
     private readonly method: string;
     private readonly form: HTMLElement;
-    private readonly inputs: Input[];
-    private readonly submitButton: SubmitButton;
+    private readonly inputs: InputElement<any>[];
+    private readonly submitButton: Button;
     private readonly success: Success;
     private readonly statusCode: StatusCode;
     private valid: boolean = false;
 
-    constructor(id: string, url: string, method: string, inputs: Input[], submitButton: SubmitButton, success: Success, statusCode: StatusCode) {
+    constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button, success: Success, statusCode: StatusCode) {
         this.url = url;
         this.method = method;
         this.form = RequireNonNull.getElementById(id);
@@ -39,7 +41,7 @@ export abstract class Form {
         return this.url;
     }
 
-    async getData(): Promise<string | { [index: string]: any; }> {
+    async getData(): Promise<string | JsonObject> {
         const data: { [index: string]: any } = {};
         for(const input of this.inputs)
             data[input.id] = await input.parse();
@@ -56,9 +58,13 @@ export abstract class Form {
             statusCode: this.statusCode
         });
     }
+
+    show(show: boolean): void {
+        this.form.style.display = show ? '' : 'none';
+    }
 }
 
-export abstract class SubmitButton {
+export abstract class Button {
     private readonly button: HTMLButtonElement;
 
     constructor(text: string, iconSrc: string) {
@@ -92,9 +98,32 @@ export abstract class SubmitButton {
     }
 }
 
-export abstract class Input {
+export abstract class StructuredForm extends Form {
+    private readonly cancelButton: Button;
+
+    //TODO
+}
+
+export abstract class InputElement<T> {
     public readonly id: string;
-    private form: Form | undefined = undefined;
+
+    constructor(id: string) {
+        this.id = id;
+    }
+
+    abstract appendTo(form: Form | InputSection): void;
+
+    set(value: T): void {
+        throw new Error('Method not implemented!');
+    }
+
+    abstract parse(): Promise<T | undefined>;
+
+    abstract getError(): boolean;
+}
+
+export abstract class Input<T> extends InputElement<T> {
+    private formOrSection: Form | InputSection | undefined = undefined;
     public input: HTMLInputElement;
     private feedback: HTMLSpanElement;
     private labelText: string;
@@ -102,7 +131,7 @@ export abstract class Input {
     private error: boolean = true;
 
     constructor(id: string, type: string, labelText: string, feedbackText: string) {
-        this.id = id;
+        super(id);
         this.input = document.createElement('input');
         this.input.id = id;
         this.input.type = type;
@@ -128,8 +157,8 @@ export abstract class Input {
         });
     }
 
-    appendTo(form: Form): void {
-        this.form = form;
+    appendTo(formOrSection: Form | InputSection): void {
+        this.formOrSection = formOrSection;
         const container = document.createElement('div');
         container.classList.add('container');
         const label = document.createElement('label');
@@ -137,14 +166,12 @@ export abstract class Input {
         label.innerText = this.labelText;
         container.appendChild(label);
         container.appendChild(this.input);
-        this.form.appendChild(container);
-        this.form.appendChild(this.feedback);
+        this.formOrSection.appendChild(container);
+        this.formOrSection.appendChild(this.feedback);
         setTimeout((): void => {
             if(this.input.value != '') this.parse();
         }, 250);
     }
-
-    abstract parse(): Promise<any>;
 
     setError(error: boolean, feedbackText: string): void {
         this.error = error;
@@ -155,7 +182,8 @@ export abstract class Input {
         else
             this.feedback.classList.replace('error', 'success');
         this.feedback.innerText = feedbackText;
-        this.form?.validate();
+        if(this.formOrSection != undefined) 
+        this.formOrSection?.validate();
     }
 
     getError(): boolean {
@@ -163,15 +191,15 @@ export abstract class Input {
     }
 }
 
-export class PasswordInput extends Input {
+export class PasswordInput extends Input<string> {
     constructor() {
         super('password', 'password', 'Password:', 'Input Password')
     }
 
-    async parse(): Promise<string | void> {
+    async parse(): Promise<string | undefined> {
         if(this.input.value.length < 8) {
             this.setError(true, 'At least 8 Characters needed!');
-            return;
+            return undefined;
         }
         let digits = 0, symbols = 0;
         for(let i = 0; i < this.input.value.length; i++) {
@@ -181,23 +209,28 @@ export class PasswordInput extends Input {
             else if((c >= 45 && c <= 47) || c == 35 || c == 64 || c == 42 || c == 95) symbols++;
             else if(!((c >= 97 && c <= 122) || (c >= 65 && c <= 90))) {
                 this.setError(true, 'Invalid Character: ' + String.fromCodePoint(c) + '!');
-                return;
+                return undefined;
             }
         }
         if(digits < 2) {
             this.setError(true, 'At least 2 Digits needed!');
-            return;
+            return undefined;
         }
         if(symbols < 1) {
             this.setError(true, 'At least 1 Symbol needed!');
-            return;
+            return undefined;
         }
         this.setError(false, 'Valid Password');
         return this.input.value;
     }
+
+    set(value: string): void {
+        this.input.value = value;
+        this.parse();
+    }
 }
 
-export abstract class ApiFeedbackInput extends Input {
+export abstract class ApiFeedbackInput extends Input<string> {
     private readonly url: string;
 
     constructor(id: string, type: string, labelText: string, feedbackText: string, url: string) {
@@ -205,11 +238,16 @@ export abstract class ApiFeedbackInput extends Input {
         this.url = url;
     }
 
-    getInputValue(): any {
+    getInputValue(): string {
         return this.input.value;
     }
 
-    async parse(): Promise<any> {
+    set(value: string): void {
+        this.input.value = value;
+        this.parse();
+    }
+
+    async parse(): Promise<string | undefined> {
         const data: { [index: string]: any; } = {};
         data[this.id] = this.getInputValue();
         return new Promise((resolve): void => {
@@ -224,9 +262,51 @@ export abstract class ApiFeedbackInput extends Input {
                 error: (req, err) => {
                     console.error(err);
                     this.setError(true, 'Server unreachable!');
-                    resolve(null);
+                    resolve(undefined);
                 }
             });
         });
+    }
+}
+
+export abstract class InputSection extends InputElement<JsonObject> {
+    private readonly title: string;
+    private readonly inputs: InputElement<any>[];
+    private readonly section: HTMLDivElement;
+    private form: Form | undefined = undefined;
+    private error: boolean = true;
+
+    constructor(title: string, inputs: InputElement<any>[]) {
+        super('');
+        this.title = title;
+        this.inputs = inputs;
+
+        this.section = document.createElement('div');
+        this.section.classList.add('box', 'section');
+        const h3 = document.createElement('h3');
+        h3.innerText = this.title;
+        this.section.appendChild(h3);
+        for(const input of inputs)
+            input.appendTo(this);
+    }
+
+    appendChild(node: HTMLElement): void {
+        this.section.appendChild(node);
+    }
+
+    appendTo(form: Form): void {
+        this.form = form;
+        form.appendChild(this.section);
+    }
+
+    getError(): boolean {
+        return this.error;
+    }
+
+    validate(): void {
+        this.error = false;
+        for(const input of this.inputs)
+            this.error = this.error || input.getError();
+        this.form?.validate();
     }
 }
