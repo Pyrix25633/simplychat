@@ -21,7 +21,7 @@ export function getEmail(raw: any): string {
 
 export function getStatus(raw: any): string {
     const parsed = getNonEmptyString(raw);
-    if(parsed.length > 64)
+    if(parsed.length < 3 || parsed.length > 64)
         throw new BadRequest();
     return parsed;
 }

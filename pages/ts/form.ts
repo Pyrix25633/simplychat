@@ -49,10 +49,12 @@ export abstract class Form {
     }
 
     async submit(): Promise<void> {
+        const data = await this.getData();
+        if(!this.valid) return;
         $.ajax({
             url: await this.getUrl(),
             method: this.method,
-            data: await this.getData(),
+            data: data,
             contentType: 'application/json',
             success: this.success,
             statusCode: this.statusCode
@@ -124,19 +126,21 @@ export abstract class StructuredForm extends Form {
     private readonly cancelButton: Button;
 
     constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button,
-                success: Success, statusCode: StatusCode, precompileUrl: string) {
+                success: Success, statusCode: StatusCode, precompileUrl: string | null = null) {
         super(id, url, method, inputs, submitButton, success, statusCode);
         this.footer = RequireNonNull.getElementById('footer') as HTMLDivElement;
         this.cancelButton = new CancelButton();
         this.cancelButton.appendTo(this);
-        $.ajax({
-            url: precompileUrl,
-            method: 'GET',
-            contentType: 'application/json',
-            success: (res: Response): void => {
-                this.precompile(res);
-            }
-        });
+        if(precompileUrl != null) {
+            $.ajax({
+                url: precompileUrl,
+                method: 'GET',
+                contentType: 'application/json',
+                success: (res: Response): void => {
+                    this.precompile(res);
+                }
+            });
+        }
     }
 
     appendChild(node: HTMLElement): void {
@@ -146,7 +150,12 @@ export abstract class StructuredForm extends Form {
             super.appendChild(node);
     }
 
-    abstract precompile(res: Response): void;
+    precompile(res: Response): void {}
+
+    show(show: boolean): void {
+        super.show(show);
+        this.cancelButton.show(show);
+    }
 }
 
 export abstract class InputElement<T> {
@@ -234,6 +243,14 @@ export abstract class Input<T> extends InputElement<T> {
     getError(): boolean {
         return this.error;
     }
+
+    getInputValue(): string {
+        return this.input.value;
+    }
+
+    setInputValue(value: string): void {
+        this.input.value = value;
+    }
 }
 
 export class PasswordInput extends Input<string> {
@@ -281,10 +298,6 @@ export abstract class ApiFeedbackInput extends Input<string> {
     constructor(id: string, type: string, labelText: string, feedbackText: string, url: string) {
         super(id, type, labelText, feedbackText);
         this.url = url;
-    }
-
-    getInputValue(): string {
-        return this.input.value;
     }
 
     set(value: string): void {

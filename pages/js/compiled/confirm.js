@@ -1,6 +1,6 @@
-import { ApiFeedbackInput, Form, Input, SubmitButton } from './form.js';
+import { ApiFeedbackInput, Form, Input, Button } from './form.js';
 import { defaultStatusCode } from './utils.js';
-class ConfirmButton extends SubmitButton {
+class ConfirmButton extends Button {
     constructor() {
         super('Confirm', '/img/confirm.svg');
     }
@@ -18,11 +18,11 @@ class VerificationCodeInput extends Input {
         const parsed = parseInt(this.input.value);
         if (!Number.isSafeInteger(parsed)) {
             this.setError(true, 'Invalid Verification Code!');
-            return;
+            return undefined;
         }
         if (parsed < 100000 || parsed > 999999) {
             this.setError(true, '6 Digits needed!');
-            return;
+            return undefined;
         }
         this.setError(false, 'Valid Verification Code');
         return parsed;
@@ -37,8 +37,7 @@ if (username == null) {
         username = usernameParameterMatch[1];
 }
 if (username != null) {
-    usernameInput.input.value = username;
-    usernameInput.parse();
+    usernameInput.set('username');
 }
 const params = new URLSearchParams(window.location.search);
 const verificationCode = params.get('verificationCode');
@@ -62,7 +61,10 @@ class ConfirmForm extends Form {
         }, confirmStatusCode);
     }
     async getUrl() {
-        return this.url.replace('{username}', await usernameInput.parse());
+        const username = await usernameInput.parse();
+        if (username === undefined)
+            throw new Error('Username not valid!');
+        return this.url.replace('{username}', username);
     }
     async getData() {
         return JSON.stringify({ verificationCode: await verificationCodeInput.parse() });

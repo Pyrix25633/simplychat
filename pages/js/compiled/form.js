@@ -33,18 +33,25 @@ export class Form {
         return this.method == 'GET' ? data : JSON.stringify(data);
     }
     async submit() {
+        const data = await this.getData();
+        if (!this.valid)
+            return;
         $.ajax({
             url: await this.getUrl(),
             method: this.method,
-            data: await this.getData(),
+            data: data,
             contentType: 'application/json',
             success: this.success,
             statusCode: this.statusCode
         });
     }
+    show(show) {
+        this.form.style.display = show ? '' : 'none';
+        this.submitButton.show(show);
+    }
 }
-export class SubmitButton {
-    constructor(text, iconSrc) {
+export class Button {
+    constructor(text, iconSrc, inFooter = false) {
         this.button = document.createElement('button');
         this.button.innerText = text;
         this.button.disabled = true;
@@ -53,12 +60,18 @@ export class SubmitButton {
         icon.src = iconSrc;
         icon.alt = text + ' Icon';
         this.button.appendChild(icon);
+        this.inFooter = inFooter;
     }
     appendTo(form) {
-        const div = document.createElement('div');
-        div.classList.add('container');
-        div.appendChild(this.button);
-        form.appendChild(div);
+        if (this.inFooter) {
+            form.appendChild(this.button);
+        }
+        else {
+            const div = document.createElement('div');
+            div.classList.add('container');
+            div.appendChild(this.button);
+            form.appendChild(div);
+        }
     }
     addClickListener(listener) {
         this.button.addEventListener('click', listener);
@@ -69,13 +82,61 @@ export class SubmitButton {
     isDisabled() {
         return this.button.disabled;
     }
+    show(show) {
+        this.button.style.display = show ? '' : 'none';
+    }
 }
-export class Input {
+class CancelButton extends Button {
+    constructor() {
+        super('Cancel', '/img/cancel.svg', true);
+        this.addClickListener(() => {
+            window.location.href = '/';
+        });
+    }
+}
+export class StructuredForm extends Form {
+    constructor(id, url, method, inputs, submitButton, success, statusCode, precompileUrl = null) {
+        super(id, url, method, inputs, submitButton, success, statusCode);
+        this.footer = RequireNonNull.getElementById('footer');
+        this.cancelButton = new CancelButton();
+        this.cancelButton.appendTo(this);
+        if (precompileUrl != null) {
+            $.ajax({
+                url: precompileUrl,
+                method: 'GET',
+                contentType: 'application/json',
+                success: (res) => {
+                    this.precompile(res);
+                }
+            });
+        }
+    }
+    appendChild(node) {
+        if (node instanceof HTMLButtonElement)
+            this.footer.appendChild(node);
+        else
+            super.appendChild(node);
+    }
+    precompile(res) { }
+    show(show) {
+        super.show(show);
+        this.cancelButton.show(show);
+    }
+}
+export class InputElement {
+    constructor(id) {
+        this.id = id;
+    }
+    set(value) {
+        throw new Error('Method not implemented!');
+    }
+}
+export class Input extends InputElement {
     constructor(id, type, labelText, feedbackText) {
-        this.form = undefined;
+        super(id);
+        this.formOrSection = undefined;
         this.timeout = undefined;
         this.error = true;
-        this.id = id;
         this.input = document.createElement('input');
         this.input.id = id;
         this.input.type = type;
@@ -100,8 +161,8 @@ export class Input {
             this.parse();
         });
     }
-    appendTo(form) {
-        this.form = form;
+    appendTo(formOrSection) {
+        this.formOrSection = formOrSection;
         const container = document.createElement('div');
         container.classList.add('container');
         const label = document.createElement('label');
@@ -109,8 +170,8 @@ export class Input {
         label.innerText = this.labelText;
         container.appendChild(label);
         container.appendChild(this.input);
-        this.form.appendChild(container);
-        this.form.appendChild(this.feedback);
+        this.formOrSection.appendChild(container);
+        this.formOrSection.appendChild(this.feedback);
         setTimeout(() => {
             if (this.input.value != '')
                 this.parse();
@@ -126,10 +187,17 @@ export class Input {
         else
             this.feedback.classList.replace('error', 'success');
         this.feedback.innerText = feedbackText;
-        (_a = this.form) === null || _a === void 0 ? void 0 : _a.validate();
+        if (this.formOrSection != undefined)
+            (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
     }
     getError() {
         return this.error;
+    }
+    getInputValue() {
+        return this.input.value;
+    }
+    setInputValue(value) {
+        this.input.value = value;
     }
 }
 export class PasswordInput extends Input {
@@ -139,7 +207,7 @@ export class PasswordInput extends Input {
     async parse() {
         if (this.input.value.length < 8) {
             this.setError(true, 'At least 8 Characters needed!');
-            return;
+            return undefined;
         }
         let digits = 0, symbols = 0;
         for (let i = 0; i < this.input.value.length; i++) {
@@ -152,19 +220,23 @@ export class PasswordInput extends Input {
                 symbols++;
             else if (!((c >= 97 && c <= 122) || (c >= 65 && c <= 90))) {
                 this.setError(true, 'Invalid Character: ' + String.fromCodePoint(c) + '!');
-                return;
+                return undefined;
             }
         }
         if (digits < 2) {
             this.setError(true, 'At least 2 Digits needed!');
-            return;
+            return undefined;
         }
         if (symbols < 1) {
             this.setError(true, 'At least 1 Symbol needed!');
-            return;
+            return undefined;
         }
         this.setError(false, 'Valid Password');
         return this.input.value;
+    }
+    set(value) {
+        this.input.value = value;
+        this.parse();
     }
 }
 export class ApiFeedbackInput extends Input {
@@ -172,8 +244,9 @@ export class ApiFeedbackInput extends Input {
         super(id, type, labelText, feedbackText);
         this.url = url;
     }
-    getInputValue() {
-        return this.input.value;
+    set(value) {
+        this.input.value = value;
+        this.parse();
     }
     async parse() {
         const data = {};
@@ -190,9 +263,42 @@ export class ApiFeedbackInput extends Input {
                 error: (req, err) => {
                     console.error(err);
                     this.setError(true, 'Server unreachable!');
-                    resolve(null);
+                    resolve(undefined);
                 }
             });
         });
+    }
+}
+export class InputSection extends InputElement {
+    constructor(title, inputs) {
+        super('');
+        this.form = undefined;
+        this.error = true;
+        this.title = title;
+        this.inputs = inputs;
+        this.section = document.createElement('div');
+        this.section.classList.add('box', 'section');
+        const h3 = document.createElement('h3');
+        h3.innerText = this.title;
+        this.section.appendChild(h3);
+        for (const input of inputs)
+            input.appendTo(this);
+    }
+    appendChild(node) {
+        this.section.appendChild(node);
+    }
+    appendTo(form) {
+        this.form = form;
+        form.appendChild(this.section);
+    }
+    getError() {
+        return this.error;
+    }
+    validate() {
+        var _a;
+        this.error = false;
+        for (const input of this.inputs)
+            this.error = this.error || input.getError();
+        (_a = this.form) === null || _a === void 0 ? void 0 : _a.validate();
     }
 }
