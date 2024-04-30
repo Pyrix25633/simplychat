@@ -137,7 +137,7 @@ div.navbar {
 
 div#footer {
     display: flex;
-    flex-direction: row;
+    flex-direction: row-reverse;
     justify-content: center;
     position: sticky;
     bottom: 0;

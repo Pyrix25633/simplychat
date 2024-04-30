@@ -95,7 +95,7 @@ export abstract class Button {
         }
         else {
             const div = document.createElement('div');
-            div.classList.add('container');
+            div.classList.add('container', 'label-input');
             div.appendChild(this.button);
             form.appendChild(div);
         }
@@ -132,11 +132,11 @@ export abstract class StructuredForm extends Form {
     private readonly cancelButton: Button;
 
     constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button,
-                success: Success, statusCode: StatusCode, precompileUrl: string | null = null) {
-        super(id, url, method, inputs, submitButton, success, statusCode);
+                success: Success, statusCode: StatusCode, wrapperId: string | undefined = undefined, precompileUrl: string | undefined = undefined) {
+        super(id, url, method, inputs, submitButton, success, statusCode, wrapperId);
         this.cancelButton = new CancelButton();
         this.cancelButton.appendTo(this);
-        if(precompileUrl != null) {
+        if(precompileUrl != undefined) {
             $.ajax({
                 url: precompileUrl,
                 method: 'GET',
@@ -172,7 +172,7 @@ export abstract class InputElement<T> {
         this.id = id;
     }
 
-    abstract appendTo(form: Form | InputSection): void;
+    abstract appendTo(formOrSection: Form | InputSection): void;
 
     set(value: T): void {
         throw new Error('Method not implemented!');
@@ -185,9 +185,9 @@ export abstract class InputElement<T> {
 
 export abstract class Input<T> extends InputElement<T> {
     private formOrSection: Form | InputSection | undefined = undefined;
-    public input: HTMLInputElement;
-    private feedback: HTMLSpanElement;
-    private labelText: string;
+    public readonly input: HTMLInputElement;
+    private readonly feedback: HTMLSpanElement;
+    private readonly labelText: string;
     private timeout: NodeJS.Timeout | undefined = undefined;
     private error: boolean = true;
 
@@ -221,7 +221,7 @@ export abstract class Input<T> extends InputElement<T> {
     appendTo(formOrSection: Form | InputSection): void {
         this.formOrSection = formOrSection;
         const container = document.createElement('div');
-        container.classList.add('container');
+        container.classList.add('container', 'label-input');
         const label = document.createElement('label');
         label.htmlFor = this.id;
         label.innerText = this.labelText;
@@ -296,6 +296,58 @@ export class PasswordInput extends Input<string> {
     set(value: string): void {
         this.input.value = value;
         this.parse();
+    }
+}
+
+export class BooleanInput extends InputElement<boolean> {
+    private readonly labelText: string;
+    private readonly slider: HTMLDivElement;
+    private readonly feedback: HTMLSpanElement;
+    private formOrSection: Form | InputSection | undefined = undefined;
+
+    constructor(id: string, labelText: string, feedbackText: string) {
+        super(id);
+        this.labelText = labelText;
+        this.slider = document.createElement('div');
+        this.slider.id = this.id;
+        this.slider.classList.add('slider', 'off');
+        this.slider.addEventListener('click', async (): Promise<void> => {
+            this.set(!(await this.parse()));
+        });
+        const sliderCircle = document.createElement('div');
+        sliderCircle.classList.add('slider-circle');
+        this.slider.appendChild(sliderCircle);
+        this.feedback = document.createElement('span');
+        this.feedback.classList.add('text');
+        this.feedback.innerText = feedbackText;
+    }
+
+    appendTo(formOrSection: Form | InputSection): void {
+        this.formOrSection = formOrSection;
+        const container = document.createElement('div');
+        container.classList.add('container', 'label-input');
+        const label = document.createElement('label');
+        label.htmlFor = this.id;
+        label.innerText = this.labelText;
+        container.appendChild(label);
+        container.appendChild(this.slider);
+        this.formOrSection.appendChild(container);
+        this.formOrSection.appendChild(this.feedback);
+    }
+
+    getError(): boolean {
+        return false;
+    }
+
+    async parse(): Promise<boolean> {
+        return this.slider.classList.contains('on');
+    }
+
+    set(value: boolean): void {
+        if(value)
+            this.slider.classList.replace('off', 'on');
+        else
+            this.slider.classList.replace('on', 'off');
     }
 }
 

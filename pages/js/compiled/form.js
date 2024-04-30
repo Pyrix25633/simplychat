@@ -72,7 +72,7 @@ export class Button {
         }
         else {
             const div = document.createElement('div');
-            div.classList.add('container');
+            div.classList.add('container', 'label-input');
             div.appendChild(this.button);
             form.appendChild(div);
         }
@@ -99,12 +99,12 @@ class CancelButton extends Button {
     }
 }
 export class StructuredForm extends Form {
-    constructor(id, url, method, inputs, submitButton, success, statusCode, precompileUrl = null) {
-        super(id, url, method, inputs, submitButton, success, statusCode);
+    constructor(id, url, method, inputs, submitButton, success, statusCode, wrapperId = undefined, precompileUrl = undefined) {
+        super(id, url, method, inputs, submitButton, success, statusCode, wrapperId);
         this.footer = undefined;
         this.cancelButton = new CancelButton();
         this.cancelButton.appendTo(this);
-        if (precompileUrl != null) {
+        if (precompileUrl != undefined) {
             $.ajax({
                 url: precompileUrl,
                 method: 'GET',
@@ -171,7 +171,7 @@ export class Input extends InputElement {
     appendTo(formOrSection) {
         this.formOrSection = formOrSection;
         const container = document.createElement('div');
-        container.classList.add('container');
+        container.classList.add('container', 'label-input');
         const label = document.createElement('label');
         label.htmlFor = this.id;
         label.innerText = this.labelText;
@@ -244,6 +244,49 @@ export class PasswordInput extends Input {
     set(value) {
         this.input.value = value;
         this.parse();
+    }
+}
+export class BooleanInput extends InputElement {
+    constructor(id, labelText, feedbackText) {
+        super(id);
+        this.formOrSection = undefined;
+        this.labelText = labelText;
+        this.slider = document.createElement('div');
+        this.slider.id = this.id;
+        this.slider.classList.add('slider', 'off');
+        this.slider.addEventListener('click', async () => {
+            this.set(!(await this.parse()));
+        });
+        const sliderCircle = document.createElement('div');
+        sliderCircle.classList.add('slider-circle');
+        this.slider.appendChild(sliderCircle);
+        this.feedback = document.createElement('span');
+        this.feedback.classList.add('text');
+        this.feedback.innerText = feedbackText;
+    }
+    appendTo(formOrSection) {
+        this.formOrSection = formOrSection;
+        const container = document.createElement('div');
+        container.classList.add('container', 'label-input');
+        const label = document.createElement('label');
+        label.htmlFor = this.id;
+        label.innerText = this.labelText;
+        container.appendChild(label);
+        container.appendChild(this.slider);
+        this.formOrSection.appendChild(container);
+        this.formOrSection.appendChild(this.feedback);
+    }
+    getError() {
+        return false;
+    }
+    async parse() {
+        return this.slider.classList.contains('on');
+    }
+    set(value) {
+        if (value)
+            this.slider.classList.replace('off', 'on');
+        else
+            this.slider.classList.replace('on', 'off');
     }
 }
 export class ApiFeedbackInput extends Input {

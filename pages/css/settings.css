@@ -30,6 +30,7 @@ div.slider {
     border: 2px solid var(--color-foreground);
     height: min-content;
     padding: 3px;
+    cursor: pointer;
 }
 div.slider.off {
     padding-right: 15px;

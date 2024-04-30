@@ -1,4 +1,4 @@
-import { Button, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
+import { BooleanInput, Button, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
 import { loadSettings } from "./load-settings.js";
 import { defaultStatusCode } from "./utils.js";
 await loadSettings();
@@ -39,14 +39,31 @@ class InfoSection extends InputSection {
         };
     }
 }
+const compactModeInput = new BooleanInput('compact-mode', 'Compact Mode', 'Enables a View with smaller Spaces');
+const condensedFontInput = new BooleanInput('condensed-font', 'Condensed Font', 'Enables a narrower Font');
+const aurebeshFontInput = new BooleanInput('aurebesh-font', 'Aurebesh Font', 'Enables the Star Wars Font');
+const sharpModeInput = new BooleanInput('sharp-mode', 'Sharp Mode', 'Enables sharper Borders');
+class CustomizationSection extends InputSection {
+    constructor() {
+        super('Customization', [compactModeInput, condensedFontInput, aurebeshFontInput, sharpModeInput]);
+    }
+    async parse() {
+        return {};
+    }
+}
 class SettingsForm extends StructuredForm {
     constructor() {
         super('settings-form', '', '', [
-            new InfoSection()
-        ], new ContinueButton(), () => { }, [], '/api/settings');
+            new InfoSection(),
+            new CustomizationSection()
+        ], new ContinueButton(), () => { }, [], 'settings', '/api/settings');
     }
     precompile(res) {
         statusInput.set(res.status);
+        compactModeInput.set(res.settings.compactMode);
+        condensedFontInput.set(res.settings.condensedFont);
+        aurebeshFontInput.set(res.settings.aurebeshFont);
+        sharpModeInput.set(res.settings.sharpMode);
     }
     async submit() {
         this.show(false);
@@ -72,7 +89,7 @@ class OldPasswordForm extends StructuredForm {
             oldPasswordInput
         ], new SaveButton(), (res) => {
             window.location.href = '/';
-        }, settingsStatusCode);
+        }, settingsStatusCode, 'authentication');
     }
     async getData() {
         return Object.assign(Object.assign({}, await settingsForm.getData()), { oldPassword: await oldPasswordInput.parse() });

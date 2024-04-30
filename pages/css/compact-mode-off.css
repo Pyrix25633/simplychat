@@ -27,9 +27,7 @@ div.bottom-margin {
 div#footer {
     padding-bottom: 20px;
     margin-top: 20px;
-}
-div#footer *:not(:first-child) {
-    margin-left: 50px;
+    gap: 50px;
 }
 
 label {
