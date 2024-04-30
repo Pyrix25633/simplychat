@@ -61,13 +61,15 @@ export abstract class Form {
 
     show(show: boolean): void {
         this.form.style.display = show ? '' : 'none';
+        this.submitButton.show(show);
     }
 }
 
 export abstract class Button {
-    private readonly button: HTMLButtonElement;
+    protected readonly button: HTMLButtonElement;
+    private readonly inFooter: boolean;
 
-    constructor(text: string, iconSrc: string) {
+    constructor(text: string, iconSrc: string, inFooter: boolean = false) {
         this.button = document.createElement('button');
         this.button.innerText = text;
         this.button.disabled = true;
@@ -76,13 +78,19 @@ export abstract class Button {
         icon.src = iconSrc;
         icon.alt = text + ' Icon';
         this.button.appendChild(icon);
+        this.inFooter = inFooter;
     }
 
     appendTo(form: Form) {
-        const div = document.createElement('div');
-        div.classList.add('container');
-        div.appendChild(this.button);
-        form.appendChild(div);
+        if(this.inFooter) {
+            form.appendChild(this.button);
+        }
+        else {
+            const div = document.createElement('div');
+            div.classList.add('container');
+            div.appendChild(this.button);
+            form.appendChild(div);
+        }
     }
 
     addClickListener(listener: () => void): void {
@@ -96,12 +104,49 @@ export abstract class Button {
     isDisabled(): boolean {
         return this.button.disabled;
     }
+
+    show(show: boolean): void {
+        this.button.style.display = show ? '' : 'none';
+    }
+}
+
+class CancelButton extends Button {
+    constructor() {
+        super('Cancel', '/img/cancel.svg', true);
+        this.addClickListener((): void => {
+            window.location.href = '/';
+        });
+    }
 }
 
 export abstract class StructuredForm extends Form {
+    private readonly footer: HTMLDivElement;
     private readonly cancelButton: Button;
 
-    //TODO
+    constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button,
+                success: Success, statusCode: StatusCode, precompileUrl: string) {
+        super(id, url, method, inputs, submitButton, success, statusCode);
+        this.footer = RequireNonNull.getElementById('footer') as HTMLDivElement;
+        this.cancelButton = new CancelButton();
+        this.cancelButton.appendTo(this);
+        $.ajax({
+            url: precompileUrl,
+            method: 'GET',
+            contentType: 'application/json',
+            success: (res: Response): void => {
+                this.precompile(res);
+            }
+        });
+    }
+
+    appendChild(node: HTMLElement): void {
+        if(node instanceof HTMLButtonElement)
+            this.footer.appendChild(node);
+        else
+            super.appendChild(node);
+    }
+
+    abstract precompile(res: Response): void;
 }
 
 export abstract class InputElement<T> {
