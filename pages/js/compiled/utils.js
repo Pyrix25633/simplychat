@@ -66,7 +66,7 @@ export class CssSettings {
     static async get() {
         return new Promise((resolve) => {
             $.ajax({
-                url: '/api/auth/settings',
+                url: '/api/settings',
                 method: 'GET',
                 success: (res) => {
                     resolve(new CssSettings(res));

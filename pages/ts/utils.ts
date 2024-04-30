@@ -77,7 +77,7 @@ export class CssSettings {
     static async get(): Promise<CssSettings> {
         return new Promise((resolve): void => {
             $.ajax({
-                url: '/api/auth/settings',
+                url: '/api/settings',
                 method: 'GET',
                 success: (res: {compactMode: boolean, condensedFont: boolean, sharpMode: boolean}) => {
                     resolve(new CssSettings(res));

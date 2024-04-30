@@ -37,7 +37,7 @@ function authenticate(user: User, res: Response): void {
 export async function getValidateToken(req: Request, res: Response): Promise<void> {
     let valid: boolean;
     try {
-        validateToken(req);
+        await validateToken(req);
         valid = true;
     }
     catch(e: any) {
@@ -98,7 +98,9 @@ export async function postLoginTfa(req: Request, res: Response): Promise<void> {
 type FindFunction<R> = (id: number) => Promise<R>;
 
 export async function validateToken<T extends { token: string; }>(req: Request, findFunction: FindFunction<T> = findUserToken as FindFunction<T>): Promise<T & { id: number; }> {
-    const authToken: string = req.cookies[settings.jwt.cookieName];
+    const authToken: string | undefined = req.cookies[settings.jwt.cookieName];
+    if(authToken == undefined)
+        throw new Unauthorized();
     try {
         const payload = jwt.verify(authToken, settings.jwt.password) as AuthTokenPayload;
         const partialUser = await findFunction(payload.userId);

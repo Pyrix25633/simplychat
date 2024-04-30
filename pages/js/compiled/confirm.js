@@ -37,7 +37,7 @@ if (username == null) {
         username = usernameParameterMatch[1];
 }
 if (username != null) {
-    usernameInput.set('username');
+    usernameInput.set(username);
 }
 const params = new URLSearchParams(window.location.search);
 const verificationCode = params.get('verificationCode');

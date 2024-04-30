@@ -38,7 +38,7 @@ class LoginForm extends Form {
             }
             else
                 window.location.href = '/';
-        }, loginStatusCode);
+        }, loginStatusCode, 'username-password');
     }
 }
 
@@ -89,7 +89,7 @@ class LoginTfaForm extends Form {
             tfaCodeInput
         ], new LoginTfaButton(), (): void => {
             window.location.href = '/';
-        }, loginTfaStatusCode);
+        }, loginTfaStatusCode, 'tfa');
     }
 
     async getData(): Promise<string> {

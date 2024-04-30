@@ -10,9 +10,11 @@ export abstract class Form {
     private readonly submitButton: Button;
     private readonly success: Success;
     private readonly statusCode: StatusCode;
+    private readonly wrapper: HTMLDivElement | undefined;
     private valid: boolean = false;
 
-    constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button, success: Success, statusCode: StatusCode) {
+    constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button,
+                success: Success, statusCode: StatusCode, wrapperId: string| undefined = undefined) {
         this.url = url;
         this.method = method;
         this.form = RequireNonNull.getElementById(id);
@@ -24,6 +26,7 @@ export abstract class Form {
         this.submitButton.addClickListener((): void => { this.submit(); });
         this.success = success;
         this.statusCode = statusCode;
+        this.wrapper = wrapperId != undefined ? RequireNonNull.getElementById(wrapperId) as HTMLDivElement : undefined;
     }
 
     appendChild(node: HTMLElement): void {
@@ -62,7 +65,10 @@ export abstract class Form {
     }
 
     show(show: boolean): void {
-        this.form.style.display = show ? '' : 'none';
+        if(this.wrapper != undefined)
+            this.wrapper.style.display = show ? '' : 'none';
+        else
+            this.form.style.display = show ? '' : 'none';
         this.submitButton.show(show);
     }
 }
@@ -122,13 +128,12 @@ class CancelButton extends Button {
 }
 
 export abstract class StructuredForm extends Form {
-    private readonly footer: HTMLDivElement;
+    private footer: HTMLDivElement | undefined = undefined;
     private readonly cancelButton: Button;
 
     constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button,
                 success: Success, statusCode: StatusCode, precompileUrl: string | null = null) {
         super(id, url, method, inputs, submitButton, success, statusCode);
-        this.footer = RequireNonNull.getElementById('footer') as HTMLDivElement;
         this.cancelButton = new CancelButton();
         this.cancelButton.appendTo(this);
         if(precompileUrl != null) {
@@ -144,6 +149,8 @@ export abstract class StructuredForm extends Form {
     }
 
     appendChild(node: HTMLElement): void {
+        if(this.footer == undefined)
+            this.footer = RequireNonNull.getElementById('footer') as HTMLDivElement;;
         if(node instanceof HTMLButtonElement)
             this.footer.appendChild(node);
         else
@@ -268,7 +275,7 @@ export class PasswordInput extends Input<string> {
             const c: number | undefined = this.input.value.codePointAt(i);
             if(c == undefined) break;
             if(c >= 48 && c <= 57) digits++;
-            else if((c >= 45 && c <= 47) || c == 35 || c == 64 || c == 42 || c == 95) symbols++;
+            else if((c >= 33 && c <= 47) || (c >= 58 && c <= 64) || (c >= 91 && c <= 96) || (c >= 123 && c <= 126)) symbols++;
             else if(!((c >= 97 && c <= 122) || (c >= 65 && c <= 90))) {
                 this.setError(true, 'Invalid Character: ' + String.fromCodePoint(c) + '!');
                 return undefined;

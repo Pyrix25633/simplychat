@@ -32,7 +32,7 @@ class LoginForm extends Form {
             }
             else
                 window.location.href = '/';
-        }, loginStatusCode);
+        }, loginStatusCode, 'username-password');
     }
 }
 const loginForm = new LoginForm();
@@ -76,7 +76,7 @@ class LoginTfaForm extends Form {
             tfaCodeInput
         ], new LoginTfaButton(), () => {
             window.location.href = '/';
-        }, loginTfaStatusCode);
+        }, loginTfaStatusCode, 'tfa');
     }
     async getData() {
         if (loginResponse == undefined)

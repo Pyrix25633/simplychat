@@ -9,7 +9,7 @@ export const settings = {
     },
     jwt: {
         cookieName: "simplychat-auth",
-        password: "",
+        password: "njiawd51baas264v9",
         algorithm: "HS512"
     },
     bcrypt: {

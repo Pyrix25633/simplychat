@@ -1,6 +1,6 @@
 import { RequireNonNull } from './utils.js';
 export class Form {
-    constructor(id, url, method, inputs, submitButton, success, statusCode) {
+    constructor(id, url, method, inputs, submitButton, success, statusCode, wrapperId = undefined) {
         this.valid = false;
         this.url = url;
         this.method = method;
@@ -13,6 +13,7 @@ export class Form {
         this.submitButton.addClickListener(() => { this.submit(); });
         this.success = success;
         this.statusCode = statusCode;
+        this.wrapper = wrapperId != undefined ? RequireNonNull.getElementById(wrapperId) : undefined;
     }
     appendChild(node) {
         this.form.appendChild(node);
@@ -46,7 +47,10 @@ export class Form {
         });
     }
     show(show) {
-        this.form.style.display = show ? '' : 'none';
+        if (this.wrapper != undefined)
+            this.wrapper.style.display = show ? '' : 'none';
+        else
+            this.form.style.display = show ? '' : 'none';
         this.submitButton.show(show);
     }
 }
@@ -97,7 +101,7 @@ class CancelButton extends Button {
 export class StructuredForm extends Form {
     constructor(id, url, method, inputs, submitButton, success, statusCode, precompileUrl = null) {
         super(id, url, method, inputs, submitButton, success, statusCode);
-        this.footer = RequireNonNull.getElementById('footer');
+        this.footer = undefined;
         this.cancelButton = new CancelButton();
         this.cancelButton.appendTo(this);
         if (precompileUrl != null) {
@@ -112,6 +116,9 @@ export class StructuredForm extends Form {
         }
     }
     appendChild(node) {
+        if (this.footer == undefined)
+            this.footer = RequireNonNull.getElementById('footer');
+        ;
         if (node instanceof HTMLButtonElement)
             this.footer.appendChild(node);
         else
@@ -216,7 +223,7 @@ export class PasswordInput extends Input {
                 break;
             if (c >= 48 && c <= 57)
                 digits++;
-            else if ((c >= 45 && c <= 47) || c == 35 || c == 64 || c == 42 || c == 95)
+            else if ((c >= 33 && c <= 47) || (c >= 58 && c <= 64) || (c >= 91 && c <= 96) || (c >= 123 && c <= 126))
                 symbols++;
             else if (!((c >= 97 && c <= 122) || (c >= 65 && c <= 90))) {
                 this.setError(true, 'Invalid Character: ' + String.fromCodePoint(c) + '!');
