@@ -19,7 +19,7 @@ model User {
   username      String         @unique @db.VarChar(32)
   email         String         @unique @db.VarChar(64)
   status        String         @db.VarChar(64)
-  settings      Json
+  customization Json
   passwordHash  String         @db.Char(60)
   token         String         @db.Char(128)
   tokenDuration Int            @db.TinyInt @default(14)

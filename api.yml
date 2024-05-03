@@ -61,7 +61,7 @@ components:
       example: "Just joined Simply Chat!"
       minLength: 1
       maxLength: 64
-    settings:
+    customization:
       type: object
       properties:
         compactMode:
@@ -451,8 +451,8 @@ paths:
                     $ref: "#/components/schemas/email"
                   status:
                     $ref: "#/components/schemas/status"
-                  settings:
-                    $ref: "#/components/schemas/settings"
+                  customization:
+                    $ref: "#/components/schemas/customization"
                   tokenDuration:
                     $ref: "#/components/schemas/tokenDuration"
                   tfa:
@@ -478,8 +478,8 @@ paths:
                   $ref: "#/components/schemas/email"
                 status:
                   $ref: "#/components/schemas/status"
-                settings:
-                  $ref: "#/components/schemas/settings"
+                customization:
+                  $ref: "#/components/schemas/customization"
                 password:
                   $ref: "#/components/schemas/password"
                 oldPassword:
@@ -495,7 +495,7 @@ paths:
                 - username
                 - email
                 - status
-                - settings
+                - customization
                 - oldPassword
                 - tokenDuration
       responses:

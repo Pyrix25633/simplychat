@@ -1,4 +1,4 @@
-import { Settings } from "../database/user";
+import { Customization } from "../database/user";
 import { BadRequest } from "../web/response";
 import { getBoolean, getInt, getNonEmptyString } from "./type-validation";
 
@@ -40,7 +40,7 @@ export function getTfaToken(raw: any): string {
     throw new BadRequest();
 }
 
-export function getSettings(raw: any): Settings {
+export function getCustomization(raw: any): Customization {
     if(typeof raw != 'object')
         throw new BadRequest();
     return {

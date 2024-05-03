@@ -3,7 +3,7 @@ import { Forbidden, NoContent, Ok, handleException } from "../web/response";
 import { validateToken } from "./auth";
 import { findUser, findUserTokenAndPasswordHash, updateUserPassword, updateUserPfp, updateUserSettings, updateUserTfaKey } from "../database/user";
 import { getNonEmptyString, getObject, getOrNull, getOrUndefined } from "../validation/type-validation";
-import { getBase64EncodedImage, getEmail, getSettings as getSettings_SemanticValidation, getSixDigitCode, getStatus, getTfaKey, getTokenDuration, getUsername } from "../validation/semantic-validation";
+import { getBase64EncodedImage, getCustomization, getEmail, getStatus, getTfaKey, getTokenDuration, getUsername } from "../validation/semantic-validation";
 import bcrypt from "bcrypt";
 
 export async function getSettings(req: Request, res: Response): Promise<void> {
@@ -14,8 +14,8 @@ export async function getSettings(req: Request, res: Response): Promise<void> {
             username: user.username,
             email: user.email,
             status: user.status,
-            settings: user.settings,
-            pfp: user.pfp,
+            customization: user.customization,
+            pfp: user.pfp.toString(),
             tokenDuration: user.tokenDuration,
             tfa: user.tfaKey != null
         }).send(res);
@@ -32,7 +32,7 @@ export async function patchSettings(req: Request, res: Response): Promise<void> 
         const username = getUsername(body.username);
         const email = getEmail(body.email);
         const status = getStatus(body.status);
-        const settings = getSettings_SemanticValidation(body.settings);
+        const customization = getCustomization(body.settings);
         const password = getOrUndefined(body.password, getNonEmptyString);
         const oldPassword = getNonEmptyString(body.oldPassword);
         if(!bcrypt.compareSync(oldPassword, partialUser.passwordHash))
@@ -40,7 +40,7 @@ export async function patchSettings(req: Request, res: Response): Promise<void> 
         const pfp = getOrUndefined(body.pfp, getBase64EncodedImage);
         const tokenDuration = getTokenDuration(body.tokenDuration);
         const tfaKey = getOrUndefined(body.tfaKey, (raw: any) => { return getOrNull(raw, getTfaKey); });
-        await updateUserSettings(partialUser.id, username, email, status, settings, tokenDuration);
+        await updateUserSettings(partialUser.id, username, email, status, customization, tokenDuration);
         if(password != undefined)
             await updateUserPassword(partialUser.id, password);
         if(pfp != undefined)

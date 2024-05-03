@@ -13,6 +13,7 @@ class UsernameInput extends ApiFeedbackInput {
 class VerificationCodeInput extends Input {
     constructor() {
         super('verificationCode', 'number', 'Verification Code:', 'Input Verification Code');
+        this.input.classList.add('medium');
     }
     async parse() {
         const parsed = parseInt(this.input.value);

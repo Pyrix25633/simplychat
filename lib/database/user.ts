@@ -14,7 +14,7 @@ export async function createUserFromTempUser(tempUser: TempUser): Promise<User> 
                 passwordHash: tempUser.passwordHash,
                 token: generateToken(tempUser.username, tempUser.email, tempUser.passwordHash),
                 status: 'Just joined Simply Chat!',
-                settings: {
+                customization: {
                     compactMode: false,
                     condensedFont: false,
                     aurebeshFont: false,
@@ -110,20 +110,20 @@ export async function findUserTokenAndUsername(id: number): Promise<{ token: str
     return partialUser;
 }
 
-export type Settings = {
+export type Customization = {
     compactMode: boolean;
     condensedFont: boolean;
     aurebeshFont: boolean;
     sharpMode: boolean;
 };
 
-export async function updateUserSettings(id: number, username: string, email: string, status: string, settings: Settings, tokenDuration: number): Promise<User> {
+export async function updateUserSettings(id: number, username: string, email: string, status: string, customization: Customization, tokenDuration: number): Promise<User> {
     return await prisma.user.update({
         data: {
             username: username,
             email: email,
             status: status,
-            settings: settings,
+            customization: customization,
             tokenDuration: tokenDuration
         },
         where: {

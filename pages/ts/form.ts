@@ -6,20 +6,20 @@ export abstract class Form {
     protected readonly url: string;
     private readonly method: string;
     private readonly form: HTMLElement;
-    private readonly inputs: InputElement<any>[];
+    private readonly elements: FormAppendable[];
     private readonly submitButton: Button;
     private readonly success: Success;
     private readonly statusCode: StatusCode;
     private readonly wrapper: HTMLDivElement | undefined;
     private valid: boolean = false;
 
-    constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button,
+    constructor(id: string, url: string, method: string, elements: FormAppendable[], submitButton: Button,
                 success: Success, statusCode: StatusCode, wrapperId: string| undefined = undefined) {
         this.url = url;
         this.method = method;
         this.form = RequireNonNull.getElementById(id);
-        this.inputs = inputs;
-        for(const input of inputs)
+        this.elements = elements;
+        for(const input of elements)
             input.appendTo(this);
         this.submitButton = submitButton;
         this.submitButton.appendTo(this);
@@ -35,8 +35,10 @@ export abstract class Form {
 
     validate(): void {
         this.valid = true;
-        for(const input of this.inputs)
-            this.valid = this.valid && !input.getError();
+        for(const input of this.elements) {
+            if(input instanceof InputElement)
+                this.valid = this.valid && !input.getError();
+        }
         this.submitButton.setDisabled(!this.valid);
     }
 
@@ -46,8 +48,10 @@ export abstract class Form {
 
     async getData(): Promise<string | JsonObject> {
         const data: { [index: string]: any } = {};
-        for(const input of this.inputs)
-            data[input.id] = await input.parse();
+        for(const input of this.elements) {
+            if(input instanceof InputElement)
+                data[input.id] = await input.parse();
+        }
         return this.method == 'GET' ? data : JSON.stringify(data);
     }
 
@@ -73,7 +77,7 @@ export abstract class Form {
     }
 }
 
-export abstract class Button {
+export abstract class Button implements FormAppendable {
     protected readonly button: HTMLButtonElement;
     private readonly inFooter: boolean;
 
@@ -89,15 +93,15 @@ export abstract class Button {
         this.inFooter = inFooter;
     }
 
-    appendTo(form: Form) {
+    appendTo(formOrSection: Form | InputSection) {
         if(this.inFooter) {
-            form.appendChild(this.button);
+            formOrSection.appendChild(this.button);
         }
         else {
             const div = document.createElement('div');
-            div.classList.add('container', 'label-input');
+            div.classList.add('container');
             div.appendChild(this.button);
-            form.appendChild(div);
+            formOrSection.appendChild(div);
         }
     }
 
@@ -124,6 +128,51 @@ class CancelButton extends Button {
         this.addClickListener((): void => {
             window.location.href = '/';
         });
+        this.setDisabled(false);
+    }
+}
+
+type Action = () => void;
+
+export class ActionButton extends Button {
+    private readonly feedbackText: string;
+
+    constructor(text: string, iconSrc: string, feedbackText: string, action: Action = () => {}) {
+        super(text, iconSrc);
+        this.feedbackText = feedbackText;
+        this.addClickListener(action);
+        this.setDisabled(false);
+    }
+
+    appendTo(formOrSection: Form | InputSection) {
+        const div = document.createElement('div');
+        div.classList.add('container');
+        div.appendChild(this.button);
+        const feedback = document.createElement('span');
+        feedback.classList.add('text');
+        feedback.innerText = this.feedbackText;
+        formOrSection.appendChild(div);
+        formOrSection.appendChild(feedback);
+    }
+}
+
+export class ApiCallButton extends ActionButton {
+    private readonly url: string;
+    private success: Success;
+
+    constructor(text: string, iconSrc: string, feedbackText: string, url: string, success: Success) {
+        super(text, iconSrc, feedbackText);
+        this.url = url;
+        this.success = success;
+        this.addClickListener((): void => {
+            $.ajax({
+                url: this.url,
+                method: 'POST',
+                contentType: 'application/json',
+                success: this.success
+            });
+        });
+        this.setDisabled(false);
     }
 }
 
@@ -165,7 +214,11 @@ export abstract class StructuredForm extends Form {
     }
 }
 
-export abstract class InputElement<T> {
+export interface FormAppendable {
+    appendTo(formOrSection: Form | InputSection): void;
+}
+
+export abstract class InputElement<T> implements FormAppendable {
     public readonly id: string;
 
     constructor(id: string) {
@@ -351,6 +404,109 @@ export class BooleanInput extends InputElement<boolean> {
     }
 }
 
+export abstract class ImageInput extends InputElement<string> {
+    private readonly img: HTMLImageElement;
+    private readonly alt: string;
+    private readonly changeImg: HTMLImageElement;
+    private readonly input: HTMLInputElement;
+    private readonly feedback: HTMLSpanElement;
+    private formOrSection: Form | InputSection | undefined = undefined;
+    private error: boolean = false;
+
+    constructor(id: string, alt: string, feedbackText: string) {
+        super(id);
+        this.alt = alt;
+        this.img = document.createElement('img');
+        this.img.alt = alt;
+        this.img.id = id;
+        this.changeImg = document.createElement('img');
+        this.changeImg.id = 'change-' + id;
+        this.changeImg.src = '/img/change.svg';
+        this.input = document.createElement('input');
+        this.input.id = 'new-' + id;
+        this.input.type = 'file';
+        this.changeImg.addEventListener('click', (): void => {
+            this.input.click();
+        });
+        this.input.addEventListener('change', (): void => {
+            this.parse();
+        });
+        this.feedback = document.createElement('span');
+        this.feedback.classList.add('text');
+        this.feedback.innerText = feedbackText;
+    }
+
+    appendTo(formOrSection: Form | InputSection): void {
+        this.formOrSection = formOrSection;
+        const container = document.createElement('div');
+        container.classList.add('box', 'relative');
+        container.appendChild(this.img);
+        container.appendChild(this.changeImg);
+        container.appendChild(this.input);
+        this.formOrSection.appendChild(container);
+        this.formOrSection.appendChild(this.feedback);
+    }
+
+    getError(): boolean {
+        return this.error;
+    }
+
+    setError(error: boolean, feedbackText: string): void {
+        this.error = error;
+        if(!this.feedback.classList.contains('error') && !this.feedback.classList.contains('success'))
+            this.feedback.classList.add('error');
+        if(this.error)
+            this.feedback.classList.replace('success', 'error');
+        else
+            this.feedback.classList.replace('error', 'success');
+        this.feedback.innerText = feedbackText;
+        if(this.formOrSection != undefined) 
+        this.formOrSection?.validate();
+    }
+
+    async parse(): Promise<string | undefined> {
+        const imageInput = this;
+        return new Promise((resolve: (value: string | undefined) => void): void => {
+            const image = new Image();
+            function invalidType(): void {
+                imageInput.setError(true, imageInput.alt + ' Type must be SVG, PNG, JPG, JPEG or GIF!');
+                resolve(undefined);
+            }
+            image.onload = (): void => {
+                if(!image.src.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,\w+$/))
+                    invalidType();
+                if(image.width != image.height) {
+                    imageInput.setError(true, imageInput.alt + ' must be a Square!');
+                    resolve(undefined);
+                    return;
+                }
+                if(image.width < 8 || image.width > 512) {
+                    imageInput.setError(true, imageInput.alt + ' Resolution must be between 8x8 and 512x512!');
+                    resolve(undefined);
+                    return;
+                }
+                imageInput.setError(false, 'Valid ' + imageInput.alt);
+                this.set(image.src);
+                resolve(image.src);
+            };
+            image.onerror = invalidType;
+            const reader = new FileReader();
+            reader.onload = (e: ProgressEvent<FileReader>): void => {
+                if(e.target == null)
+                    return;
+                if(e.target.result != null)
+                    image.src = e.target.result.toString();
+            };
+            if(imageInput.input.files != null)
+                reader.readAsDataURL(imageInput.input.files[0]);
+        });
+    }
+
+    set(value: string): void {
+        this.img.src = value;
+    }
+}
+
 export abstract class ApiFeedbackInput extends Input<string> {
     private readonly url: string;
 
@@ -388,22 +544,21 @@ export abstract class ApiFeedbackInput extends Input<string> {
 
 export abstract class InputSection extends InputElement<JsonObject> {
     private readonly title: string;
-    private readonly inputs: InputElement<any>[];
-    private readonly section: HTMLDivElement;
+    private readonly elements: FormAppendable[];
+    protected readonly section: HTMLDivElement;
     private form: Form | undefined = undefined;
     private error: boolean = true;
 
-    constructor(title: string, inputs: InputElement<any>[]) {
+    constructor(title: string, elements: FormAppendable[]) {
         super('');
         this.title = title;
-        this.inputs = inputs;
-
+        this.elements = elements;
         this.section = document.createElement('div');
         this.section.classList.add('box', 'section');
         const h3 = document.createElement('h3');
         h3.innerText = this.title;
         this.section.appendChild(h3);
-        for(const input of inputs)
+        for(const input of elements)
             input.appendTo(this);
     }
 
@@ -422,8 +577,10 @@ export abstract class InputSection extends InputElement<JsonObject> {
 
     validate(): void {
         this.error = false;
-        for(const input of this.inputs)
-            this.error = this.error || input.getError();
+        for(const input of this.elements) {
+            if(input instanceof InputElement)
+                this.error = this.error || input.getError();
+        }
         this.form?.validate();
     }
 }

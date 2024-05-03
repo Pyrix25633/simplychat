@@ -1,4 +1,4 @@
-import { BooleanInput, Button, Form, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
+import { ApiCallButton, BooleanInput, Button, Form, ImageInput, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
 import { loadSettings } from "./load-settings.js";
 import { Response, defaultStatusCode } from "./utils.js";
 
@@ -7,6 +7,12 @@ await loadSettings();
 class ContinueButton extends Button {
     constructor() {
         super('Continue', '/img/continue.svg', true);
+    }
+}
+
+class PfpInput extends ImageInput {
+    constructor() {
+        super('pfp', 'Profile Picture', 'You can change your Profile Picture');
     }
 }
 
@@ -34,6 +40,8 @@ class StatusInput extends Input<string> {
     }
 }
 
+const pfpInput = new PfpInput();
+
 const statusInput = new StatusInput();
 
 class InfoSection extends InputSection {
@@ -43,7 +51,39 @@ class InfoSection extends InputSection {
 
     async parse(): Promise<{ [index: string]: any; } | undefined> {
         return {
-            status: statusInput.parse()
+            status: await statusInput.parse()
+        };
+    }
+}
+
+class LogoutButton extends ApiCallButton {
+    constructor() {
+        super('Logout', '/img/logout.svg', 'Logs you out of this Device', '/api/auth/logout', (res: Response): void => {
+            location.href = '/login';
+        });
+    }
+}
+
+class RegenerateTokenButton extends ApiCallButton {
+    constructor() {
+        super('Regenerate Token', '/img/logout.svg', 'Logs you out of all Devices', '/api/auth/regenerate-token', (res: Response): void => {
+            location.href = '/login';
+        });
+    }
+}
+
+const passwordInput = new PasswordInput();
+const tfaInput = new BooleanInput('tfa', '2 Factor Authentication', 'Protects your Account');
+
+class SecuritySection extends InputSection {
+    constructor() {
+        super('Security', [passwordInput, new LogoutButton(), new RegenerateTokenButton(), tfaInput]);
+        this.section.classList.add('warning');
+    }
+
+    async parse(): Promise<{ [index: string]: any; } | undefined> {
+        return {
+            password: await passwordInput.parse()
         };
     }
 }
@@ -60,7 +100,10 @@ class CustomizationSection extends InputSection {
 
     async parse(): Promise<{ [index: string]: boolean; }> {
         return {
-
+            compactMode: await compactModeInput.parse(),
+            condensedFont: await condensedFontInput.parse(),
+            aurebeshFont: await aurebeshFontInput.parse(),
+            sharpMode: await sharpModeInput.parse()
         };
     }
 }
@@ -68,17 +111,21 @@ class CustomizationSection extends InputSection {
 class SettingsForm extends StructuredForm {
     constructor() {
         super('settings-form', '', '', [
+            pfpInput,
             new InfoSection(),
+            new SecuritySection(),
             new CustomizationSection()
         ], new ContinueButton(), (): void => {}, [], 'settings', '/api/settings');
     }
 
     precompile(res: Response): void {
+        pfpInput.set(res.pfp);
         statusInput.set(res.status);
-        compactModeInput.set(res.settings.compactMode);
-        condensedFontInput.set(res.settings.condensedFont);
-        aurebeshFontInput.set(res.settings.aurebeshFont);
-        sharpModeInput.set(res.settings.sharpMode);
+        tfaInput.set(res.tfa);
+        compactModeInput.set(res.customization.compactMode);
+        condensedFontInput.set(res.customization.condensedFont);
+        aurebeshFontInput.set(res.customization.aurebeshFont);
+        sharpModeInput.set(res.customization.sharpMode);
     }
 
     async submit(): Promise<void> {

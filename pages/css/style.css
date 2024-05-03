@@ -109,11 +109,11 @@ a {
     color: var(--color-warning);
     border-color: var(--color-warning);
 }
-button.warning {
+div.warning button {
     background-color: var(--color-warning);
     color: var(--color-background);
 }
-button.warning:active {
+ div.warning button:active {
     background-color: var(--color-foreground);
     color: var(--color-warning);
 }

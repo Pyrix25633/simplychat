@@ -1,10 +1,15 @@
-import { BooleanInput, Button, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
+import { ApiCallButton, BooleanInput, Button, ImageInput, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
 import { loadSettings } from "./load-settings.js";
 import { defaultStatusCode } from "./utils.js";
 await loadSettings();
 class ContinueButton extends Button {
     constructor() {
         super('Continue', '/img/continue.svg', true);
+    }
+}
+class PfpInput extends ImageInput {
+    constructor() {
+        super('pfp', 'Profile Picture', 'You can change your Profile Picture');
     }
 }
 class StatusInput extends Input {
@@ -28,6 +33,7 @@ class StatusInput extends Input {
         this.setInputValue(value);
     }
 }
+const pfpInput = new PfpInput();
 const statusInput = new StatusInput();
 class InfoSection extends InputSection {
     constructor() {
@@ -35,7 +41,34 @@ class InfoSection extends InputSection {
     }
     async parse() {
         return {
-            status: statusInput.parse()
+            status: await statusInput.parse()
+        };
+    }
+}
+class LogoutButton extends ApiCallButton {
+    constructor() {
+        super('Logout', '/img/logout.svg', 'Logs you out of this Device', '/api/auth/logout', (res) => {
+            location.href = '/login';
+        });
+    }
+}
+class RegenerateTokenButton extends ApiCallButton {
+    constructor() {
+        super('Regenerate Token', '/img/logout.svg', 'Logs you out of all Devices', '/api/auth/regenerate-token', (res) => {
+            location.href = '/login';
+        });
+    }
+}
+const passwordInput = new PasswordInput();
+const tfaInput = new BooleanInput('tfa', '2 Factor Authentication', 'Protects your Account');
+class SecuritySection extends InputSection {
+    constructor() {
+        super('Security', [passwordInput, new LogoutButton(), new RegenerateTokenButton(), tfaInput]);
+        this.section.classList.add('warning');
+    }
+    async parse() {
+        return {
+            password: await passwordInput.parse()
         };
     }
 }
@@ -48,22 +81,31 @@ class CustomizationSection extends InputSection {
         super('Customization', [compactModeInput, condensedFontInput, aurebeshFontInput, sharpModeInput]);
     }
     async parse() {
-        return {};
+        return {
+            compactMode: await compactModeInput.parse(),
+            condensedFont: await condensedFontInput.parse(),
+            aurebeshFont: await aurebeshFontInput.parse(),
+            sharpMode: await sharpModeInput.parse()
+        };
     }
 }
 class SettingsForm extends StructuredForm {
     constructor() {
         super('settings-form', '', '', [
+            pfpInput,
             new InfoSection(),
+            new SecuritySection(),
             new CustomizationSection()
         ], new ContinueButton(), () => { }, [], 'settings', '/api/settings');
     }
     precompile(res) {
+        pfpInput.set(res.pfp);
         statusInput.set(res.status);
-        compactModeInput.set(res.settings.compactMode);
-        condensedFontInput.set(res.settings.condensedFont);
-        aurebeshFontInput.set(res.settings.aurebeshFont);
-        sharpModeInput.set(res.settings.sharpMode);
+        tfaInput.set(res.tfa);
+        compactModeInput.set(res.customization.compactMode);
+        condensedFontInput.set(res.customization.condensedFont);
+        aurebeshFontInput.set(res.customization.aurebeshFont);
+        sharpModeInput.set(res.customization.sharpMode);
     }
     async submit() {
         this.show(false);

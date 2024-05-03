@@ -1,12 +1,12 @@
 import { RequireNonNull } from './utils.js';
 export class Form {
-    constructor(id, url, method, inputs, submitButton, success, statusCode, wrapperId = undefined) {
+    constructor(id, url, method, elements, submitButton, success, statusCode, wrapperId = undefined) {
         this.valid = false;
         this.url = url;
         this.method = method;
         this.form = RequireNonNull.getElementById(id);
-        this.inputs = inputs;
-        for (const input of inputs)
+        this.elements = elements;
+        for (const input of elements)
             input.appendTo(this);
         this.submitButton = submitButton;
         this.submitButton.appendTo(this);
@@ -20,8 +20,10 @@ export class Form {
     }
     validate() {
         this.valid = true;
-        for (const input of this.inputs)
-            this.valid = this.valid && !input.getError();
+        for (const input of this.elements) {
+            if (input instanceof InputElement)
+                this.valid = this.valid && !input.getError();
+        }
         this.submitButton.setDisabled(!this.valid);
     }
     async getUrl() {
@@ -29,8 +31,10 @@ export class Form {
     }
     async getData() {
         const data = {};
-        for (const input of this.inputs)
-            data[input.id] = await input.parse();
+        for (const input of this.elements) {
+            if (input instanceof InputElement)
+                data[input.id] = await input.parse();
+        }
         return this.method == 'GET' ? data : JSON.stringify(data);
     }
     async submit() {
@@ -66,15 +70,15 @@ export class Button {
         this.button.appendChild(icon);
         this.inFooter = inFooter;
     }
-    appendTo(form) {
+    appendTo(formOrSection) {
         if (this.inFooter) {
-            form.appendChild(this.button);
+            formOrSection.appendChild(this.button);
         }
         else {
             const div = document.createElement('div');
-            div.classList.add('container', 'label-input');
+            div.classList.add('container');
             div.appendChild(this.button);
-            form.appendChild(div);
+            formOrSection.appendChild(div);
         }
     }
     addClickListener(listener) {
@@ -96,6 +100,41 @@ class CancelButton extends Button {
         this.addClickListener(() => {
             window.location.href = '/';
         });
+        this.setDisabled(false);
+    }
+}
+export class ActionButton extends Button {
+    constructor(text, iconSrc, feedbackText, action = () => { }) {
+        super(text, iconSrc);
+        this.feedbackText = feedbackText;
+        this.addClickListener(action);
+        this.setDisabled(false);
+    }
+    appendTo(formOrSection) {
+        const div = document.createElement('div');
+        div.classList.add('container');
+        div.appendChild(this.button);
+        const feedback = document.createElement('span');
+        feedback.classList.add('text');
+        feedback.innerText = this.feedbackText;
+        formOrSection.appendChild(div);
+        formOrSection.appendChild(feedback);
+    }
+}
+export class ApiCallButton extends ActionButton {
+    constructor(text, iconSrc, feedbackText, url, success) {
+        super(text, iconSrc, feedbackText);
+        this.url = url;
+        this.success = success;
+        this.addClickListener(() => {
+            $.ajax({
+                url: this.url,
+                method: 'POST',
+                contentType: 'application/json',
+                success: this.success
+            });
+        });
+        this.setDisabled(false);
     }
 }
 export class StructuredForm extends Form {
@@ -289,6 +328,98 @@ export class BooleanInput extends InputElement {
             this.slider.classList.replace('on', 'off');
     }
 }
+export class ImageInput extends InputElement {
+    constructor(id, alt, feedbackText) {
+        super(id);
+        this.formOrSection = undefined;
+        this.error = false;
+        this.alt = alt;
+        this.img = document.createElement('img');
+        this.img.alt = alt;
+        this.img.id = id;
+        this.changeImg = document.createElement('img');
+        this.changeImg.id = 'change-' + id;
+        this.changeImg.src = '/img/change.svg';
+        this.input = document.createElement('input');
+        this.input.id = 'new-' + id;
+        this.input.type = 'file';
+        this.changeImg.addEventListener('click', () => {
+            this.input.click();
+        });
+        this.input.addEventListener('change', () => {
+            this.parse();
+        });
+        this.feedback = document.createElement('span');
+        this.feedback.classList.add('text');
+        this.feedback.innerText = feedbackText;
+    }
+    appendTo(formOrSection) {
+        this.formOrSection = formOrSection;
+        const container = document.createElement('div');
+        container.classList.add('box', 'relative');
+        container.appendChild(this.img);
+        container.appendChild(this.changeImg);
+        container.appendChild(this.input);
+        this.formOrSection.appendChild(container);
+        this.formOrSection.appendChild(this.feedback);
+    }
+    getError() {
+        return this.error;
+    }
+    setError(error, feedbackText) {
+        var _a;
+        this.error = error;
+        if (!this.feedback.classList.contains('error') && !this.feedback.classList.contains('success'))
+            this.feedback.classList.add('error');
+        if (this.error)
+            this.feedback.classList.replace('success', 'error');
+        else
+            this.feedback.classList.replace('error', 'success');
+        this.feedback.innerText = feedbackText;
+        if (this.formOrSection != undefined)
+            (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
+    }
+    async parse() {
+        const imageInput = this;
+        return new Promise((resolve) => {
+            const image = new Image();
+            function invalidType() {
+                imageInput.setError(true, imageInput.alt + ' Type must be SVG, PNG, JPG, JPEG or GIF!');
+                resolve(undefined);
+            }
+            image.onload = () => {
+                if (!image.src.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,\w+$/))
+                    invalidType();
+                if (image.width != image.height) {
+                    imageInput.setError(true, imageInput.alt + ' must be a Square!');
+                    resolve(undefined);
+                    return;
+                }
+                if (image.width < 8 || image.width > 512) {
+                    imageInput.setError(true, imageInput.alt + ' Resolution must be between 8x8 and 512x512!');
+                    resolve(undefined);
+                    return;
+                }
+                imageInput.setError(false, 'Valid ' + imageInput.alt);
+                this.set(image.src);
+                resolve(image.src);
+            };
+            image.onerror = invalidType;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (e.target == null)
+                    return;
+                if (e.target.result != null)
+                    image.src = e.target.result.toString();
+            };
+            if (imageInput.input.files != null)
+                reader.readAsDataURL(imageInput.input.files[0]);
+        });
+    }
+    set(value) {
+        this.img.src = value;
+    }
+}
 export class ApiFeedbackInput extends Input {
     constructor(id, type, labelText, feedbackText, url) {
         super(id, type, labelText, feedbackText);
@@ -320,18 +451,18 @@ export class ApiFeedbackInput extends Input {
     }
 }
 export class InputSection extends InputElement {
-    constructor(title, inputs) {
+    constructor(title, elements) {
         super('');
         this.form = undefined;
         this.error = true;
         this.title = title;
-        this.inputs = inputs;
+        this.elements = elements;
         this.section = document.createElement('div');
         this.section.classList.add('box', 'section');
         const h3 = document.createElement('h3');
         h3.innerText = this.title;
         this.section.appendChild(h3);
-        for (const input of inputs)
+        for (const input of elements)
             input.appendTo(this);
     }
     appendChild(node) {
@@ -347,8 +478,10 @@ export class InputSection extends InputElement {
     validate() {
         var _a;
         this.error = false;
-        for (const input of this.inputs)
-            this.error = this.error || input.getError();
+        for (const input of this.elements) {
+            if (input instanceof InputElement)
+                this.error = this.error || input.getError();
+        }
         (_a = this.form) === null || _a === void 0 ? void 0 : _a.validate();
     }
 }

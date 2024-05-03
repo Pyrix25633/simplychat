@@ -1,7 +1,6 @@
 img#pfp {
     height: 100px;
     background-color: var(--color-lighter);
-    margin-top: 10px;
     margin-bottom: 5px;
 }
 
@@ -36,7 +35,7 @@ div.slider.off {
     padding-right: 15px;
     background-color: var(--color-background);
 }
-div.slider.off.warning {
+div.warning div.slider.off {
     background-color: var(--color-background);
     border-color: var(--color-error);
 }
@@ -44,7 +43,7 @@ div.slider.on {
     padding-left: 15px;
     background-color: var(--color-simplychat);
 }
-div.slider.on.warning {
+div.warning div.slider.on {
     background-color: var(--color-background);
     border-color: var(--color-success);
 }
@@ -53,9 +52,9 @@ div.slider div.slider-circle {
     height: 15px;
     width: 15px;
 }
-div.slider.warning.off div.slider-circle {
+div.warning div.slider.off div.slider-circle {
     background-color: var(--color-error);
 }
-div.slider.warning.on div.slider-circle {
+div.warning div.slider.on div.slider-circle {
     background-color: var(--color-success);
 }
