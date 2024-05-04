@@ -206,7 +206,9 @@ export abstract class StructuredForm extends Form {
             super.appendChild(node);
     }
 
-    precompile(res: Response): void {}
+    precompile(res: Response): void {
+        throw new Error('Method not implemented!')
+    }
 
     show(show: boolean): void {
         super.show(show);
@@ -216,6 +218,31 @@ export abstract class StructuredForm extends Form {
 
 export interface FormAppendable {
     appendTo(formOrSection: Form | InputSection): void;
+}
+
+export class InfoSpan implements FormAppendable {
+    private readonly labelSpan: HTMLSpanElement;
+    private readonly valueSpan: HTMLSpanElement;
+
+    constructor(labelText: string) {
+        this.labelSpan = document.createElement('span');
+        this.labelSpan.classList.add('text');
+        this.labelSpan.innerText = labelText;
+        this.valueSpan = document.createElement('span');
+        this.valueSpan.classList.add('text');
+    }
+
+    appendTo(formOrSection: Form | InputSection): void {
+        const container = document.createElement('div');
+        container.classList.add('container', 'no-margin');
+        container.appendChild(this.labelSpan);
+        container.appendChild(this.valueSpan);
+        formOrSection.appendChild(container);
+    }
+
+    set(value: string): void {
+        this.valueSpan.innerText = value;
+    }
 }
 
 export abstract class InputElement<T> implements FormAppendable {
@@ -239,16 +266,19 @@ export abstract class InputElement<T> implements FormAppendable {
 export abstract class Input<T> extends InputElement<T> {
     private formOrSection: Form | InputSection | undefined = undefined;
     public readonly input: HTMLInputElement;
+    private readonly feedbackText: string;
     private readonly feedback: HTMLSpanElement;
     private readonly labelText: string;
     private timeout: NodeJS.Timeout | undefined = undefined;
     private error: boolean = true;
+    protected precompiledValue: T | undefined = undefined;
 
     constructor(id: string, type: string, labelText: string, feedbackText: string) {
         super(id);
         this.input = document.createElement('input');
         this.input.id = id;
         this.input.type = type;
+        this.feedbackText = feedbackText;
         this.feedback = document.createElement('span');
         this.feedback.classList.add('text');
         this.feedback.innerText = feedbackText;
@@ -296,7 +326,6 @@ export abstract class Input<T> extends InputElement<T> {
         else
             this.feedback.classList.replace('error', 'success');
         this.feedback.innerText = feedbackText;
-        if(this.formOrSection != undefined) 
         this.formOrSection?.validate();
     }
 
@@ -311,21 +340,36 @@ export abstract class Input<T> extends InputElement<T> {
     setInputValue(value: string): void {
         this.input.value = value;
     }
+
+    precompile(value: T): void {
+        this.precompiledValue = value;
+        this.error = false;
+        this.feedback.classList.remove('success', 'error');
+        this.feedback.innerText = this.feedbackText;
+        if(typeof value == 'string')
+            this.setInputValue(value);
+        this.formOrSection?.validate();
+    }
 }
 
 export class PasswordInput extends Input<string> {
-    constructor() {
-        super('password', 'password', 'Password:', 'Input Password')
+    constructor(feedbackText: string = 'Input Password') {
+        super('password', 'password', 'Password:', feedbackText);
     }
 
     async parse(): Promise<string | undefined> {
-        if(this.input.value.length < 8) {
+        const password = this.getInputValue();
+        if(password == this.precompiledValue) {
+            this.precompile(password);
+            return password;
+        }
+        if(password.length < 8) {
             this.setError(true, 'At least 8 Characters needed!');
             return undefined;
         }
         let digits = 0, symbols = 0;
-        for(let i = 0; i < this.input.value.length; i++) {
-            const c: number | undefined = this.input.value.codePointAt(i);
+        for(let i = 0; i < password.length; i++) {
+            const c: number | undefined = password.codePointAt(i);
             if(c == undefined) break;
             if(c >= 48 && c <= 57) digits++;
             else if((c >= 33 && c <= 47) || (c >= 58 && c <= 64) || (c >= 91 && c <= 96) || (c >= 123 && c <= 126)) symbols++;
@@ -343,12 +387,16 @@ export class PasswordInput extends Input<string> {
             return undefined;
         }
         this.setError(false, 'Valid Password');
-        return this.input.value;
+        return password;
     }
 
     set(value: string): void {
-        this.input.value = value;
+        this.setInputValue(value);
         this.parse();
+    }
+
+    changed(): boolean {
+        return this.input.value != this.precompiledValue;
     }
 }
 
@@ -409,9 +457,11 @@ export abstract class ImageInput extends InputElement<string> {
     private readonly alt: string;
     private readonly changeImg: HTMLImageElement;
     private readonly input: HTMLInputElement;
+    private readonly feedbackText: string;
     private readonly feedback: HTMLSpanElement;
     private formOrSection: Form | InputSection | undefined = undefined;
     private error: boolean = false;
+    private precompiledValue: string | undefined = undefined;
 
     constructor(id: string, alt: string, feedbackText: string) {
         super(id);
@@ -431,6 +481,7 @@ export abstract class ImageInput extends InputElement<string> {
         this.input.addEventListener('change', (): void => {
             this.parse();
         });
+        this.feedbackText = feedbackText;
         this.feedback = document.createElement('span');
         this.feedback.classList.add('text');
         this.feedback.innerText = feedbackText;
@@ -460,7 +511,6 @@ export abstract class ImageInput extends InputElement<string> {
         else
             this.feedback.classList.replace('error', 'success');
         this.feedback.innerText = feedbackText;
-        if(this.formOrSection != undefined) 
         this.formOrSection?.validate();
     }
 
@@ -487,6 +537,8 @@ export abstract class ImageInput extends InputElement<string> {
                 }
                 imageInput.setError(false, 'Valid ' + imageInput.alt);
                 this.set(image.src);
+                if(image.src == imageInput.precompiledValue)
+                    this.precompile(image.src);
                 resolve(image.src);
             };
             image.onerror = invalidType;
@@ -505,6 +557,20 @@ export abstract class ImageInput extends InputElement<string> {
     set(value: string): void {
         this.img.src = value;
     }
+
+    precompile(value: string): void {
+        this.precompiledValue = value;
+        this.error = false;
+        this.feedback.classList.remove('success', 'error');
+        this.feedback.innerText = this.feedbackText;
+        if(typeof value == 'string')
+            this.set(value);
+        this.formOrSection?.validate();
+    }
+
+    changed(): boolean {
+        return this.img.src != this.precompiledValue;
+    }
 }
 
 export abstract class ApiFeedbackInput extends Input<string> {
@@ -516,11 +582,16 @@ export abstract class ApiFeedbackInput extends Input<string> {
     }
 
     set(value: string): void {
-        this.input.value = value;
+        this.setInputValue(value);
         this.parse();
     }
 
     async parse(): Promise<string | undefined> {
+        const value = this.getInputValue()
+        if(value == this.precompiledValue) {
+            this.precompile(value);
+            return value;
+        }
         const data: { [index: string]: any; } = {};
         data[this.id] = this.getInputValue();
         return new Promise((resolve): void => {
@@ -560,6 +631,7 @@ export abstract class InputSection extends InputElement<JsonObject> {
         this.section.appendChild(h3);
         for(const input of elements)
             input.appendTo(this);
+        this.validate();
     }
 
     appendChild(node: HTMLElement): void {

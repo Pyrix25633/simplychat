@@ -97,16 +97,16 @@ export async function postLoginTfa(req: Request, res: Response): Promise<void> {
 
 type FindFunction<R> = (id: number) => Promise<R>;
 
-export async function validateToken<T extends { token: string; }>(req: Request, findFunction: FindFunction<T> = findUserToken as FindFunction<T>): Promise<T & { id: number; }> {
+export async function validateToken<T extends { token: string; }>(req: Request, findFunction: FindFunction<T> = findUserToken as FindFunction<T>): Promise<T & { id: number; sessionExpiration: number; }> {
     const authToken: string | undefined = req.cookies[settings.jwt.cookieName];
     if(authToken == undefined)
         throw new Unauthorized();
     try {
-        const payload = jwt.verify(authToken, settings.jwt.password) as AuthTokenPayload;
+        const payload = jwt.verify(authToken, settings.jwt.password) as AuthTokenPayload & { exp: number; };
         const partialUser = await findFunction(payload.userId);
         if(payload.token != partialUser.token)
             throw new Unauthorized();
-        return { id: payload.userId, ...partialUser };
+        return { id: payload.userId, sessionExpiration: payload.exp, ...partialUser };
     } catch(e: any) {
         throw new Unauthorized();
     }

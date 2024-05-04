@@ -16,6 +16,7 @@ export async function getSettings(req: Request, res: Response): Promise<void> {
             status: user.status,
             customization: user.customization,
             pfp: user.pfp.toString(),
+            sessionExpiration: user.sessionExpiration,
             tokenDuration: user.tokenDuration,
             tfa: user.tfaKey != null
         }).send(res);
@@ -29,8 +30,8 @@ export async function patchSettings(req: Request, res: Response): Promise<void> 
     try {
         const partialUser = await validateToken(req, findUserTokenAndPasswordHash);
         const body = getObject(req.body);
-        const username = getUsername(body.username);
-        const email = getEmail(body.email);
+        const username = getUsername(body.username); //TODO: check
+        const email = getEmail(body.email); //TODO: check
         const status = getStatus(body.status);
         const customization = getCustomization(body.settings);
         const password = getOrUndefined(body.password, getNonEmptyString);

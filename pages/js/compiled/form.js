@@ -163,10 +163,31 @@ export class StructuredForm extends Form {
         else
             super.appendChild(node);
     }
-    precompile(res) { }
+    precompile(res) {
+        throw new Error('Method not implemented!');
+    }
     show(show) {
         super.show(show);
         this.cancelButton.show(show);
+    }
+}
+export class InfoSpan {
+    constructor(labelText) {
+        this.labelSpan = document.createElement('span');
+        this.labelSpan.classList.add('text');
+        this.labelSpan.innerText = labelText;
+        this.valueSpan = document.createElement('span');
+        this.valueSpan.classList.add('text');
+    }
+    appendTo(formOrSection) {
+        const container = document.createElement('div');
+        container.classList.add('container', 'no-margin');
+        container.appendChild(this.labelSpan);
+        container.appendChild(this.valueSpan);
+        formOrSection.appendChild(container);
+    }
+    set(value) {
+        this.valueSpan.innerText = value;
     }
 }
 export class InputElement {
@@ -183,9 +204,11 @@ export class Input extends InputElement {
         this.formOrSection = undefined;
         this.timeout = undefined;
         this.error = true;
+        this.precompiledValue = undefined;
         this.input = document.createElement('input');
         this.input.id = id;
         this.input.type = type;
+        this.feedbackText = feedbackText;
         this.feedback = document.createElement('span');
         this.feedback.classList.add('text');
         this.feedback.innerText = feedbackText;
@@ -233,8 +256,7 @@ export class Input extends InputElement {
         else
             this.feedback.classList.replace('error', 'success');
         this.feedback.innerText = feedbackText;
-        if (this.formOrSection != undefined)
-            (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
+        (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
     }
     getError() {
         return this.error;
@@ -245,19 +267,34 @@ export class Input extends InputElement {
     setInputValue(value) {
         this.input.value = value;
     }
+    precompile(value) {
+        var _a;
+        this.precompiledValue = value;
+        this.error = false;
+        this.feedback.classList.remove('success', 'error');
+        this.feedback.innerText = this.feedbackText;
+        if (typeof value == 'string')
+            this.setInputValue(value);
+        (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
+    }
 }
 export class PasswordInput extends Input {
-    constructor() {
-        super('password', 'password', 'Password:', 'Input Password');
+    constructor(feedbackText = 'Input Password') {
+        super('password', 'password', 'Password:', feedbackText);
     }
     async parse() {
-        if (this.input.value.length < 8) {
+        const password = this.getInputValue();
+        if (password == this.precompiledValue) {
+            this.precompile(password);
+            return password;
+        }
+        if (password.length < 8) {
             this.setError(true, 'At least 8 Characters needed!');
             return undefined;
         }
         let digits = 0, symbols = 0;
-        for (let i = 0; i < this.input.value.length; i++) {
-            const c = this.input.value.codePointAt(i);
+        for (let i = 0; i < password.length; i++) {
+            const c = password.codePointAt(i);
             if (c == undefined)
                 break;
             if (c >= 48 && c <= 57)
@@ -278,11 +315,14 @@ export class PasswordInput extends Input {
             return undefined;
         }
         this.setError(false, 'Valid Password');
-        return this.input.value;
+        return password;
     }
     set(value) {
-        this.input.value = value;
+        this.setInputValue(value);
         this.parse();
+    }
+    changed() {
+        return this.input.value != this.precompiledValue;
     }
 }
 export class BooleanInput extends InputElement {
@@ -333,6 +373,7 @@ export class ImageInput extends InputElement {
         super(id);
         this.formOrSection = undefined;
         this.error = false;
+        this.precompiledValue = undefined;
         this.alt = alt;
         this.img = document.createElement('img');
         this.img.alt = alt;
@@ -349,6 +390,7 @@ export class ImageInput extends InputElement {
         this.input.addEventListener('change', () => {
             this.parse();
         });
+        this.feedbackText = feedbackText;
         this.feedback = document.createElement('span');
         this.feedback.classList.add('text');
         this.feedback.innerText = feedbackText;
@@ -376,8 +418,7 @@ export class ImageInput extends InputElement {
         else
             this.feedback.classList.replace('error', 'success');
         this.feedback.innerText = feedbackText;
-        if (this.formOrSection != undefined)
-            (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
+        (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
     }
     async parse() {
         const imageInput = this;
@@ -402,6 +443,8 @@ export class ImageInput extends InputElement {
                 }
                 imageInput.setError(false, 'Valid ' + imageInput.alt);
                 this.set(image.src);
+                if (image.src == imageInput.precompiledValue)
+                    this.precompile(image.src);
                 resolve(image.src);
             };
             image.onerror = invalidType;
@@ -419,6 +462,19 @@ export class ImageInput extends InputElement {
     set(value) {
         this.img.src = value;
     }
+    precompile(value) {
+        var _a;
+        this.precompiledValue = value;
+        this.error = false;
+        this.feedback.classList.remove('success', 'error');
+        this.feedback.innerText = this.feedbackText;
+        if (typeof value == 'string')
+            this.set(value);
+        (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
+    }
+    changed() {
+        return this.img.src != this.precompiledValue;
+    }
 }
 export class ApiFeedbackInput extends Input {
     constructor(id, type, labelText, feedbackText, url) {
@@ -426,10 +482,15 @@ export class ApiFeedbackInput extends Input {
         this.url = url;
     }
     set(value) {
-        this.input.value = value;
+        this.setInputValue(value);
         this.parse();
     }
     async parse() {
+        const value = this.getInputValue();
+        if (value == this.precompiledValue) {
+            this.precompile(value);
+            return value;
+        }
         const data = {};
         data[this.id] = this.getInputValue();
         return new Promise((resolve) => {
@@ -464,6 +525,7 @@ export class InputSection extends InputElement {
         this.section.appendChild(h3);
         for (const input of elements)
             input.appendTo(this);
+        this.validate();
     }
     appendChild(node) {
         this.section.appendChild(node);

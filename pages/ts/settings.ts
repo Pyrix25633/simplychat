@@ -1,4 +1,4 @@
-import { ApiCallButton, BooleanInput, Button, Form, ImageInput, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
+import { ApiCallButton, ApiFeedbackInput, BooleanInput, Button, Form, ImageInput, InfoSpan, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
 import { loadSettings } from "./load-settings.js";
 import { Response, defaultStatusCode } from "./utils.js";
 
@@ -16,13 +16,31 @@ class PfpInput extends ImageInput {
     }
 }
 
+const pfpInput = new PfpInput();
+
+class UsernameInput extends ApiFeedbackInput {
+    constructor() {
+        super('username', 'text', 'Username:', 'You can change your Username', '/api/feedbacks/register-username');
+    }
+}
+
+class EmailInput extends ApiFeedbackInput {
+    constructor() {
+        super('email', 'text', 'Email:', 'You can change your Email', '/api/feedbacks/register-email');
+    }
+}
+
 class StatusInput extends Input<string> {
     constructor() {
-        super('status', 'text', 'Status:', 'Input Status');
+        super('status', 'text', 'Status:', 'You can change your Status');
     }
 
     async parse(): Promise<string | undefined> {
         const status = this.getInputValue();
+        if(status == this.precompiledValue) {
+            this.precompile(status);
+            return status;
+        }
         if(status.length < 3) {
             this.setError(true, 'Status too short!');
             return undefined;
@@ -34,19 +52,16 @@ class StatusInput extends Input<string> {
         this.setError(false, 'Valid Status');
         return status;
     }
-
-    set(value: string): void {
-        this.setInputValue(value);
-    }
 }
 
-const pfpInput = new PfpInput();
-
+const idInfoSpan = new InfoSpan('Id:');
+const usernameInput = new UsernameInput();
+const emailInput = new EmailInput();
 const statusInput = new StatusInput();
 
 class InfoSection extends InputSection {
     constructor() {
-        super('Info', [statusInput]);
+        super('Info', [idInfoSpan, usernameInput, emailInput, statusInput]);
     }
 
     async parse(): Promise<{ [index: string]: any; } | undefined> {
@@ -72,12 +87,13 @@ class RegenerateTokenButton extends ApiCallButton {
     }
 }
 
-const passwordInput = new PasswordInput();
+const passwordInput = new PasswordInput('You can change your Password');
+const sessionExpirationInfoSpan = new InfoSpan('Session Expiration:');
 const tfaInput = new BooleanInput('tfa', '2 Factor Authentication', 'Protects your Account');
 
 class SecuritySection extends InputSection {
     constructor() {
-        super('Security', [passwordInput, new LogoutButton(), new RegenerateTokenButton(), tfaInput]);
+        super('Security', [passwordInput, new LogoutButton(), sessionExpirationInfoSpan, new RegenerateTokenButton(), tfaInput]);
         this.section.classList.add('warning');
     }
 
@@ -119,8 +135,13 @@ class SettingsForm extends StructuredForm {
     }
 
     precompile(res: Response): void {
-        pfpInput.set(res.pfp);
-        statusInput.set(res.status);
+        pfpInput.precompile(res.pfp);
+        idInfoSpan.set(res.id);
+        usernameInput.precompile(res.username);
+        emailInput.precompile(res.email);
+        statusInput.precompile(res.status);
+        passwordInput.precompile('');
+        sessionExpirationInfoSpan.set(new Date(res.sessionExpiration * 1000).toLocaleString('en-ZA'));
         tfaInput.set(res.tfa);
         compactModeInput.set(res.customization.compactMode);
         condensedFontInput.set(res.customization.condensedFont);
@@ -133,10 +154,25 @@ class SettingsForm extends StructuredForm {
         oldPasswordForm.show(true);
     }
 
-    async getData(): Promise<string | { [index: string]: any; }> {
-        return {
-            status: await statusInput.parse()
-        }
+    async getData(): Promise<{ [index: string]: any; }> {
+        const data: { [index: string]: any; } = {
+            username: await usernameInput.parse(),
+            email: await emailInput.parse(),
+            status: await statusInput.parse(),
+            customization: {
+                compactMode: await compactModeInput.parse(),
+                condensedFont: await condensedFontInput.parse(),
+                aurebeshFont: await aurebeshFontInput.parse(),
+                sharpMode: await sharpModeInput.parse()
+            }
+        };
+        const pfp = await pfpInput.parse();
+        if(pfp != undefined && pfpInput.changed())
+            data.pfp = pfp;
+        const password = await passwordInput.parse();
+        if(password != undefined && passwordInput.changed())
+            data.password = password;
+        return data;
     }
 }
 

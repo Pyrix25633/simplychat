@@ -453,6 +453,9 @@ paths:
                     $ref: "#/components/schemas/status"
                   customization:
                     $ref: "#/components/schemas/customization"
+                  sessionExpiration:
+                    type: integer
+                    example: 1715960830
                   tokenDuration:
                     $ref: "#/components/schemas/tokenDuration"
                   tfa:
