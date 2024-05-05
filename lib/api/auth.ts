@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleException } from "../web/response";
-import { getNonEmptyString, getObject, parseInt } from "../validation/type-validation";
+import { getInt, getNonEmptyString, getObject } from "../validation/type-validation";
 import { getSixDigitCode, getTfaKey, getTfaToken, getUsername } from "../validation/semantic-validation";
 import bcrypt from "bcrypt";
 import { findUser, findUserToken, findUserTokenAndUsername, findUserWhereUsername, regenerateUserToken } from "../database/user";
-import { generateTfaToken } from "../random";
+import { encodeSvgToBase64, generateTfaToken } from "../random";
 import { settings } from "../settings";
 import { User } from "@prisma/client";
 import jwt from "jsonwebtoken";
@@ -117,27 +117,27 @@ export async function getTfaGenerateKey(req: Request, res: Response): Promise<vo
         const partialUser = await validateToken(req, findUserTokenAndUsername);
         const tfaKey = tfa.generateSecret().base32;
         const tfaQr = await qrcode.toString(
-            'optauth://totp/' + partialUser.username + '?secret=' + tfaKey + '&issuer=SimplyChat&algorithm=' + settings.tfa.algorithm,
+            'otpauth://totp/' + partialUser.username + '?secret=' + tfaKey + '&issuer=SimplyChat&algorithm=' + settings.tfa.algorithm,
             { type: 'svg' }
         );
         new Ok({
             tfaKey: tfaKey,
-            tfaQr: tfaQr
+            tfaQr: encodeSvgToBase64(tfaQr.replace('#ffffff', '#dddddd').replace('#000000', '#222222'))
         }).send(res);
     } catch(e: any) {
-        handleException(res, e);
+        handleException(e, res);
     }
 }
 
 export async function getTfaValidateCode(req: Request, res: Response): Promise<void> {
     try {
-        const tfaKey = getTfaKey(req.params.tfaKey);
-        const tfaCode = getSixDigitCode(parseInt(req.params.tfaCode));
+        const tfaKey = getTfaKey(req.query.tfaKey);
+        const tfaCode = getSixDigitCode(req.query.tfaCode);
         new Ok({
             valid: verify(tfaKey, tfaCode)
         }).send(res);
     } catch(e: any) {
-        handleException(res, e);
+        handleException(e, res);
     }
 }
 
@@ -157,6 +157,6 @@ export async function postRegenerateToken(req: Request, res: Response): Promise<
         });
         new NoContent().send(res);
     } catch(e: any) {
-        handleException(res, e);
+        handleException(e, res);
     }
 }

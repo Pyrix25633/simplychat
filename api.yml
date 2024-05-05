@@ -44,9 +44,9 @@ components:
       maxLength: 128
     tfaKey:
       type: string
-      example: MF3WIMJZN53GE2LONFQT
-      minLength: 20
-      maxLength: 20
+      example: NUZSQS3CNRMGYJBJNATFI2BIJ4QUGULDKNKDS6CGJ5XWC4B4KIRQ
+      minLength: 52
+      maxLength: 52
     tfaCode:
       type: integer
       minimum: 100000
@@ -406,16 +406,17 @@ paths:
       summary: Used by the client to verify that the user correctly scanned the QR
       description: Gets a boolean feedbacks
       operationId: auth/tfa/validate-code
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                tfaKey:
-                  $ref: "#/components/schemas/tfaKey"
-                tfaCode:
-                  $ref: "#/components/schemas/tfaCode"
+      parameters:
+        - in: query
+          name: tfaKey
+          schema:
+              $ref: "#/components/schemas/tfaKey"
+          required: true
+        - in: query
+          name: tfaCode
+          schema:
+            $ref: "#/components/schemas/tfaCode"
+          required: true
       responses:
         "200":
           description: If true the user has correctly scanned the QR and saved a new totp
@@ -524,8 +525,9 @@ paths:
                 sessionDuration:
                   $ref: "#/components/schemas/sessionDuration"
                 tfaKey:
-                  $ref: "#/components/schemas/tfaKey"
-                  nullable: true
+                  oneOf:
+                    - $ref: "#/components/schemas/tfaKey"
+                    - nullable: true
               required:
                 - username
                 - email

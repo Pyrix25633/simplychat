@@ -130,7 +130,6 @@ export class ApiCallButton extends ActionButton {
             $.ajax({
                 url: this.url,
                 method: 'POST',
-                contentType: 'application/json',
                 success: this.success
             });
         });
@@ -147,7 +146,6 @@ export class StructuredForm extends Form {
             $.ajax({
                 url: precompileUrl,
                 method: 'GET',
-                contentType: 'application/json',
                 success: (res) => {
                     this.precompile(res);
                 }
@@ -329,7 +327,7 @@ export class PasswordInput extends Input {
     }
 }
 export class BooleanInput extends InputElement {
-    constructor(id, labelText, feedbackText) {
+    constructor(id, labelText, feedbackText, onSet = async () => { }) {
         super(id);
         this.formOrSection = undefined;
         this.labelText = labelText;
@@ -345,6 +343,7 @@ export class BooleanInput extends InputElement {
         this.feedback = document.createElement('span');
         this.feedback.classList.add('text');
         this.feedback.innerText = feedbackText;
+        this.onSet = onSet;
     }
     appendTo(formOrSection) {
         this.formOrSection = formOrSection;
@@ -364,11 +363,22 @@ export class BooleanInput extends InputElement {
     async parse() {
         return this.slider.classList.contains('on');
     }
+    precompile(value) {
+        if (value)
+            this.slider.classList.replace('off', 'on');
+        else
+            this.slider.classList.replace('on', 'off');
+        this.precompiledValue = value;
+    }
     set(value) {
         if (value)
             this.slider.classList.replace('off', 'on');
         else
             this.slider.classList.replace('on', 'off');
+        this.onSet(value);
+    }
+    changed() {
+        return this.slider.classList.contains('on') != this.precompiledValue;
     }
 }
 export class ImageInput extends InputElement {
@@ -432,8 +442,10 @@ export class ImageInput extends InputElement {
                 resolve(undefined);
             }
             image.onload = () => {
-                if (!image.src.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,\w+$/))
+                if (!image.src.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,.+$/)) {
                     invalidType();
+                    return;
+                }
                 if (image.width != image.height) {
                     imageInput.setError(true, imageInput.alt + ' must be a Square!');
                     resolve(undefined);
@@ -445,9 +457,10 @@ export class ImageInput extends InputElement {
                     return;
                 }
                 imageInput.setError(false, 'Valid ' + imageInput.alt);
-                this.set(image.src);
                 if (image.src == imageInput.precompiledValue)
                     this.precompile(image.src);
+                else
+                    this.set(image.src);
                 resolve(image.src);
             };
             image.onerror = invalidType;

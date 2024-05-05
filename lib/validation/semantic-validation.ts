@@ -28,16 +28,16 @@ export function getStatus(raw: any): string {
 
 export function getSixDigitCode(raw: any): number {
     const parsed = getInt(raw);
-    if(parsed >= 100000 && parsed <= 999999)
-        return parsed;
-    throw new BadRequest();
+    if(parsed < 100000 || parsed > 999999)
+        throw new BadRequest();
+    return parsed;
 }
 
 export function getTfaToken(raw: any): string {
     const parsed = getNonEmptyString(raw);
-    if(parsed.length == 128)
-        return parsed;
-    throw new BadRequest();
+    if(parsed.length != 128)
+        throw new BadRequest();
+    return parsed;
 }
 
 export function getCustomization(raw: any): Customization {
@@ -53,7 +53,7 @@ export function getCustomization(raw: any): Customization {
 
 export function getBase64EncodedImage(raw: any): Buffer {
     const parsed = getNonEmptyString(raw);
-    if(!parsed.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,\w+$/))
+    if(!parsed.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,.+$/))
         throw new BadRequest();
     return Buffer.from(parsed);
 }
@@ -67,7 +67,7 @@ export function getSessionDuration(raw: any): number {
 
 export function getTfaKey(raw: any): string {
     const parsed = getNonEmptyString(raw);
-    if(!parsed.match(/^\w{20}$/))
+    if(!parsed.match(/^\w{52}$/))
         throw new BadRequest();
     return parsed;
 }

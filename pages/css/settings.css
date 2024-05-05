@@ -10,6 +10,7 @@ img#change-pfp {
     right: 0;
     height: 30px;
     background-color: var(--color-simplychat);
+    cursor: pointer;
 }
 
 img#tfaQr {

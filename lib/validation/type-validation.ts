@@ -12,18 +12,20 @@ export function getBoolean(raw: any): boolean {
     return raw;
 }
 
-export function parseInt(raw: string): number {
-    const parsed = Number.parseInt(raw);
+function parseInt(raw: any): number {
+    const parsed = Number.parseInt(getNonEmptyString(raw));
     if(!Number.isSafeInteger(parsed))
         throw new BadRequest();
     return parsed;
 }
 
 export function getInt(raw: any): number {
-    raw = parseInt(raw);
+    if(typeof raw == "string")
+        raw = parseInt(raw);
     if(raw == undefined || typeof raw != "number")
         throw new BadRequest();
-    if(!Number.isSafeInteger(raw)) throw new BadRequest();
+    if(!Number.isSafeInteger(raw))
+        throw new BadRequest();
     return raw;
 }
 
@@ -42,7 +44,8 @@ export function getString(raw: any): string {
 export function getNonEmptyString(raw: any): string {
     if(raw == undefined || typeof raw != "string")
         throw new BadRequest();
-    if(raw.length == 0) throw new BadRequest();
+    if(raw.length == 0)
+        throw new BadRequest();
     return raw;
 }
 

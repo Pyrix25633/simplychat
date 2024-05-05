@@ -168,7 +168,6 @@ export class ApiCallButton extends ActionButton {
             $.ajax({
                 url: this.url,
                 method: 'POST',
-                contentType: 'application/json',
                 success: this.success
             });
         });
@@ -189,7 +188,6 @@ export abstract class StructuredForm extends Form {
             $.ajax({
                 url: precompileUrl,
                 method: 'GET',
-                contentType: 'application/json',
                 success: (res: Response): void => {
                     this.precompile(res);
                 }
@@ -266,9 +264,9 @@ export abstract class InputElement<T> implements FormAppendable {
 export abstract class Input<T> extends InputElement<T> {
     private formOrSection: Form | InputSection | undefined = undefined;
     public readonly input: HTMLInputElement;
+    private readonly labelText: string;
     private readonly feedbackText: string;
     private readonly feedback: HTMLSpanElement;
-    private readonly labelText: string;
     private timeout: NodeJS.Timeout | undefined = undefined;
     private error: boolean = true;
     protected precompiledValue: T | undefined = undefined;
@@ -403,13 +401,17 @@ export class PasswordInput extends Input<string> {
     }
 }
 
+type OnSet = (value: boolean) => Promise<void>;
+
 export class BooleanInput extends InputElement<boolean> {
     private readonly labelText: string;
     private readonly slider: HTMLDivElement;
     private readonly feedback: HTMLSpanElement;
     private formOrSection: Form | InputSection | undefined = undefined;
+    private precompiledValue: boolean | undefined;
+    private onSet: OnSet;
 
-    constructor(id: string, labelText: string, feedbackText: string) {
+    constructor(id: string, labelText: string, feedbackText: string, onSet: OnSet = async (): Promise<void> => {}) {
         super(id);
         this.labelText = labelText;
         this.slider = document.createElement('div');
@@ -424,6 +426,7 @@ export class BooleanInput extends InputElement<boolean> {
         this.feedback = document.createElement('span');
         this.feedback.classList.add('text');
         this.feedback.innerText = feedbackText;
+        this.onSet = onSet;
     }
 
     appendTo(formOrSection: Form | InputSection): void {
@@ -447,11 +450,24 @@ export class BooleanInput extends InputElement<boolean> {
         return this.slider.classList.contains('on');
     }
 
+    precompile(value: boolean): void {
+        if(value)
+            this.slider.classList.replace('off', 'on');
+        else
+            this.slider.classList.replace('on', 'off');
+        this.precompiledValue = value;
+    }
+
     set(value: boolean): void {
         if(value)
             this.slider.classList.replace('off', 'on');
         else
             this.slider.classList.replace('on', 'off');
+        this.onSet(value);
+    }
+
+    changed(): boolean {
+        return this.slider.classList.contains('on') != this.precompiledValue;
     }
 }
 
@@ -526,8 +542,10 @@ export abstract class ImageInput extends InputElement<string> {
                 resolve(undefined);
             }
             image.onload = (): void => {
-                if(!image.src.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,\w+$/))
+                if(!image.src.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,.+$/)) {
                     invalidType();
+                    return;
+                }
                 if(image.width != image.height) {
                     imageInput.setError(true, imageInput.alt + ' must be a Square!');
                     resolve(undefined);
@@ -539,9 +557,10 @@ export abstract class ImageInput extends InputElement<string> {
                     return;
                 }
                 imageInput.setError(false, 'Valid ' + imageInput.alt);
-                this.set(image.src);
                 if(image.src == imageInput.precompiledValue)
                     this.precompile(image.src);
+                else
+                    this.set(image.src);
                 resolve(image.src);
             };
             image.onerror = invalidType;

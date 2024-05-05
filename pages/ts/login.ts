@@ -53,15 +53,17 @@ class LoginTfaButton extends Button {
 class TfaCodeInput extends Input<number> {
     constructor() {
         super('tfaCode', 'number', '2FA Code:', 'Input 2FA Code');
+        this.input.classList.add('medium');
     }
 
     async parse(): Promise<number | undefined> {
+        const text = this.input.value.replace(' ', '');
         const parsed: number = parseInt(this.input.value);
         if(!Number.isSafeInteger(parsed)) {
             this.setError(true, 'Invalid 2FA Code!');
             return undefined;
         }
-        if(parsed < 100000 || parsed > 999999) {
+        if(text.length != 6) {
             this.setError(true, '6 Digits needed!');
             return undefined;
         }

@@ -16,17 +16,17 @@ class VerificationCodeInput extends Input {
         this.input.classList.add('medium');
     }
     async parse() {
-        const parsed = parseInt(this.input.value);
-        if (!Number.isSafeInteger(parsed)) {
+        const verificationCode = parseInt(this.input.value);
+        if (!Number.isSafeInteger(verificationCode)) {
             this.setError(true, 'Invalid Verification Code!');
             return undefined;
         }
-        if (parsed < 100000 || parsed > 999999) {
+        if (verificationCode < 100000 || verificationCode > 999999) {
             this.setError(true, '6 Digits needed!');
             return undefined;
         }
         this.setError(false, 'Valid Verification Code');
-        return parsed;
+        return verificationCode;
     }
 }
 const usernameInput = new UsernameInput();

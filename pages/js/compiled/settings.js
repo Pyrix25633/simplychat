@@ -1,6 +1,6 @@
-import { ApiCallButton, ApiFeedbackInput, BooleanInput, Button, ImageInput, InfoSpan, Input, InputSection, PasswordInput, StructuredForm } from "./form.js";
+import { ApiCallButton, ApiFeedbackInput, BooleanInput, Button, ImageInput, InfoSpan, Input, InputElement, InputSection, PasswordInput, StructuredForm } from "./form.js";
 import { loadSettings } from "./load-settings.js";
-import { defaultStatusCode } from "./utils.js";
+import { CssManager, CssSettings, defaultStatusCode } from "./utils.js";
 await loadSettings();
 class ContinueButton extends Button {
     constructor() {
@@ -79,27 +79,158 @@ class SessionDurationInput extends Input {
         this.input.classList.add('small');
     }
     async parse() {
-        const parsed = parseInt(this.input.value);
-        if (parsed == this.precompiledValue) {
-            this.precompile(parsed);
-            return parsed;
+        const sessionDuration = parseInt(this.input.value);
+        if (sessionDuration == this.precompiledValue) {
+            this.precompile(sessionDuration);
+            return sessionDuration;
         }
-        if (!Number.isSafeInteger(parsed)) {
+        if (!Number.isSafeInteger(sessionDuration)) {
             this.setError(true, 'Invalid Verification Code!');
             return undefined;
         }
-        if (parsed < 5 || parsed > 90) {
-            this.setError(true, 'Sessio Duration must be between 5 and 90 Days!');
+        if (sessionDuration < 5 || sessionDuration > 90) {
+            this.setError(true, 'Session Duration must be between 5 and 90 Days!');
             return undefined;
         }
         this.setError(false, 'Valid Session Duration');
-        return parsed;
+        return sessionDuration;
+    }
+}
+class TfaActivationInput extends InputElement {
+    constructor() {
+        super('tfa-activation');
+        this.formOrSection = undefined;
+        this.timeout = undefined;
+        this.key = undefined;
+        this.error = true;
+        this.box = document.createElement('div');
+        this.box.classList.add('box', 'margin-top');
+        this.qr = document.createElement('img');
+        this.qr.classList.add('rounded');
+        this.qr.alt = '2FA QR';
+        this.labelText = '2FA Code Test:';
+        this.codeInput = document.createElement('input');
+        this.codeInput.id = this.id;
+        this.codeInput.classList.add('medium');
+        this.codeInput.type = 'number';
+        this.feedback = document.createElement('span');
+        this.feedback.classList.add('text', 'error');
+        this.feedback.innerText = 'Input 2FA Code!';
+        this.codeInput.addEventListener('keyup', () => {
+            clearTimeout(this.timeout);
+            this.timeout = setTimeout(() => {
+                this.parse();
+            }, 1000);
+        });
+        this.codeInput.addEventListener('keydown', () => {
+            clearTimeout(this.timeout);
+        });
+        this.codeInput.addEventListener('focusout', () => {
+            clearTimeout(this.timeout);
+            this.parse();
+        });
+        this.codeInput.addEventListener('change', () => {
+            this.parse();
+        });
+        this.show(false);
+    }
+    appendTo(formOrSection) {
+        this.formOrSection = formOrSection;
+        const container = document.createElement('div');
+        container.classList.add('container', 'label-input');
+        const label = document.createElement('label');
+        label.htmlFor = this.id;
+        label.innerText = this.labelText;
+        container.appendChild(label);
+        container.appendChild(this.codeInput);
+        this.box.appendChild(this.qr);
+        this.box.appendChild(container);
+        this.box.appendChild(this.feedback);
+        formOrSection.appendChild(this.box);
+    }
+    async parse() {
+        const text = this.codeInput.value.replace(' ', '');
+        const code = parseInt(this.codeInput.value);
+        if (!Number.isSafeInteger(code)) {
+            this.setError(true, 'Invalid 2FA Code!');
+            return undefined;
+        }
+        if (text.length != 6) {
+            this.setError(true, '6 Digits needed!');
+            return undefined;
+        }
+        return new Promise((resolve) => {
+            $.ajax({
+                url: '/api/auth/tfa/validate-code',
+                method: 'GET',
+                data: {
+                    tfaKey: this.key,
+                    tfaCode: code
+                },
+                contentType: 'application/json',
+                success: (res) => {
+                    if (res.valid) {
+                        this.setError(false, 'Verified 2FA Code');
+                        resolve(code);
+                    }
+                    else {
+                        this.setError(true, 'Wrong 2FA Code!');
+                        resolve(undefined);
+                    }
+                },
+                error: () => {
+                    this.setError(true, 'Server Unreachable!');
+                    resolve(undefined);
+                }
+            });
+        });
+    }
+    getKey() {
+        return this.key;
+    }
+    setError(error, feedbackText) {
+        var _a;
+        this.error = error;
+        if (this.error)
+            this.feedback.classList.replace('success', 'error');
+        else
+            this.feedback.classList.replace('error', 'success');
+        this.feedback.innerText = feedbackText;
+        (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
+    }
+    getError() {
+        return this.key != undefined ? this.error : false;
+    }
+    async show(show) {
+        if (show) {
+            this.box.style.display = '';
+            return new Promise((resolve) => {
+                $.ajax({
+                    url: '/api/auth/tfa/generate-key',
+                    method: 'GET',
+                    success: (res) => {
+                        this.qr.src = res.tfaQr;
+                        this.key = res.tfaKey;
+                        resolve();
+                    },
+                    statusCode: defaultStatusCode
+                });
+            });
+        }
+        else {
+            this.box.style.display = 'none';
+            this.key = undefined;
+        }
     }
 }
 const passwordInput = new PasswordInput('You can change your Password');
 const sessionDurationInput = new SessionDurationInput();
 const sessionExpirationInfoSpan = new InfoSpan('Session Expiration:');
-const tfaInput = new BooleanInput('tfa', '2 Factor Authentication', 'Protects your Account');
+const tfaInput = new BooleanInput('tfa', '2 Factor Authentication', 'Protects your Account', async (value) => {
+    await tfaActivationInput.show(value);
+    settingsForm.validate();
+});
+const tfaActivationInput = new TfaActivationInput();
 class SecuritySection extends InputSection {
     constructor() {
         super('Security', [
@@ -108,7 +239,8 @@ class SecuritySection extends InputSection {
             sessionExpirationInfoSpan,
             new RegenerateTokenButton(),
             sessionDurationInput,
-            tfaInput
+            tfaInput,
+            tfaActivationInput
         ]);
         this.section.classList.add('warning');
     }
@@ -118,10 +250,20 @@ class SecuritySection extends InputSection {
         };
     }
 }
-const compactModeInput = new BooleanInput('compact-mode', 'Compact Mode', 'Enables a View with smaller Spaces');
-const condensedFontInput = new BooleanInput('condensed-font', 'Condensed Font', 'Enables a narrower Font');
-const aurebeshFontInput = new BooleanInput('aurebesh-font', 'Aurebesh Font', 'Enables the Star Wars Font');
-const sharpModeInput = new BooleanInput('sharp-mode', 'Sharp Mode', 'Enables sharper Borders');
+const cssManager = new CssManager();
+async function previewCustomization() {
+    const cssSettings = new CssSettings({
+        compactMode: await compactModeInput.parse(),
+        condensedFont: await condensedFontInput.parse(),
+        aurebeshFont: await aurebeshFontInput.parse(),
+        sharpMode: await sharpModeInput.parse()
+    });
+    cssManager.applyStyle(cssSettings);
+}
+const compactModeInput = new BooleanInput('compact-mode', 'Compact Mode', 'Enables a View with smaller Spaces', previewCustomization);
+const condensedFontInput = new BooleanInput('condensed-font', 'Condensed Font', 'Enables a narrower Font', previewCustomization);
+const aurebeshFontInput = new BooleanInput('aurebesh-font', 'Aurebesh Font', 'Enables the Star Wars Font', previewCustomization);
+const sharpModeInput = new BooleanInput('sharp-mode', 'Sharp Mode', 'Enables sharper Borders', previewCustomization);
 class CustomizationSection extends InputSection {
     constructor() {
         super('Customization', [compactModeInput, condensedFontInput, aurebeshFontInput, sharpModeInput]);
@@ -153,7 +295,7 @@ class SettingsForm extends StructuredForm {
         passwordInput.precompile('');
         sessionDurationInput.precompile(res.sessionDuration);
         sessionExpirationInfoSpan.set(new Date(res.sessionExpiration * 1000).toLocaleString('en-ZA'));
-        tfaInput.set(res.tfa);
+        tfaInput.precompile(res.tfa);
         compactModeInput.set(res.customization.compactMode);
         condensedFontInput.set(res.customization.condensedFont);
         aurebeshFontInput.set(res.customization.aurebeshFont);
@@ -173,14 +315,25 @@ class SettingsForm extends StructuredForm {
                 condensedFont: await condensedFontInput.parse(),
                 aurebeshFont: await aurebeshFontInput.parse(),
                 sharpMode: await sharpModeInput.parse()
-            }
+            },
+            sessionDuration: await sessionDurationInput.parse()
         };
-        const pfp = await pfpInput.parse();
-        if (pfp != undefined && pfpInput.changed())
-            data.pfp = pfp;
-        const password = await passwordInput.parse();
-        if (password != undefined && passwordInput.changed())
-            data.password = password;
+        if (pfpInput.changed()) {
+            const pfp = await pfpInput.parse();
+            if (pfp != undefined)
+                data.pfp = pfp;
+        }
+        if (passwordInput.changed()) {
+            const password = await passwordInput.parse();
+            if (password != undefined)
+                data.password = password;
+        }
+        if (tfaInput.changed()) {
+            if (await tfaInput.parse() && tfaActivationInput.getKey() != undefined)
+                data.tfaKey = tfaActivationInput.getKey();
+            else
+                data.tfaKey = null;
+        }
         return data;
     }
 }
@@ -192,6 +345,9 @@ class SaveButton extends Button {
 }
 const oldPasswordInput = new PasswordInput();
 const settingsStatusCode = Object.assign({}, defaultStatusCode);
+settingsStatusCode[403] = () => {
+    oldPasswordInput.setError(true, 'Wrong Password!');
+};
 class OldPasswordForm extends StructuredForm {
     constructor() {
         super('old-password-form', '/api/settings', 'PATCH', [
@@ -201,7 +357,7 @@ class OldPasswordForm extends StructuredForm {
         }, settingsStatusCode, 'authentication');
     }
     async getData() {
-        return Object.assign(Object.assign({}, await settingsForm.getData()), { oldPassword: await oldPasswordInput.parse() });
+        return JSON.stringify(Object.assign(Object.assign({}, await settingsForm.getData()), { oldPassword: await oldPasswordInput.parse() }));
     }
 }
 const oldPasswordForm = new OldPasswordForm();

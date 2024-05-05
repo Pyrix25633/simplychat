@@ -20,17 +20,17 @@ class VerificationCodeInput extends Input<number> {
     }
 
     async parse(): Promise<number | undefined> {
-        const parsed: number = parseInt(this.input.value);
-        if(!Number.isSafeInteger(parsed)) {
+        const verificationCode: number = parseInt(this.input.value);
+        if(!Number.isSafeInteger(verificationCode)) {
             this.setError(true, 'Invalid Verification Code!');
             return undefined;
         }
-        if(parsed < 100000 || parsed > 999999) {
+        if(verificationCode < 100000 || verificationCode > 999999) {
             this.setError(true, '6 Digits needed!');
             return undefined;
         }
         this.setError(false, 'Valid Verification Code');
-        return parsed;
+        return verificationCode;
     }
 }
 

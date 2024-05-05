@@ -24,7 +24,7 @@ function generateColor(): string {
     return color;
 }
 
-function encodeSvgToBase64(svg: string): string {
+export function encodeSvgToBase64(svg: string): string {
     return 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
 }
 

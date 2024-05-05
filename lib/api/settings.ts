@@ -34,14 +34,14 @@ export async function patchSettings(req: Request, res: Response): Promise<void> 
         const username = getUsername(body.username);
         const email = getEmail(body.email);
         const status = getStatus(body.status);
-        const customization = getCustomization(body.settings);
+        const customization = getCustomization(body.customization);
         const password = getOrUndefined(body.password, getNonEmptyString);
         const oldPassword = getNonEmptyString(body.oldPassword);
         if(!bcrypt.compareSync(oldPassword, partialUser.passwordHash))
             throw new Forbidden();
         const pfp = getOrUndefined(body.pfp, getBase64EncodedImage);
-        const sessionDuration = getSessionDuration(body.tokenDuration);
-        const tfaKey = getOrUndefined(body.tfaKey, (raw: any) => { return getOrNull(raw, getTfaKey); });
+        const sessionDuration = getSessionDuration(body.sessionDuration);
+        const tfaKey = getOrUndefined(body.tfaKey, (raw: any): string | null => { return getOrNull(raw, getTfaKey); });
         await updateUserSettings(partialUser.id, username, email, status, customization, sessionDuration);
         if(password != undefined)
             await updateUserPassword(partialUser.id, password);
