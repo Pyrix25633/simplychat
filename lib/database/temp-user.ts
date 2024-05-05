@@ -22,7 +22,7 @@ export async function isTempUserEmailInUse(email: string): Promise<boolean> {
 
 export async function createTempUser(username: string, email: string, password: string, verificationCode: number): Promise<TempUser> {
     try {
-        return await prisma.tempUser.create({
+        return prisma.tempUser.create({
             data: {
                 username: username,
                 email: email,
@@ -46,8 +46,8 @@ export async function findTempUser(username: string): Promise<TempUser> {
     return tempUser;
 }
 
-export async function deleteTempUser(username: string): Promise<void> {
-    await prisma.tempUser.delete({
+export async function deleteTempUser(username: string): Promise<TempUser> {
+    return prisma.tempUser.delete({
         where: {
             username: username
         }

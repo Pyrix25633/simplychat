@@ -3,7 +3,7 @@ import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleExce
 import { getNonEmptyString, getObject, parseInt } from "../validation/type-validation";
 import { getSixDigitCode, getTfaKey, getTfaToken, getUsername } from "../validation/semantic-validation";
 import bcrypt from "bcrypt";
-import { findUser, findUserToken, findUserTokenAndUsername, findUserWhereUsername } from "../database/user";
+import { findUser, findUserToken, findUserTokenAndUsername, findUserWhereUsername, regenerateUserToken } from "../database/user";
 import { generateTfaToken } from "../random";
 import { settings } from "../settings";
 import { User } from "@prisma/client";
@@ -25,10 +25,10 @@ function authenticate(user: User, res: Response): void {
     };
     const authToken = jwt.sign(payload, settings.jwt.password, {
         algorithm: settings.jwt.algorithm as unknown as jwt.Algorithm,
-        expiresIn: user.tokenDuration + 'd'
+        expiresIn: user.sessionDuration + 'd'
     });
     res.cookie(settings.jwt.cookieName, authToken, {
-        expires: new Date(Date.now() + (user.tokenDuration * 24 * 60 * 60 * 1000)),
+        expires: new Date(Date.now() + (user.sessionDuration * 24 * 60 * 60 * 1000)),
         sameSite: 'strict'
     });
     new NoContent().send(res);
@@ -136,6 +136,26 @@ export async function getTfaValidateCode(req: Request, res: Response): Promise<v
         new Ok({
             valid: verify(tfaKey, tfaCode)
         }).send(res);
+    } catch(e: any) {
+        handleException(res, e);
+    }
+}
+
+export async function postLogout(req: Request, res: Response): Promise<void> {
+    res.cookie(settings.jwt.cookieName, '', {
+        expires: new Date(0)
+    });
+    new NoContent().send(res);
+}
+
+export async function postRegenerateToken(req: Request, res: Response): Promise<void> {
+    try {
+        const user = await validateToken(req, findUser);
+        await regenerateUserToken(user);
+        res.cookie(settings.jwt.cookieName, '', {
+            expires: new Date(0)
+        });
+        new NoContent().send(res);
     } catch(e: any) {
         handleException(res, e);
     }

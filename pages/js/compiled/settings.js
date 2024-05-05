@@ -73,12 +73,43 @@ class RegenerateTokenButton extends ApiCallButton {
         });
     }
 }
+class SessionDurationInput extends Input {
+    constructor() {
+        super('sessionDuration', 'number', 'Session Duration:', 'You can change your Session Duration (Days)');
+        this.input.classList.add('small');
+    }
+    async parse() {
+        const parsed = parseInt(this.input.value);
+        if (parsed == this.precompiledValue) {
+            this.precompile(parsed);
+            return parsed;
+        }
+        if (!Number.isSafeInteger(parsed)) {
+            this.setError(true, 'Invalid Verification Code!');
+            return undefined;
+        }
+        if (parsed < 5 || parsed > 90) {
+            this.setError(true, 'Sessio Duration must be between 5 and 90 Days!');
+            return undefined;
+        }
+        this.setError(false, 'Valid Session Duration');
+        return parsed;
+    }
+}
 const passwordInput = new PasswordInput('You can change your Password');
+const sessionDurationInput = new SessionDurationInput();
 const sessionExpirationInfoSpan = new InfoSpan('Session Expiration:');
 const tfaInput = new BooleanInput('tfa', '2 Factor Authentication', 'Protects your Account');
 class SecuritySection extends InputSection {
     constructor() {
-        super('Security', [passwordInput, new LogoutButton(), sessionExpirationInfoSpan, new RegenerateTokenButton(), tfaInput]);
+        super('Security', [
+            passwordInput,
+            new LogoutButton(),
+            sessionExpirationInfoSpan,
+            new RegenerateTokenButton(),
+            sessionDurationInput,
+            tfaInput
+        ]);
         this.section.classList.add('warning');
     }
     async parse() {
@@ -120,6 +151,7 @@ class SettingsForm extends StructuredForm {
         emailInput.precompile(res.email);
         statusInput.precompile(res.status);
         passwordInput.precompile('');
+        sessionDurationInput.precompile(res.sessionDuration);
         sessionExpirationInfoSpan.set(new Date(res.sessionExpiration * 1000).toLocaleString('en-ZA'));
         tfaInput.set(res.tfa);
         compactModeInput.set(res.customization.compactMode);

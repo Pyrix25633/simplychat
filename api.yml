@@ -22,7 +22,7 @@ components:
     cookieAuth:
       type: apiKey
       in: cookie
-      name: simplychat-token
+      name: simplychat-auth
   schemas:
     username:
       type: string
@@ -81,7 +81,7 @@ components:
         - condensedFont
         - aurebeshFont
         - sharpMode
-    tokenDuration:
+    sessionDuration:
       type: integer
       example: 14
       minimum: 5
@@ -331,7 +331,7 @@ paths:
               schema:
                 type: string
                 example: >
-                  Set-Cookie: simplychat-token=...; Path=/; SameSite=Strict; Expires=Tue 09 Apr 2024 11:39:56 GMT
+                  Set-Cookie: simplychat-auth=...; Path=/; SameSite=Strict; Expires=Tue 09 Apr 2024 11:39:56 GMT
               description: Sets authentication cookie
         "400":
           description: Bad Request
@@ -368,7 +368,7 @@ paths:
               schema:
                 type: string
                 example: >
-                  Set-Cookie: simplychat-token=...; Path=/; SameSite=Strict; Expires=Tue 09 Apr 2024 11:39:56 GMT
+                  Set-Cookie: simplychat-auth=...; Path=/; SameSite=Strict; Expires=Tue 09 Apr 2024 11:39:56 GMT
               description: Sets authentication cookie
         "400":
           description: Bad Request
@@ -428,6 +428,38 @@ paths:
                     type: boolean
         "400":
           description: Bad Request
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Logs the user out
+      description: Unsets the authentication cookie
+      operationId: auth/logout
+      responses:
+        "204":
+          description: Logout successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "Set-Cookie: simplychat-auth=; Expires=Thu 01 Jan 1970 00:00:00 GMT"
+              description: Unsets authentication cookie
+  /auth/regenerate-token:
+    post:
+      tags:
+        - auth
+      summary: Logs the user out from all devices
+      description: Unsets the authentication cookie and invalidates all sessions
+      operationId: auth/regenerate-token
+      responses:
+        "204":
+          description: Token regenerated succesfully
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "Set-Cookie: simplychat-auth=; Expires=Thu 01 Jan 1970 00:00:00 GMT"
+              description: Unsets authentication cookie
   /settings:
     get:
       tags:
@@ -456,8 +488,8 @@ paths:
                   sessionExpiration:
                     type: integer
                     example: 1715960830
-                  tokenDuration:
-                    $ref: "#/components/schemas/tokenDuration"
+                  sessionDuration:
+                    $ref: "#/components/schemas/sessionDuration"
                   tfa:
                     type: boolean
         "401":
@@ -489,8 +521,8 @@ paths:
                   $ref: "#/components/schemas/password"
                 pfp:
                   $ref: "#/components/schemas/base64Image"
-                tokenDuration:
-                  $ref: "#/components/schemas/tokenDuration"
+                sessionDuration:
+                  $ref: "#/components/schemas/sessionDuration"
                 tfaKey:
                   $ref: "#/components/schemas/tfaKey"
                   nullable: true
@@ -500,7 +532,7 @@ paths:
                 - status
                 - customization
                 - oldPassword
-                - tokenDuration
+                - sessionDuration
       responses:
         "204":
           description: Settings update succeded

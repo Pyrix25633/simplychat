@@ -273,8 +273,11 @@ export class Input extends InputElement {
         this.error = false;
         this.feedback.classList.remove('success', 'error');
         this.feedback.innerText = this.feedbackText;
-        if (typeof value == 'string')
-            this.setInputValue(value);
+        switch (typeof value) {
+            case 'string':
+            case 'number':
+                this.setInputValue(value.toString());
+        }
         (_a = this.formOrSection) === null || _a === void 0 ? void 0 : _a.validate();
     }
 }

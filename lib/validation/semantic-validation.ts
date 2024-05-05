@@ -58,7 +58,7 @@ export function getBase64EncodedImage(raw: any): Buffer {
     return Buffer.from(parsed);
 }
 
-export function getTokenDuration(raw: any): number {
+export function getSessionDuration(raw: any): number {
     const parsed = getInt(raw);
     if(parsed < 5 || parsed > 90)
         throw new BadRequest();

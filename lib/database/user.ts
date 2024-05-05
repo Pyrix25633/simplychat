@@ -7,7 +7,7 @@ import { settings } from "../settings";
 
 export async function createUserFromTempUser(tempUser: TempUser): Promise<User> {
     try {
-        return await prisma.user.create({
+        return prisma.user.create({
             data: {
                 username: tempUser.username,
                 email: tempUser.email,
@@ -117,19 +117,23 @@ export type Customization = {
     sharpMode: boolean;
 };
 
-export async function updateUserSettings(id: number, username: string, email: string, status: string, customization: Customization, tokenDuration: number): Promise<User> {
-    return await prisma.user.update({
-        data: {
-            username: username,
-            email: email,
-            status: status,
-            customization: customization,
-            tokenDuration: tokenDuration
-        },
-        where: {
-            id: id
-        }
-    });
+export async function updateUserSettings(id: number, username: string, email: string, status: string, customization: Customization, sessionDuration: number): Promise<User> {
+    try {
+        return prisma.user.update({
+            data: {
+                username: username,
+                email: email,
+                status: status,
+                customization: customization,
+                sessionDuration: sessionDuration
+            },
+            where: {
+                id: id
+            }
+        });
+    } catch(e: any) {
+        throw new UnprocessableContent();
+    }
 }
 
 export async function updateUserPassword(id: number, password: string): Promise<User> {
@@ -161,6 +165,17 @@ export async function updateUserTfaKey(id: number, tfaKey: string | null): Promi
         },
         where: {
             id: id
+        }
+    });
+}
+
+export async function regenerateUserToken(user: User): Promise<User> {
+    return prisma.user.update({
+        data: {
+            token: generateToken(user.username, user.email, user.passwordHash)
+        },
+        where: {
+            id: user.id
         }
     });
 }
