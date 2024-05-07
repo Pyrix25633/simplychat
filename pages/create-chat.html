@@ -5,15 +5,14 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Simply Chat - Create Chat</title>
-        <link rel="stylesheet" href="./css/style.css">
-        <link rel="stylesheet" href="./css/create-chat.css">
+        <link rel="stylesheet" href="/css/style.css">
+        <link rel="stylesheet" href="/css/create-chat.css">
         <link rel="stylesheet" href="" id="compact-mode-css">
         <link rel="stylesheet" href="" id="sharp-mode-css">
         <link href="" rel="stylesheet" id="font-css">
-        <link rel="icon" href="./img/icon.svg" type="image/png">
+        <link rel="icon" href="/img/icon.svg" type="image/png">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script defer type="module" src="./js/load-settings.js"></script>
-        <script defer type="module" src="./js/create-chat.js"></script>
+        <script defer type="module" src="/js/compiled/create-chat.js"></script>
     </head>
     <body>
         <nav id="navbar">
@@ -25,20 +24,7 @@
         </nav>
         <div class="box panel bottom-margin">
             <h3>Create Chat</h3>
-            <div class="box">
-                <div class="container label-input">
-                    <label for="name">Name:</label>
-                    <input type="text" id="name">
-                </div>
-                <span class="text" id="name-feedback">Input Name</span>
-                <div class="container label-input">
-                    <label for="description">Description:</label>
-                    <input type="text" id="description">
-                </div>
-                <span class="text" id="description-feedback">Input Description</span>
-                <div class="container">
-                    <button id="create">Create <img src="./img/confirm.svg" class="button"></button>
-                </div>
+            <div class="box" id="create-chat-form">
             </div>
         </div>
     </body>

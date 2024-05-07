@@ -12,6 +12,7 @@ import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailF
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
 import cookieParser from "cookie-parser";
 import { getSettings, patchSettings } from './lib/api/settings';
+import { postChats } from './lib/api/chats';
 
 const main: Express = express();
 export const port: number = settings.https.port;
@@ -82,6 +83,10 @@ main.post('/api/auth/regenerate-token', postRegenerateToken);
 main.get('/api/settings', getSettings);
 
 main.patch('/api/settings', patchSettings);
+
+// chats //
+
+main.post('/api/chats', postChats);
 
 //// server ////
 

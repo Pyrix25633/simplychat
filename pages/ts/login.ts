@@ -1,19 +1,7 @@
 import { ApiFeedbackInput, Form, Input, PasswordInput, Button } from './form.js';
-import { RequireNonNull, Response, defaultStatusCode } from './utils.js';
+import { Response, defaultStatusCode } from './utils.js';
 
-class LoginButton extends Button {
-    constructor() {
-        super('Login', '/img/login.svg');
-    }
-}
-
-class UsernameInput extends ApiFeedbackInput {
-    constructor() {
-        super('username', 'text', 'Username:', 'Input Username', '/api/feedbacks/login-username');
-    }
-}
-
-const usernameInput = new UsernameInput();
+const usernameInput = new ApiFeedbackInput('username', 'text', 'Username:', 'Input Username', '/api/feedbacks/login-username');
 const passwordInput = new PasswordInput();
 
 const loginStatusCode = Object.assign({}, defaultStatusCode);
@@ -30,7 +18,7 @@ class LoginForm extends Form {
     constructor() {
         super('login-form', '/api/auth/login', 'POST', [
             usernameInput, passwordInput
-        ], new LoginButton(), (res: Response): void => {
+        ], new Button('Login', '/img/login.svg'), (res: Response): void => {
             if(res != undefined) {
                 loginResponse = res;
                 loginTfaForm.show(true);
@@ -43,12 +31,6 @@ class LoginForm extends Form {
 }
 
 const loginForm = new LoginForm();
-
-class LoginTfaButton extends Button {
-    constructor() {
-        super('Verify', '/img/confirm.svg');
-    }
-}
 
 class TfaCodeInput extends Input<number> {
     constructor() {
@@ -89,7 +71,7 @@ class LoginTfaForm extends Form {
     constructor() {
         super('login-tfa-form', '/api/auth/login-tfa', 'POST', [
             tfaCodeInput
-        ], new LoginTfaButton(), (): void => {
+        ], new Button('Verify', '/img/confirm.svg'), (): void => {
             window.location.href = '/';
         }, loginTfaStatusCode, 'tfa');
     }

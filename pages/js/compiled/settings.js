@@ -2,27 +2,7 @@ import { ApiCallButton, ApiFeedbackInput, BooleanInput, Button, ImageInput, Info
 import { loadSettings } from "./load-settings.js";
 import { CssManager, CssSettings, defaultStatusCode } from "./utils.js";
 await loadSettings();
-class ContinueButton extends Button {
-    constructor() {
-        super('Continue', '/img/continue.svg', true);
-    }
-}
-class PfpInput extends ImageInput {
-    constructor() {
-        super('pfp', 'Profile Picture', 'You can change your Profile Picture');
-    }
-}
-const pfpInput = new PfpInput();
-class UsernameInput extends ApiFeedbackInput {
-    constructor() {
-        super('username', 'text', 'Username:', 'You can change your Username', '/api/feedbacks/register-username');
-    }
-}
-class EmailInput extends ApiFeedbackInput {
-    constructor() {
-        super('email', 'text', 'Email:', 'You can change your Email', '/api/feedbacks/register-email');
-    }
-}
+const pfpInput = new ImageInput('pfp', 'Profile Picture', 'You can change your Profile Picture');
 class StatusInput extends Input {
     constructor() {
         super('status', 'text', 'Status:', 'You can change your Status');
@@ -46,8 +26,8 @@ class StatusInput extends Input {
     }
 }
 const idInfoSpan = new InfoSpan('Id:');
-const usernameInput = new UsernameInput();
-const emailInput = new EmailInput();
+const usernameInput = new ApiFeedbackInput('username', 'text', 'Username:', 'You can change your Username', '/api/feedbacks/register-username');
+const emailInput = new ApiFeedbackInput('email', 'text', 'Email:', 'You can change your Email', '/api/feedbacks/register-email');
 const statusInput = new StatusInput();
 class InfoSection extends InputSection {
     constructor() {
@@ -57,20 +37,6 @@ class InfoSection extends InputSection {
         return {
             status: await statusInput.parse()
         };
-    }
-}
-class LogoutButton extends ApiCallButton {
-    constructor() {
-        super('Logout', '/img/logout.svg', 'Logs you out of this Device', '/api/auth/logout', (res) => {
-            location.href = '/login';
-        });
-    }
-}
-class RegenerateTokenButton extends ApiCallButton {
-    constructor() {
-        super('Regenerate Token', '/img/logout.svg', 'Logs you out of all Devices', '/api/auth/regenerate-token', (res) => {
-            location.href = '/login';
-        });
     }
 }
 class SessionDurationInput extends Input {
@@ -224,8 +190,14 @@ class TfaActivationInput extends InputElement {
     }
 }
 const passwordInput = new PasswordInput('You can change your Password');
-const sessionDurationInput = new SessionDurationInput();
+const logoutButton = new ApiCallButton('Logout', '/img/logout.svg', 'Logs you out of this Device', '/api/auth/logout', (res) => {
+    location.href = '/login';
+});
+const regenerateTokenButton = new ApiCallButton('Regenerate Token', '/img/logout.svg', 'Logs you out of all Devices', '/api/auth/regenerate-token', (res) => {
+    location.href = '/login';
+});
 const sessionExpirationInfoSpan = new InfoSpan('Session Expiration:');
+const sessionDurationInput = new SessionDurationInput();
 const tfaInput = new BooleanInput('tfa', '2 Factor Authentication', 'Protects your Account', async (value) => {
     await tfaActivationInput.show(value);
     settingsForm.validate();
@@ -235,9 +207,9 @@ class SecuritySection extends InputSection {
     constructor() {
         super('Security', [
             passwordInput,
-            new LogoutButton(),
+            logoutButton,
             sessionExpirationInfoSpan,
-            new RegenerateTokenButton(),
+            regenerateTokenButton,
             sessionDurationInput,
             tfaInput,
             tfaActivationInput
@@ -284,7 +256,7 @@ class SettingsForm extends StructuredForm {
             new InfoSection(),
             new SecuritySection(),
             new CustomizationSection()
-        ], new ContinueButton(), () => { }, [], 'settings', '/api/settings');
+        ], new Button('Continue', '/img/continue.svg', true), () => { }, [], 'settings', '/api/settings');
     }
     precompile(res) {
         pfpInput.precompile(res.pfp);
@@ -338,11 +310,6 @@ class SettingsForm extends StructuredForm {
     }
 }
 const settingsForm = new SettingsForm();
-class SaveButton extends Button {
-    constructor() {
-        super('Save', '/img/save.svg', true);
-    }
-}
 const oldPasswordInput = new PasswordInput();
 const settingsStatusCode = Object.assign({}, defaultStatusCode);
 settingsStatusCode[403] = () => {
@@ -352,7 +319,7 @@ class OldPasswordForm extends StructuredForm {
     constructor() {
         super('old-password-form', '/api/settings', 'PATCH', [
             oldPasswordInput
-        ], new SaveButton(), (res) => {
+        ], new Button('Save', '/img/save.svg', true), (res) => {
             window.location.href = '/';
         }, settingsStatusCode, 'authentication');
     }

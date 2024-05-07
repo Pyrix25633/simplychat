@@ -71,3 +71,17 @@ export function getTfaKey(raw: any): string {
         throw new BadRequest();
     return parsed;
 }
+
+export function getName(raw: any): string {
+    const parsed = getNonEmptyString(raw);
+    if(parsed.length < 3 || parsed.length > 64)
+        throw new BadRequest();
+    return parsed;
+}
+
+export function getDescription(raw: any): string {
+    const parsed = getNonEmptyString(raw);
+    if(parsed.length < 3 || parsed.length > 128)
+        throw new BadRequest();
+    return parsed;
+}

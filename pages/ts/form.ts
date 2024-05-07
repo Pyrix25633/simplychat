@@ -77,7 +77,7 @@ export abstract class Form {
     }
 }
 
-export abstract class Button implements FormAppendable {
+export class Button implements FormAppendable {
     protected readonly button: HTMLButtonElement;
     private readonly inFooter: boolean;
 
@@ -471,7 +471,7 @@ export class BooleanInput extends InputElement<boolean> {
     }
 }
 
-export abstract class ImageInput extends InputElement<string> {
+export class ImageInput extends InputElement<string> {
     private readonly img: HTMLImageElement;
     private readonly alt: string;
     private readonly changeImg: HTMLImageElement;
@@ -595,7 +595,7 @@ export abstract class ImageInput extends InputElement<string> {
     }
 }
 
-export abstract class ApiFeedbackInput extends Input<string> {
+export class ApiFeedbackInput extends Input<string> {
     private readonly url: string;
 
     constructor(id: string, type: string, labelText: string, feedbackText: string, url: string) {

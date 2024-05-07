@@ -1,7 +1,7 @@
 .RECIPEPREFIX=>
 
 default:
-> systemctl start mysql
+> systemctl is-active --quiet mysql || systemctl start mysql
 > npm start
 
 install:

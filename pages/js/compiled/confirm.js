@@ -1,15 +1,5 @@
 import { ApiFeedbackInput, Form, Input, Button } from './form.js';
 import { defaultStatusCode } from './utils.js';
-class ConfirmButton extends Button {
-    constructor() {
-        super('Confirm', '/img/confirm.svg');
-    }
-}
-class UsernameInput extends ApiFeedbackInput {
-    constructor() {
-        super('username', 'text', 'Username:', 'Input Username', '/api/feedbacks/confirm-username');
-    }
-}
 class VerificationCodeInput extends Input {
     constructor() {
         super('verificationCode', 'number', 'Verification Code:', 'Input Verification Code');
@@ -29,7 +19,7 @@ class VerificationCodeInput extends Input {
         return verificationCode;
     }
 }
-const usernameInput = new UsernameInput();
+const usernameInput = new ApiFeedbackInput('username', 'text', 'Username:', 'Input Username', '/api/feedbacks/confirm-username');
 const verificationCodeInput = new VerificationCodeInput();
 let username = localStorage.getItem('pendingConfirmUsername');
 if (username == null) {
@@ -57,7 +47,7 @@ class ConfirmForm extends Form {
     constructor() {
         super('confirm-form', '/api/temp-users/{username}/confirm', 'POST', [
             usernameInput, verificationCodeInput
-        ], new ConfirmButton(), () => {
+        ], new Button('Confirm', '/img/confirm.svg'), () => {
             window.location.href = '/login';
         }, confirmStatusCode);
     }

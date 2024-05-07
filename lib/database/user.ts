@@ -1,18 +1,18 @@
 import { TempUser, User } from "@prisma/client";
 import { prisma } from "./prisma";
 import { NotFound, UnprocessableContent } from "../web/response";
-import { generatePfp, generateToken } from "../random";
+import { generatePfp, generateUserToken } from "../random";
 import * as bcrypt from "bcrypt";
 import { settings } from "../settings";
 
 export async function createUserFromTempUser(tempUser: TempUser): Promise<User> {
     try {
-        return prisma.user.create({
+        return await prisma.user.create({
             data: {
                 username: tempUser.username,
                 email: tempUser.email,
                 passwordHash: tempUser.passwordHash,
-                token: generateToken(tempUser.username, tempUser.email, tempUser.passwordHash),
+                token: generateUserToken(tempUser.username, tempUser.email, tempUser.passwordHash),
                 status: 'Just joined Simply Chat!',
                 customization: {
                     compactMode: false,
@@ -29,19 +29,19 @@ export async function createUserFromTempUser(tempUser: TempUser): Promise<User> 
 }
 
 export async function isUserUsernameInUse(username: string): Promise<boolean> {
-    return (await prisma.user.findMany({
+    return (await prisma.user.count({
         where: {
             username: username
         }
-    })).length != 0;
+    })) != 0;
 }
 
 export async function isUserEmailInUse(email: string): Promise<boolean> {
-    return (await prisma.user.findMany({
+    return (await prisma.user.count({
         where: {
             email: email
         }
-    })).length != 0;
+    })) != 0;
 }
 
 export async function findUser(id: number): Promise<User> {
@@ -172,7 +172,7 @@ export async function updateUserTfaKey(id: number, tfaKey: string | null): Promi
 export async function regenerateUserToken(user: User): Promise<User> {
     return prisma.user.update({
         data: {
-            token: generateToken(user.username, user.email, user.passwordHash)
+            token: generateUserToken(user.username, user.email, user.passwordHash)
         },
         where: {
             id: user.id

@@ -1,5 +1,4 @@
 import { randomInt, createHash } from 'crypto';
-import * as fs from 'fs';
 
 export function generateVerificationCode(): number {
     return randomInt(100000, 1000000);
@@ -11,8 +10,12 @@ function hash(data: string): string {
     return hash.digest('hex');
 }
 
-export function generateToken(username: string, email: string, passwordHash: string): string {
+export function generateUserToken(username: string, email: string, passwordHash: string): string {
     return hash(username + '.' + email + '@' + passwordHash + '#' + Date.now() + '&' + randomInt(1000000));
+}
+
+export function generateChatToken(name: string, description: string): string {
+    return hash(name + '.' + description + '#' + Date.now() + '&' + randomInt(1000000));
 }
 
 function generateColor(): string {

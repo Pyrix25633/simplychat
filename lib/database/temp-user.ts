@@ -5,24 +5,24 @@ import * as bcrypt from "bcrypt";
 import { settings } from "../settings";
 
 export async function isTempUserUsernameInUse(username: string): Promise<boolean> {
-    return (await prisma.tempUser.findMany({
+    return (await prisma.tempUser.count({
         where: {
             username: username
         }
-    })).length != 0;
+    })) != 0;
 }
 
 export async function isTempUserEmailInUse(email: string): Promise<boolean> {
-    return (await prisma.tempUser.findMany({
+    return (await prisma.tempUser.count({
         where: {
             email: email
         }
-    })).length != 0;
+    })) != 0;
 }
 
 export async function createTempUser(username: string, email: string, password: string, verificationCode: number): Promise<TempUser> {
     try {
-        return prisma.tempUser.create({
+        return await prisma.tempUser.create({
             data: {
                 username: username,
                 email: email,
