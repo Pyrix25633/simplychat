@@ -39,7 +39,7 @@ components:
       type: string
       example: passwd1234@
       minLength: 8
-    tfaToken:
+    token:
       type: string
       example: 4b135f35634c8f34258551d907f179a1d2847a2e6a55f54d399b3a0928294a5f30c842bf2ebcf2aad96769d6c3e50f216d386c15b3caebc07ec72696577a1d01
       minLength: 128
@@ -335,7 +335,7 @@ paths:
                 type: object
                 properties:
                   tfaToken:
-                    $ref: "#/components/schemas/tfaToken"
+                    $ref: "#/components/schemas/token"
         "204":
           description: Authentication succeded
           headers:
@@ -366,7 +366,7 @@ paths:
               type: object
               properties:
                 tfaToken:
-                  $ref: "#/components/schemas/tfaToken"
+                  $ref: "#/components/schemas/token"
                 tfaCode:
                   $ref: "#/components/schemas/tfaCode"
               required:
@@ -593,5 +593,46 @@ paths:
           description: Unauthorized
         "422":
           description: "Unprocessable Content: Chat cannot be created"
+  /chats/{chatId}/join:
+    get:
+      tags:
+        - chats
+      summary: Used by the client to get chat info for the join page
+      description: Returns basic chat info
+      operationId: chats/[chatId]/join(get)
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+              $ref: "#/components/schemas/id"
+          required: true
+        - in: query
+          name: token
+          schema:
+            $ref: "#/components/schemas/token"
+          required: true
+      responses:
+        "200":
+          description: Chat name, description, logo and number of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    $ref: "#/components/schemas/name"
+                  description:
+                    $ref: "#/components/schemas/description"
+                  logo:
+                    $ref: "#/components/schemas/base64Image"
+                  users:
+                    type: integer
+                    example: 19
+        "400":
+          description: Bad Request
+        "403":
+          description: "Forbidden: wrong or expired token"
+        "404":
+          description: "Not Found: no chats found with specified chatId"
 servers:
   - url: https://simplychat.ddns.net/api/

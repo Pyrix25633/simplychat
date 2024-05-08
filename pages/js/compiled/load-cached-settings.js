@@ -1,3 +1,3 @@
-import { CssManager, CssSettings } from "./utils.js";
+import { CssManager, Customization } from "./utils.js";
 const cssManager = new CssManager();
-cssManager.applyStyle(CssSettings.loadCached());
+cssManager.applyStyle(Customization.loadCached());

@@ -25,7 +25,8 @@ class VerificationCodeInput extends Input<number> {
 const usernameInput = new ApiFeedbackInput('username', 'text', 'Username:', 'Input Username', '/api/feedbacks/confirm-username');
 const verificationCodeInput = new VerificationCodeInput();
 
-let username = localStorage.getItem('pendingConfirmUsername');
+const pendingConfirmUsernameKey = 'pendingConfirmUsername';
+let username = localStorage.getItem(pendingConfirmUsernameKey);
 if(username == null) {
     const usernameParameterMatch = window.location.href.match(/^.+\/temp-users\/(\w+)\/confirm$/);
     if(usernameParameterMatch != null)
@@ -55,6 +56,8 @@ class ConfirmForm extends Form {
         super('confirm-form', '/api/temp-users/{username}/confirm', 'POST', [
             usernameInput, verificationCodeInput
         ], new Button('Confirm', '/img/confirm.svg'), (): void => {
+            if(username == localStorage.getItem(pendingConfirmUsernameKey))
+                localStorage.removeItem(pendingConfirmUsernameKey);
             window.location.href = '/login';
         }, confirmStatusCode);
     }

@@ -30,60 +30,39 @@ div#footer {
     gap: 50px;
 }
 
-label {
-    margin-right: 10px;
-}
-
-span.text {
-    margin-top: 5px;
-}
-
-div.container:not(:first-child) {
-    margin-top: 12px;
-}
-div.container span:not(:first-child) {
-    margin-left: 7px;
-}
-
 div.panel {
     padding: 40px;
     margin-left: 20px;
     margin-right: 20px;
+}
+div.box {
+    gap: 15px;
+}
+div.container {
+    gap: 10px;
+}
+div.input-feedback {
+    gap: 3px;
+}
+div.small-gap {
+    gap: 5px;
 }
 
 div.read, div.unread, div.online, div.offline {
     right: 5px;
 }
 
-img.chat-logo, img.pfp, img#chat-logo {
-    margin-right: 5px;
-}
-
 div.chat, div.user, div#chats, div#users, div#chat-topbar, div.dpl {
     padding: 5px;
-}
-div.chat:not(:first-child), div.user:not(:first-child) {
-    margin-top: 5px;
-}
-
-div.chat-settings, div.user-settings, div.user-actions, span.user-last-online, span.user-status {
-    margin-top: 3px !important;
 }
 
 button {
     padding: 5px 10px 5px 10px;
+    gap: 5px;
 }
-div.container > img.button:not(:first-child) {
-    margin-left: 5px;
-}
+
 img#show-chats {
     margin-right: 5px;
-}
-div.box > img.button:not(:first-child) {
-    margin-top: 5px;
-}
-button img.button {
-    margin-left: 5px;
 }
 
 div#messages {
@@ -92,24 +71,8 @@ div#messages {
 div.message {
     margin-left: 5px;
 }
-div.message-metas {
-    margin-left: 5px;
-}
-div.message:not(:first-child) {
-    margin-top: 5px;
-}
-div.message-data {
-    margin-bottom: 5px;
-}
 span.message-text {
     padding: 5px;
-}
-div.message-actions {
-    margin-top: 5px !important;
-}
-
-div.load-more {
-    margin-bottom: 5px;
 }
 
 div#unread-messages {
@@ -130,24 +93,9 @@ textarea {
     padding: 5px;
 }
 
-div.show-sidebars {
-    margin-right: 5px;
-}
-div.textarea-extras {
-    margin-left: 5px;
-}
-
-span.char-counter {
-    margin-top: 5px;
-}
-
 div#emoji-selector {
     gap: 5px;
     padding: 5px;
-}
-
-div.user-options {
-    margin-left: 5px;
 }
 
 h3#name {
@@ -162,14 +110,13 @@ canvas {
     padding: 5px;
 }
 
-div.panel.status {
-    margin-top: 20px;
-}
-
 @media screen and (max-width: 850px) {
     div.panel {
         padding: 25px;
         margin-left: 5px;
         margin-right: 5px;
+    }
+    div.label-input {
+        gap: 2px;
     }
 }

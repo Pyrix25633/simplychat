@@ -1,6 +1,6 @@
 import { ApiCallButton, ApiFeedbackInput, BooleanInput, Button, Form, ImageInput, InfoSpan, Input, InputElement, InputSection, PasswordInput, StructuredForm } from "./form.js";
 import { loadSettings } from "./load-settings.js";
-import { CssManager, CssSettings, Response, defaultStatusCode } from "./utils.js";
+import { CssManager, Customization, Response, defaultStatusCode } from "./utils.js";
 
 await loadSettings();
 
@@ -86,7 +86,7 @@ class TfaActivationInput extends InputElement<number> {
     constructor() {
         super('tfa-activation');
         this.box = document.createElement('div');
-        this.box.classList.add('box', 'margin-top');
+        this.box.classList.add('box');
         this.qr = document.createElement('img');
         this.qr.classList.add('rounded');
         this.qr.alt = '2FA QR';
@@ -119,6 +119,8 @@ class TfaActivationInput extends InputElement<number> {
 
     appendTo(formOrSection: Form | InputSection): void {
         this.formOrSection = formOrSection;
+        const inputFeedback = document.createElement('div');
+        inputFeedback.classList.add('box', 'input-feedback');
         const container = document.createElement('div');
         container.classList.add('container', 'label-input');
         const label = document.createElement('label');
@@ -126,9 +128,10 @@ class TfaActivationInput extends InputElement<number> {
         label.innerText = this.labelText;
         container.appendChild(label);
         container.appendChild(this.codeInput);
+        inputFeedback.appendChild(container);
+        inputFeedback.appendChild(this.feedback);
         this.box.appendChild(this.qr);
-        this.box.appendChild(container);
-        this.box.appendChild(this.feedback);
+        this.box.appendChild(inputFeedback);
         formOrSection.appendChild(this.box);
     }
 
@@ -249,7 +252,7 @@ class SecuritySection extends InputSection {
 
 const cssManager = new CssManager();
 async function previewCustomization(): Promise<void> {
-    const cssSettings = new CssSettings({
+    const cssSettings = new Customization({
         compactMode: await compactModeInput.parse(),
         condensedFont: await condensedFontInput.parse(),
         aurebeshFont: await aurebeshFontInput.parse(),
@@ -355,7 +358,8 @@ class OldPasswordForm extends StructuredForm {
     constructor() {
         super('old-password-form', '/api/settings', 'PATCH', [
             oldPasswordInput
-        ], new Button('Save', '/img/save.svg', true), (res: Response): void => {
+        ], new Button('Save', '/img/save.svg', true), async (res: Response): Promise<void> => {
+            (await Customization.get()).cache();
             window.location.href = '/';
         }, settingsStatusCode, 'authentication');
     }

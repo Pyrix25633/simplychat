@@ -5,9 +5,6 @@ li, span {
     text-align: justify;
     line-height: 28px;
 }
-span.spaced {
-    margin-top: 20px;
-}
 
 @media screen and (max-width: 1000px) {
     div.panel span, div.panel li {

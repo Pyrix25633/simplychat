@@ -11,8 +11,6 @@ export async function createUserFromTempUser(tempUser: TempUser): Promise<User> 
             data: {
                 username: tempUser.username,
                 email: tempUser.email,
-                passwordHash: tempUser.passwordHash,
-                token: generateUserToken(tempUser.username, tempUser.email, tempUser.passwordHash),
                 status: 'Just joined Simply Chat!',
                 customization: {
                     compactMode: false,
@@ -20,6 +18,8 @@ export async function createUserFromTempUser(tempUser: TempUser): Promise<User> 
                     aurebeshFont: false,
                     sharpMode: false
                 },
+                passwordHash: tempUser.passwordHash,
+                token: generateUserToken(tempUser.username, tempUser.email, tempUser.passwordHash),
                 pfp: Buffer.from(generatePfp())
             }
         });
@@ -78,6 +78,21 @@ export async function findUserToken(id: number): Promise<{ token: string; }> {
     if(partialUser == null)
         throw new NotFound();
     return partialUser;
+}
+
+export async function findUserTokenAndCustomization(id: number): Promise<{ token: string; customization: Customization }> {
+    const partialUser = await prisma.user.findUnique({
+        select: {
+            token: true,
+            customization: true
+        },
+        where: {
+            id: id
+        }
+    });
+    if(partialUser == null)
+        throw new NotFound();
+    return partialUser as { token: string; customization: Customization };
 }
 
 export async function findUserTokenAndPasswordHash(id: number): Promise<{ token: string; passwordHash: string; }> {

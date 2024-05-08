@@ -51,7 +51,7 @@ export class Auth {
         });
     }
 }
-export class CssSettings {
+export class Customization {
     constructor(json) {
         var _a, _b, _c, _d;
         this.compactMode = (_a = json === null || json === void 0 ? void 0 : json.compactMode) !== null && _a !== void 0 ? _a : false;
@@ -61,22 +61,22 @@ export class CssSettings {
     }
     static loadCached() {
         var _a;
-        return new CssSettings(JSON.parse((_a = localStorage.getItem('cachedSettings')) !== null && _a !== void 0 ? _a : 'null'));
+        return new Customization(JSON.parse((_a = localStorage.getItem('cachedSettings')) !== null && _a !== void 0 ? _a : 'null'));
     }
     static async get() {
         return new Promise((resolve) => {
             $.ajax({
-                url: '/api/settings',
+                url: '/api/settings/customization',
                 method: 'GET',
                 success: (res) => {
-                    resolve(new CssSettings(res));
+                    resolve(new Customization(res));
                 },
                 statusCode: defaultStatusCode
             });
         });
     }
-    static cache(settings) {
-        localStorage.setItem('cachedSettings', JSON.stringify(settings));
+    cache() {
+        localStorage.setItem('cachedSettings', JSON.stringify(this));
     }
 }
 export class CssManager {

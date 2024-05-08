@@ -15,3 +15,11 @@ export async function createUserOnChat(userId: number, chatId: number, permissio
         throw new UnprocessableContent();
     }
 }
+
+export async function countUsersOnChat(chatId: number): Promise<number> {
+    return prisma.usersOnChats.count({
+        where: {
+            chatId: chatId
+        }
+    });
+}

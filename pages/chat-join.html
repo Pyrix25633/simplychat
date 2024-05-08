@@ -4,28 +4,32 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Simply Chat - Create Chat</title>
+        <title>Simply Chat - Join Chat</title>
         <link rel="stylesheet" href="/css/style.css">
-        <link rel="stylesheet" href="/css/create-chat.css">
+        <link rel="stylesheet" href="/css/chat-join.css">
         <link rel="stylesheet" href="" id="compact-mode-css">
         <link rel="stylesheet" href="" id="sharp-mode-css">
-        <link href="" rel="stylesheet" id="font-css">
+        <link rel="stylesheet" href="" id="font-css">
         <link rel="icon" href="/img/icon.svg" type="image/png">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script defer type="module" src="/js/compiled/create-chat.js"></script>
+        <script defer type="module" src="/js/compiled/chat-join.js"></script>
     </head>
     <body>
         <nav id="navbar">
             <div class="container navbar">
                 <span class="title">SIMPLY</span>
                 <span class="title simplychat-color">CHAT</span>
-                <img id="icon" src="./img/icon.svg" alt="Simply Chat Icon">
+                <img id="icon" src="/img/icon.svg" alt="Simply Chat Icon">
             </div>
         </nav>
-        <div class="box panel bottom-margin">
-            <h3>Create Chat</h3>
-            <div class="box" id="create-chat-form">
+        <div class="box panel bottom-margin" id="username-password">
+            <h3>Join Chat</h3>
+            <div class="box" id="chat-join-form">
             </div>
+        </div>
+        <div class="box panel bottom-margin" id="error">
+            <h3 class="error">Join Token is wrong or expired!</h3>
+            <img id="error" src="/img/error.svg" alt="Error">
         </div>
     </body>
 </html>

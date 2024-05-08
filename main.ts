@@ -11,8 +11,8 @@ import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
 import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
 import cookieParser from "cookie-parser";
-import { getSettings, patchSettings } from './lib/api/settings';
-import { postChats } from './lib/api/chats';
+import { getSettings, getSettingsCustomization, patchSettings } from './lib/api/settings';
+import { getChatJoin, postChat } from './lib/api/chats';
 
 const main: Express = express();
 export const port: number = settings.https.port;
@@ -82,11 +82,15 @@ main.post('/api/auth/regenerate-token', postRegenerateToken);
 
 main.get('/api/settings', getSettings);
 
+main.get('/api/settings/customization', getSettingsCustomization);
+
 main.patch('/api/settings', patchSettings);
 
 // chats //
 
-main.post('/api/chats', postChats);
+main.post('/api/chats', postChat);
+
+main.get('/api/chats/:chatId/join', getChatJoin);
 
 //// server ////
 
@@ -130,16 +134,16 @@ main.get('/settings', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/settings.html'));
 });
 
-main.get('/create-chat', (req: Request, res: Response): void => {
-    res.sendFile(path.resolve(__dirname, './pages/create-chat.html'));
+main.get('/chats/create', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/chat-create.html'));
 });
 
-main.get('/chat-settings', (req: Request, res: Response): void => {
+main.get('/chats/:chatId/settings', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/chat-settings.html'));
 });
 
-main.get('/join-chat', (req: Request, res: Response): void => {
-    res.sendFile(path.resolve(__dirname, './pages/join-chat.html'));
+main.get('/chats/:chatId/join', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/chat-join.html'));
 });
 
 main.get('/', (req: Request, res: Response): void => {

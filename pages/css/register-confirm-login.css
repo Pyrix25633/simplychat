@@ -1,22 +1,8 @@
-label {
-    margin-right: 5px;
-    line-height: 31px;
-}
-
 span {
     text-align: center;
 }
-span.text {
-    margin-top: 2px;
-}
-span.terms-and-conditions {
-    margin-top: 4px;
-}
+
 span.terms-and-conditions, span.terms-and-conditions * {
     font-size: 20px;
     line-height: 25px;
-}
-
-div.container:not(:first-child) {
-    margin-top: 10px;
 }

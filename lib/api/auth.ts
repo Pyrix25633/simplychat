@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleException } from "../web/response";
 import { getInt, getNonEmptyString, getObject } from "../validation/type-validation";
-import { getSixDigitCode, getTfaKey, getTfaToken, getUsername } from "../validation/semantic-validation";
+import { getSixDigitCode, getTfaKey, getToken, getUsername } from "../validation/semantic-validation";
 import bcrypt from "bcrypt";
 import { findUser, findUserToken, findUserTokenAndUsername, findUserWhereUsername, regenerateUserToken } from "../database/user";
 import { encodeSvgToBase64, generateTfaToken } from "../random";
@@ -79,7 +79,7 @@ function verify(key: string, code: number): boolean {
 export async function postLoginTfa(req: Request, res: Response): Promise<void> {
     try {
         const body = getObject(req.body);
-        const tfaToken = getTfaToken(body.tfaToken);
+        const tfaToken = getToken(body.tfaToken);
         const tfaCode = getSixDigitCode(body.tfaCode);
         const userId = pendingTfas[tfaToken];
         if(userId == undefined)

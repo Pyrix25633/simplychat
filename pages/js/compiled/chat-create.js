@@ -1,25 +1,22 @@
 import { Button, Form, Input } from "./form.js";
 import { loadSettings } from "./load-settings.js";
-import { Response, defaultStatusCode } from "./utils.js";
-
+import { defaultStatusCode } from "./utils.js";
 await loadSettings();
-
-class NameInput extends Input<string> {
+class NameInput extends Input {
     constructor() {
         super('name', 'text', 'Name:', 'Input Chat Name');
     }
-
-    async parse(): Promise<string | undefined> {
+    async parse() {
         const status = this.getInputValue();
-        if(status == this.precompiledValue) {
+        if (status == this.precompiledValue) {
             this.precompile(status);
             return status;
         }
-        if(status.length < 3) {
+        if (status.length < 3) {
             this.setError(true, 'Chat Name too short!');
             return undefined;
         }
-        if(status.length > 64) {
+        if (status.length > 64) {
             this.setError(true, 'Chat Name too long!');
             return undefined;
         }
@@ -27,23 +24,21 @@ class NameInput extends Input<string> {
         return status;
     }
 }
-
-class DescriptionInput extends Input<string> {
+class DescriptionInput extends Input {
     constructor() {
         super('description', 'text', 'Description:', 'Input Chat Description');
     }
-
-    async parse(): Promise<string | undefined> {
+    async parse() {
         const status = this.getInputValue();
-        if(status == this.precompiledValue) {
+        if (status == this.precompiledValue) {
             this.precompile(status);
             return status;
         }
-        if(status.length < 3) {
+        if (status.length < 3) {
             this.setError(true, 'Chat Description too short!');
             return undefined;
         }
-        if(status.length > 128) {
+        if (status.length > 128) {
             this.setError(true, 'Chat Description too long!');
             return undefined;
         }
@@ -51,19 +46,16 @@ class DescriptionInput extends Input<string> {
         return status;
     }
 }
-
 const nameInput = new NameInput();
 const descriptionInput = new DescriptionInput();
-
 class CreateChatForm extends Form {
     constructor() {
-        super('create-chat-form', '/api/chats', 'POST', [
+        super('chat-create-form', '/api/chats', 'POST', [
             nameInput,
             descriptionInput
-        ], new Button('Create', '/img/confirm.svg'), (res: Response): void => {
+        ], new Button('Create', '/img/confirm.svg'), (res) => {
             window.location.href = '/';
         }, defaultStatusCode);
     }
 }
-
 const createChatForm = new CreateChatForm();

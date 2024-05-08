@@ -57,7 +57,7 @@ export class Auth {
     }
 }
 
-export class CssSettings {
+export class Customization {
     readonly compactMode: boolean;
     readonly condensedFont: boolean;
     readonly aurebeshFont: boolean;
@@ -70,25 +70,25 @@ export class CssSettings {
         this.sharpMode = json?.sharpMode ?? false;
     }
 
-    static loadCached(): CssSettings {
-        return new CssSettings(JSON.parse(localStorage.getItem('cachedSettings') ?? 'null'));
+    static loadCached(): Customization {
+        return new Customization(JSON.parse(localStorage.getItem('cachedSettings') ?? 'null'));
     }
 
-    static async get(): Promise<CssSettings> {
-        return new Promise((resolve): void => {
+    static async get(): Promise<Customization> {
+        return new Promise((resolve: (settings: Customization) => void): void => {
             $.ajax({
-                url: '/api/settings',
+                url: '/api/settings/customization',
                 method: 'GET',
                 success: (res: {compactMode: boolean, condensedFont: boolean, sharpMode: boolean}) => {
-                    resolve(new CssSettings(res));
+                    resolve(new Customization(res));
                 },
                 statusCode: defaultStatusCode
             });
         });
     }
 
-    static cache(settings: CssSettings): void {
-        localStorage.setItem('cachedSettings', JSON.stringify(settings));
+    cache(): void {
+        localStorage.setItem('cachedSettings', JSON.stringify(this));
     }
 }
 
@@ -103,7 +103,7 @@ export class CssManager {
         this.fontCssLink = RequireNonNull.getElementById('font-css') as HTMLLinkElement;
     }
 
-    applyStyle(settings: CssSettings): void {
+    applyStyle(settings: Customization): void {
         this.compactModeCssLink.href = CssManager.buildLink('compact-mode', settings.compactMode);
         this.sharpModeCssLink.href = CssManager.buildLink('sharp-mode', settings.sharpMode);
         this.fontCssLink.href = CssManager.buildLink((settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed', settings.condensedFont);

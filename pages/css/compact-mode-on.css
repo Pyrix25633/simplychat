@@ -30,60 +30,40 @@ div#footer {
     gap: 30px;
 }
 
-label {
-    margin-right: 6px;
-}
-
-span.text {
-    margin-top: 2px;
-}
-
-div.container:not(:first-child) {
-    margin-top: 8px;
-}
-div.container span:not(:first-child) {
-    margin-left: 4px;
-}
-
 div.panel {
     padding: 25px;
     margin-left: 10px;
     margin-right: 10px;
+}
+div.box {
+    gap: 7px;
+}
+div.container {
+    gap: 5px;
+}
+div.input-feedback {
+    gap: 1px;
+}
+div.small-gap {
+    gap: 2px;
 }
 
 div.read, div.unread, div.online, div.offline {
     right: 2px;
 }
 
-img.chat-logo, img.pfp, img#chat-logo {
-    margin-right: 2px;
-}
 
 div.chat, div.user, div#chats, div#users, div#chat-topbar, div.dpl {
     padding: 2px;
 }
-div.chat:not(:first-child), div.user:not(:first-child) {
-    margin-top: 2px;
-}
-
-div.chat-settings, div.user-settings, div.user-actions, span.user-last-online, span.user-status {
-    margin-top: 1px !important;
-}
 
 button {
     padding: 2px 4px 2px 4px;
+    gap: 2px;
 }
-div.container > img.button:not(:first-child) {
-    margin-left: 2px;
-}
+
 img#show-chats {
     margin-right: 2px;
-}
-div.box > img.button:not(:first-child) {
-    margin-top: 2px;
-}
-button img.button {
-    margin-left: 2px;
 }
 
 div#messages {
@@ -92,24 +72,8 @@ div#messages {
 div.message {
     margin-left: 2px;
 }
-div.message-metas {
-    margin-left: 2px;
-}
-div.message:not(:first-child) {
-    margin-top: 2px;
-}
-div.message-data {
-    margin-bottom: 2px;
-}
 span.message-text {
     padding: 2px;
-}
-div.message-actions {
-    margin-top: 2px !important;
-}
-
-div.load-more {
-    margin-bottom: 2px;
 }
 
 div#unread-messages {
@@ -130,17 +94,6 @@ textarea {
     padding: 2px;
 }
 
-div.show-sidebars {
-    margin-right: 2px;
-}
-div.textarea-extras {
-    margin-left: 2px;
-}
-
-span.char-counter {
-    margin-top: 2px;
-}
-
 div#emoji-selector {
     gap: 2px;
     padding: 2px;
@@ -158,14 +111,14 @@ canvas {
     padding: 2px;
 }
 
-div.panel.status {
-    margin-top: 10px;
-}
-
 @media screen and (max-width: 850px) {
     div.panel {
         padding: 15px;
         margin-left: 2px;
         margin-right: 2px;
+    }
+
+    div.label-input {
+        gap: 1px;
     }
 }

@@ -1,6 +1,8 @@
-import { Auth, CssManager, CssSettings } from "./utils.js";
+import { Auth, CssManager, Customization } from "./utils.js";
 export async function loadSettings() {
     const cssManager = new CssManager();
     await Auth.validateToken();
-    cssManager.applyStyle(await CssSettings.get());
+    const cssSettings = await Customization.get();
+    cssManager.applyStyle(cssSettings);
+    cssSettings.cache();
 }

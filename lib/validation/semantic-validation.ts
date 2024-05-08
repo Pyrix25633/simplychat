@@ -33,7 +33,7 @@ export function getSixDigitCode(raw: any): number {
     return parsed;
 }
 
-export function getTfaToken(raw: any): string {
+export function getToken(raw: any): string {
     const parsed = getNonEmptyString(raw);
     if(parsed.length != 128)
         throw new BadRequest();

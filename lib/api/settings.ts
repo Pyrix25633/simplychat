@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
-import { Forbidden, NoContent, Ok, UnprocessableContent, handleException } from "../web/response";
+import { Forbidden, NoContent, Ok, handleException } from "../web/response";
 import { validateToken } from "./auth";
-import { findUser, findUserTokenAndPasswordHash, isUserEmailInUse, isUserUsernameInUse, updateUserPassword, updateUserPfp, updateUserSettings, updateUserTfaKey } from "../database/user";
+import { findUser, findUserTokenAndCustomization, findUserTokenAndPasswordHash, updateUserPassword, updateUserPfp, updateUserSettings, updateUserTfaKey } from "../database/user";
 import { getNonEmptyString, getObject, getOrNull, getOrUndefined } from "../validation/type-validation";
 import { getBase64EncodedImage, getCustomization, getEmail, getStatus, getTfaKey, getSessionDuration, getUsername } from "../validation/semantic-validation";
 import bcrypt from "bcrypt";
-import { isTempUserEmailInUse, isTempUserUsernameInUse } from "../database/temp-user";
 
 export async function getSettings(req: Request, res: Response): Promise<void> {
     try {
@@ -20,6 +19,18 @@ export async function getSettings(req: Request, res: Response): Promise<void> {
             sessionExpiration: user.sessionExpiration,
             sessionDuration: user.sessionDuration,
             tfa: user.tfaKey != null
+        }).send(res);
+    } catch(e: any) {
+        console.error(e);
+        handleException(e, res);
+    }
+}
+
+export async function getSettingsCustomization(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req, findUserTokenAndCustomization);
+        new Ok({
+            ...(partialUser.customization)
         }).send(res);
     } catch(e: any) {
         console.error(e);

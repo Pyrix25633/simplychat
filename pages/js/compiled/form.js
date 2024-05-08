@@ -111,14 +111,17 @@ export class ActionButton extends Button {
         this.setDisabled(false);
     }
     appendTo(formOrSection) {
-        const div = document.createElement('div');
-        div.classList.add('container');
-        div.appendChild(this.button);
+        const box = document.createElement('div');
+        box.classList.add('box', 'input-feedback');
+        const container = document.createElement('div');
+        container.classList.add('container');
+        container.appendChild(this.button);
         const feedback = document.createElement('span');
         feedback.classList.add('text');
         feedback.innerText = this.feedbackText;
-        formOrSection.appendChild(div);
-        formOrSection.appendChild(feedback);
+        box.appendChild(container);
+        box.appendChild(feedback);
+        formOrSection.appendChild(box);
     }
 }
 export class ApiCallButton extends ActionButton {
@@ -179,7 +182,7 @@ export class InfoSpan {
     }
     appendTo(formOrSection) {
         const container = document.createElement('div');
-        container.classList.add('container', 'no-margin');
+        container.classList.add('container', 'label-input');
         container.appendChild(this.labelSpan);
         container.appendChild(this.valueSpan);
         formOrSection.appendChild(container);
@@ -230,6 +233,8 @@ export class Input extends InputElement {
     }
     appendTo(formOrSection) {
         this.formOrSection = formOrSection;
+        const box = document.createElement('div');
+        box.classList.add('box', 'input-feedback');
         const container = document.createElement('div');
         container.classList.add('container', 'label-input');
         const label = document.createElement('label');
@@ -237,8 +242,9 @@ export class Input extends InputElement {
         label.innerText = this.labelText;
         container.appendChild(label);
         container.appendChild(this.input);
-        this.formOrSection.appendChild(container);
-        this.formOrSection.appendChild(this.feedback);
+        box.appendChild(container);
+        box.appendChild(this.feedback);
+        this.formOrSection.appendChild(box);
         setTimeout(() => {
             if (this.input.value != '')
                 this.parse();
@@ -347,6 +353,8 @@ export class BooleanInput extends InputElement {
     }
     appendTo(formOrSection) {
         this.formOrSection = formOrSection;
+        const box = document.createElement('div');
+        box.classList.add('box', 'input-feedback');
         const container = document.createElement('div');
         container.classList.add('container', 'label-input');
         const label = document.createElement('label');
@@ -354,8 +362,9 @@ export class BooleanInput extends InputElement {
         label.innerText = this.labelText;
         container.appendChild(label);
         container.appendChild(this.slider);
-        this.formOrSection.appendChild(container);
-        this.formOrSection.appendChild(this.feedback);
+        box.appendChild(container);
+        box.appendChild(this.feedback);
+        this.formOrSection.appendChild(box);
     }
     getError() {
         return false;
@@ -410,13 +419,16 @@ export class ImageInput extends InputElement {
     }
     appendTo(formOrSection) {
         this.formOrSection = formOrSection;
+        const box = document.createElement('div');
+        box.classList.add('box', 'input-feedback');
         const container = document.createElement('div');
         container.classList.add('box', 'relative');
         container.appendChild(this.img);
         container.appendChild(this.changeImg);
         container.appendChild(this.input);
-        this.formOrSection.appendChild(container);
-        this.formOrSection.appendChild(this.feedback);
+        box.appendChild(container);
+        box.appendChild(this.feedback);
+        this.formOrSection.appendChild(box);
     }
     getError() {
         return this.error;
