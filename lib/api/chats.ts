@@ -37,7 +37,7 @@ export async function getChatJoin(req: Request, res: Response): Promise<void> {
         new Ok({
             name: chat.name,
             description: chat.description,
-            logo: chat.logo,
+            logo: chat.logo.toString(),
             users: await countUsersOnChat(chat.id)
         }).send(res);
     } catch(e: any) {

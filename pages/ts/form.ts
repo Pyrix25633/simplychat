@@ -27,6 +27,7 @@ export abstract class Form {
         this.success = success;
         this.statusCode = statusCode;
         this.wrapper = wrapperId != undefined ? RequireNonNull.getElementById(wrapperId) as HTMLDivElement : undefined;
+        this.validate();
     }
 
     appendChild(node: HTMLElement): void {

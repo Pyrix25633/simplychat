@@ -14,6 +14,7 @@ export class Form {
         this.success = success;
         this.statusCode = statusCode;
         this.wrapper = wrapperId != undefined ? RequireNonNull.getElementById(wrapperId) : undefined;
+        this.validate();
     }
     appendChild(node) {
         this.form.appendChild(node);

@@ -28,7 +28,7 @@ const verificationCodeInput = new VerificationCodeInput();
 const pendingConfirmUsernameKey = 'pendingConfirmUsername';
 let username = localStorage.getItem(pendingConfirmUsernameKey);
 if(username == null) {
-    const usernameParameterMatch = window.location.href.match(/^.+\/temp-users\/(\w+)\/confirm$/);
+    const usernameParameterMatch = window.location.href.match(/^.+\/temp-users\/(\w+)\/confirm.*$/);
     if(usernameParameterMatch != null)
         username = usernameParameterMatch[1];
 }
