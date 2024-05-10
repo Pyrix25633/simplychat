@@ -1,24 +1,27 @@
+function navigateToErrorPage(req) {
+    window.location.href = '/error?code=' + req.status + '&req=' + JSON.stringify(req) + '&message=' + req.statusText;
+}
 export const defaultStatusCode = {
-    400: () => {
-        window.location.href = '/400.html';
+    400: (req) => {
+        navigateToErrorPage(req);
     },
     401: () => {
         window.location.href = '/login';
     },
-    403: () => {
-        window.location.href = '/403.html';
+    403: (req) => {
+        navigateToErrorPage(req);
     },
-    404: () => {
-        window.location.href = '/404.html';
+    404: (req) => {
+        navigateToErrorPage(req);
     },
-    405: () => {
-        window.location.href = '/405.html';
+    405: (req) => {
+        navigateToErrorPage(req);
     },
-    422: () => {
-        window.location.href = '/422.html';
+    422: (req) => {
+        navigateToErrorPage(req);
     },
-    500: () => {
-        window.location.href = '/500.html';
+    500: (req) => {
+        navigateToErrorPage(req);
     }
 };
 export class RequireNonNull {

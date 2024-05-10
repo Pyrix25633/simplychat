@@ -1,28 +1,32 @@
 export type Response = { [index: string]: any; };
 export type Success = (res: Response) => void;
-export type StatusCode = { [index: number]: () => void; };
+export type StatusCode = { [index: number]: (req: JQueryXHR, message: string, error: string) => void; };
+
+function navigateToErrorPage(req: JQueryXHR): void {
+    window.location.href = '/error?code=' + req.status + '&req=' + JSON.stringify(req) + '&message=' + req.statusText;
+}
 
 export const defaultStatusCode: StatusCode = {
-    400: (): void => {
-        window.location.href = '/400.html';
+    400: (req: JQueryXHR): void => {
+        navigateToErrorPage(req);
     },
     401: (): void => {
         window.location.href = '/login';
     },
-    403: (): void => {
-        window.location.href = '/403.html';
+    403: (req: JQueryXHR): void => {
+        navigateToErrorPage(req);
     },
-    404: (): void => {
-        window.location.href = '/404.html';
+    404: (req: JQueryXHR): void => {
+        navigateToErrorPage(req);
     },
-    405: (): void => {
-        window.location.href = '/405.html';
+    405: (req: JQueryXHR): void => {
+        navigateToErrorPage(req);
     },
-    422: (): void => {
-        window.location.href = '/422.html';
+    422: (req: JQueryXHR): void => {
+        navigateToErrorPage(req);
     },
-    500: (): void => {
-        window.location.href = '/500.html';
+    500: (req: JQueryXHR): void => {
+        navigateToErrorPage(req);
     }
 };
 

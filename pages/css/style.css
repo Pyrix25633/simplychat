@@ -110,7 +110,7 @@ a {
 .error {
     color: var(--color-error) !important;
 }
-img#error {
+img.error {
     width: 50px;
 }
 .warning, .warning * {

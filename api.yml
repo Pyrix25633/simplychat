@@ -243,7 +243,7 @@ paths:
         "400":
           description: Bad Request
         "422":
-          description: "Unprocessable Content: Temporary user cannot be created because of duplicate username or email"
+          description: "Unprocessable Content: temporary user cannot be created because of duplicate username or email"
   /temp-users/{username}/confirm:
     post:
       tags:
@@ -287,7 +287,7 @@ paths:
         "404":
           description: "Not Found: no temporary users found with specified username"
         "422":
-          description: "Unprocessable Content: User cannot be created"
+          description: "Unprocessable Content: user cannot be created"
   /auth/validate-token:
     get:
       tags:
@@ -473,6 +473,8 @@ paths:
                 type: string
                 example: "Set-Cookie: simplychat-auth=; Expires=Thu 01 Jan 1970 00:00:00 GMT"
               description: Unsets authentication cookie
+        "401":
+          description: Unauthorized
   /settings:
     get:
       tags:
@@ -592,7 +594,7 @@ paths:
         "401":
           description: Unauthorized
         "422":
-          description: "Unprocessable Content: Chat cannot be created"
+          description: "Unprocessable Content: chat cannot be created"
   /chats/{chatId}/join:
     get:
       tags:
@@ -630,9 +632,47 @@ paths:
                     example: 19
         "400":
           description: Bad Request
+        "401":
+          description: Unauthorized
         "403":
           description: "Forbidden: wrong or expired token"
         "404":
           description: "Not Found: no chats found with specified chatId"
+    post:
+      tags:
+        - chats
+      summary: Adds a user to the chat
+      description: Adds the user with the default chat's permission level and sends a welcome message
+      operationId: chats/[chatId]/join(post)
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+              $ref: "#/components/schemas/id"
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  $ref: "#/components/schemas/token"
+              required:
+                - token
+      responses:
+        "204":
+          description: User added succesfully
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: wrong or expired token"
+        "404":
+          description: "Not Found: no chats found with specified chatId"
+        "422":
+          description: "Unprocessable Content: user already joined the chat"
 servers:
   - url: https://simplychat.ddns.net/api/

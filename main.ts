@@ -12,7 +12,7 @@ import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailF
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
 import cookieParser from "cookie-parser";
 import { getSettings, getSettingsCustomization, patchSettings } from './lib/api/settings';
-import { getChatJoin, postChat } from './lib/api/chats';
+import { getChatJoin, postChat, postChatJoin } from './lib/api/chats';
 
 const main: Express = express();
 export const port: number = settings.https.port;
@@ -92,6 +92,8 @@ main.post('/api/chats', postChat);
 
 main.get('/api/chats/:chatId/join', getChatJoin);
 
+main.post('/api/chats/:chatId/join', postChatJoin);
+
 //// server ////
 
 const options = {
@@ -153,6 +155,10 @@ main.get('/', (req: Request, res: Response): void => {
 main.get('/status', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/status.html'));
 });
+
+main.get('/error', (req: Request, res: Response): void => {
+    res.sendFile(path.resolve(__dirname, './pages/error.html'));
+})
 
 //// tests ////
 

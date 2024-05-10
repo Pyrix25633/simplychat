@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { Forbidden, Ok, handleException } from "../web/response";
+import { Forbidden, NoContent, Ok, handleException } from "../web/response";
 import { validateToken } from "./auth";
-import { getInt, getNonEmptyString, getObject } from "../validation/type-validation";
+import { getInt, getObject } from "../validation/type-validation";
 import { getDescription, getName, getToken } from "../validation/semantic-validation";
 import { createChat, findChat } from "../database/chat";
 import { prisma, simplychat } from "../database/prisma";
@@ -40,6 +40,25 @@ export async function getChatJoin(req: Request, res: Response): Promise<void> {
             logo: chat.logo.toString(),
             users: await countUsersOnChat(chat.id)
         }).send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function postChatJoin(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        const body = getObject(req.body);
+        const token = getToken(body.token);
+        const chat = await findChat(chatId);
+        if(token != chat.token || (chat.tokenExpiration != null && chat.tokenExpiration < new Date()))
+            throw new Forbidden();
+        await prisma.$transaction(async (): Promise<void> => {
+            await createUserOnChat(partialUser.id, chat.id, chat.defaultPermissionLevel);
+            await createMessage('Welcome @' + partialUser.id + '!', (await simplychat).id, chat.id);
+        });
+        new NoContent().send(res);
     } catch(e: any) {
         handleException(e, res);
     }
