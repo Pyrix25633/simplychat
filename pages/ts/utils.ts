@@ -3,7 +3,7 @@ export type Success = (res: Response) => void;
 export type StatusCode = { [index: number]: (req: JQueryXHR, message: string, error: string) => void; };
 
 function navigateToErrorPage(req: JQueryXHR): void {
-    window.location.href = '/error?code=' + req.status + '&req=' + JSON.stringify(req) + '&message=' + req.statusText;
+    window.location.href = '/error?code=' + req.status + '&message=' + req.statusText;
 }
 
 export const defaultStatusCode: StatusCode = {
@@ -75,7 +75,7 @@ export class Customization {
     }
 
     static loadCached(): Customization {
-        return new Customization(JSON.parse(localStorage.getItem('cachedSettings') ?? 'null'));
+        return new Customization(JSON.parse(localStorage.getItem('cachedCustomization') ?? 'null'));
     }
 
     static async get(): Promise<Customization> {
@@ -92,7 +92,7 @@ export class Customization {
     }
 
     cache(): void {
-        localStorage.setItem('cachedSettings', JSON.stringify(this));
+        localStorage.setItem('cachedCustomization', JSON.stringify(this));
     }
 }
 
@@ -107,10 +107,10 @@ export class CssManager {
         this.fontCssLink = RequireNonNull.getElementById('font-css') as HTMLLinkElement;
     }
 
-    applyStyle(settings: Customization): void {
-        this.compactModeCssLink.href = CssManager.buildLink('compact-mode', settings.compactMode);
-        this.sharpModeCssLink.href = CssManager.buildLink('sharp-mode', settings.sharpMode);
-        this.fontCssLink.href = CssManager.buildLink((settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed', settings.condensedFont);
+    applyStyle(customization: Customization): void {
+        this.compactModeCssLink.href = CssManager.buildLink('compact-mode', customization.compactMode);
+        this.sharpModeCssLink.href = CssManager.buildLink('sharp-mode', customization.sharpMode);
+        this.fontCssLink.href = CssManager.buildLink((customization.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed', customization.condensedFont);
     }
 
     private static buildLink(name: string, on: boolean): string {

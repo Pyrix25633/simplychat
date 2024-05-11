@@ -28,3 +28,18 @@ export async function findChat(id: number): Promise<Chat> {
         throw new NotFound();
     return chat;
 }
+
+export async function updateChatToken(id: number, token: string): Promise<Chat> {
+    try {
+        return await prisma.chat.update({
+            data: {
+                token: token
+            },
+            where: {
+                id: id
+            }
+        });
+    } catch(e: any) {
+        throw new UnprocessableContent();
+    }
+}

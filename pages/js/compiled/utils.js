@@ -1,5 +1,5 @@
 function navigateToErrorPage(req) {
-    window.location.href = '/error?code=' + req.status + '&req=' + JSON.stringify(req) + '&message=' + req.statusText;
+    window.location.href = '/error?code=' + req.status + '&message=' + req.statusText;
 }
 export const defaultStatusCode = {
     400: (req) => {
@@ -64,7 +64,7 @@ export class Customization {
     }
     static loadCached() {
         var _a;
-        return new Customization(JSON.parse((_a = localStorage.getItem('cachedSettings')) !== null && _a !== void 0 ? _a : 'null'));
+        return new Customization(JSON.parse((_a = localStorage.getItem('cachedCustomization')) !== null && _a !== void 0 ? _a : 'null'));
     }
     static async get() {
         return new Promise((resolve) => {
@@ -79,7 +79,7 @@ export class Customization {
         });
     }
     cache() {
-        localStorage.setItem('cachedSettings', JSON.stringify(this));
+        localStorage.setItem('cachedCustomization', JSON.stringify(this));
     }
 }
 export class CssManager {
@@ -88,10 +88,10 @@ export class CssManager {
         this.sharpModeCssLink = RequireNonNull.getElementById('sharp-mode-css');
         this.fontCssLink = RequireNonNull.getElementById('font-css');
     }
-    applyStyle(settings) {
-        this.compactModeCssLink.href = CssManager.buildLink('compact-mode', settings.compactMode);
-        this.sharpModeCssLink.href = CssManager.buildLink('sharp-mode', settings.sharpMode);
-        this.fontCssLink.href = CssManager.buildLink((settings.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed', settings.condensedFont);
+    applyStyle(customization) {
+        this.compactModeCssLink.href = CssManager.buildLink('compact-mode', customization.compactMode);
+        this.sharpModeCssLink.href = CssManager.buildLink('sharp-mode', customization.sharpMode);
+        this.fontCssLink.href = CssManager.buildLink((customization.aurebeshFont ? 'aurebesh' : 'roboto') + '-condensed', customization.condensedFont);
     }
     static buildLink(name, on) {
         return '/css/' + name + '-' + (on ? 'on' : 'off') + '.css';

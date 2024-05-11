@@ -1,7 +1,6 @@
 img#pfp {
     height: 100px;
     background-color: var(--color-lighter);
-    margin-bottom: 5px;
 }
 
 img#change-pfp {
@@ -15,10 +14,6 @@ img#change-pfp {
 
 img#tfaQr {
     width: auto;
-}
-
-input#new-pfp {
-    display: none;
 }
 
 div.relative {

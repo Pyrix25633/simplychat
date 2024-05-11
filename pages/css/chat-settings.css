@@ -5,23 +5,17 @@
     --color-permission-level-3: #b913fb;
 }
 
-img#chat-logo {
+img#logo {
     height: 100px;
     background-color: var(--color-lighter);
-    margin-top: 10px;
-    margin-bottom: 5px;
 }
 
-img#change-chat-logo {
+img#change-logo {
     position: absolute;
     bottom: 5px;
     right: 0;
     height: 30px;
     background-color: var(--color-simplychat);
-}
-
-input#new-chat-logo {
-    display: none;
 }
 
 div.relative {
@@ -68,15 +62,12 @@ div.dpl {
 }
 div.dpl-options {
     width: 60px;
-    margin-top: 0 !important;
 }
 span#dpl {
     font-size: 20px;
     width: 150px;
-    margin-left: 5px;
 }
 
 div.user-options {
     width: 85px;
-    margin-top: 0 !important;
 }

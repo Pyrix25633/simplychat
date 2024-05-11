@@ -1,4 +1,4 @@
-import { RequireNonNull } from './utils.js';
+import { RequireNonNull, defaultStatusCode } from './utils.js';
 export class Form {
     constructor(id, url, method, elements, submitButton, success, statusCode, wrapperId = undefined) {
         this.valid = false;
@@ -141,18 +141,21 @@ export class ApiCallButton extends ActionButton {
     }
 }
 export class StructuredForm extends Form {
-    constructor(id, url, method, inputs, submitButton, success, statusCode, wrapperId = undefined, precompileUrl = undefined) {
+    constructor(id, url, method, inputs, submitButton, success, statusCode, wrapperId = undefined, precompile = false) {
         super(id, url, method, inputs, submitButton, success, statusCode, wrapperId);
         this.footer = undefined;
         this.cancelButton = new CancelButton();
         this.cancelButton.appendTo(this);
-        if (precompileUrl != undefined) {
-            $.ajax({
-                url: precompileUrl,
-                method: 'GET',
-                success: (res) => {
-                    this.precompile(res);
-                }
+        if (precompile) {
+            new Promise(async (resolve) => {
+                $.ajax({
+                    url: await this.getUrl(),
+                    method: 'GET',
+                    success: (res) => {
+                        this.precompile(res);
+                    },
+                    statusCode: defaultStatusCode
+                });
             });
         }
     }
@@ -407,6 +410,7 @@ export class ImageInput extends InputElement {
         this.input = document.createElement('input');
         this.input.id = 'new-' + id;
         this.input.type = 'file';
+        this.input.style.display = 'none';
         this.changeImg.addEventListener('click', () => {
             this.input.click();
         });

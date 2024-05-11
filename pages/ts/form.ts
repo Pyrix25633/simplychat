@@ -1,4 +1,4 @@
-import { RequireNonNull, StatusCode, Success } from './utils.js';
+import { RequireNonNull, StatusCode, Success, defaultStatusCode } from './utils.js';
 
 type JsonObject = { [index: string]: any; };
 
@@ -184,17 +184,20 @@ export abstract class StructuredForm extends Form {
     private readonly cancelButton: Button;
 
     constructor(id: string, url: string, method: string, inputs: InputElement<any>[], submitButton: Button,
-                success: Success, statusCode: StatusCode, wrapperId: string | undefined = undefined, precompileUrl: string | undefined = undefined) {
+                success: Success, statusCode: StatusCode, wrapperId: string | undefined = undefined, precompile: boolean = false) {
         super(id, url, method, inputs, submitButton, success, statusCode, wrapperId);
         this.cancelButton = new CancelButton();
         this.cancelButton.appendTo(this);
-        if(precompileUrl != undefined) {
-            $.ajax({
-                url: precompileUrl,
-                method: 'GET',
-                success: (res: Response): void => {
-                    this.precompile(res);
-                }
+        if(precompile) {
+            new Promise<void>(async (resolve: () => void): Promise<void> => {
+                $.ajax({
+                    url: await this.getUrl(),
+                    method: 'GET',
+                    success: (res: Response): void => {
+                        this.precompile(res);
+                    },
+                    statusCode: defaultStatusCode
+                });
             });
         }
     }
@@ -504,6 +507,7 @@ export class ImageInput extends InputElement<string> {
         this.input = document.createElement('input');
         this.input.id = 'new-' + id;
         this.input.type = 'file';
+        this.input.style.display = 'none';
         this.changeImg.addEventListener('click', (): void => {
             this.input.click();
         });

@@ -3,11 +3,12 @@ import { Forbidden, NoContent, Ok, handleException } from "../web/response";
 import { validateToken } from "./auth";
 import { getInt, getObject } from "../validation/type-validation";
 import { getDescription, getName, getToken } from "../validation/semantic-validation";
-import { createChat, findChat } from "../database/chat";
+import { createChat, findChat, updateChatToken } from "../database/chat";
 import { prisma, simplychat } from "../database/prisma";
 import { countUsersOnChat, createUserOnChat, findUsersOnChat, isUserOnChatAdministrator } from "../database/users-on-chats";
 import { PermissionLevel } from "@prisma/client";
 import { createMessage } from "../database/message";
+import { generateChatToken } from "../random";
 
 export async function postChat(req: Request, res: Response): Promise<void> {
     try {
@@ -72,13 +73,29 @@ export async function getChatSettings(req: Request, res: Response): Promise<void
         if(!(await isUserOnChatAdministrator(partialUser.id, chat.id)))
             throw new Forbidden();
         new Ok({
-            id: chat.id,
             name: chat.name,
             description: chat.description,
             token: chat.token,
             tokenExpiration: chat.tokenExpiration != null ? chat.tokenExpiration.toLocaleDateString('en-ZA') : null,
             logo: chat.logo.toString(),
             users: await findUsersOnChat(chatId)
+        }).send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function postChatRegenerateToken(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        const chat = await findChat(chatId);
+        if(!(await isUserOnChatAdministrator(partialUser.id, chat.id)))
+            throw new Forbidden();
+        const token = generateChatToken(chat.name, chat.description);
+        await updateChatToken(chat.id, token);
+        new Ok({
+            token: token
         }).send(res);
     } catch(e: any) {
         handleException(e, res);

@@ -12,7 +12,7 @@ import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailF
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
 import cookieParser from "cookie-parser";
 import { getSettings, getSettingsCustomization, patchSettings } from './lib/api/settings';
-import { getChatJoin, getChatSettings, postChat, postChatJoin } from './lib/api/chats';
+import { getChatJoin, getChatSettings, postChat, postChatJoin, postChatRegenerateToken } from './lib/api/chats';
 
 const main: Express = express();
 export const port: number = settings.https.port;
@@ -95,6 +95,8 @@ main.get('/api/chats/:chatId/join', getChatJoin);
 main.post('/api/chats/:chatId/join', postChatJoin);
 
 main.get('/api/chats/:chatId/settings', getChatSettings);
+
+main.post('/api/chats/:chatId/regenerate-token', postChatRegenerateToken);
 
 //// server ////
 

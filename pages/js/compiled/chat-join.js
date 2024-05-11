@@ -1,10 +1,10 @@
 import { Button, Form, InputElement } from "./form.js";
-import { loadSettings } from "./load-settings.js";
+import { loadCustomization } from "./load-customization.js";
 import { RequireNonNull, defaultStatusCode } from "./utils.js";
-await loadSettings();
+await loadCustomization();
 const chatIdMatch = window.location.href.match(/^.+\/chats\/(\d+)\/join.*$/);
 if (chatIdMatch == null) {
-    window.location.href = '/400.html';
+    window.location.href = '/error?code=400&message=Bad%20Request';
     throw new Error('Invalid chatId!');
 }
 const chatId = chatIdMatch[1];

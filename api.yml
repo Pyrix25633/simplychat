@@ -103,7 +103,7 @@ components:
       maxLength: 128
     tokenExpiration:
       type: string
-      example: '2024-05-13'
+      example: '2024/05/13'
       minLength: 10
       maxLength: 10
     permissionLevel:
@@ -706,8 +706,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  id:
-                    $ref: "#/components/schemas/id"
                   name:
                     $ref: "#/components/schemas/name"
                   description:
@@ -734,8 +732,41 @@ paths:
         "401":
           description: Unauthorized
         "403":
-          description: "Forbidden: user is not a chat's administrator"
+          description: "Forbidden: user is not one of chat's administrator"
         "404":
           description: "Not Found: no chats found with specified chatId"
+  /chats/{chatId}/regenerate-token:
+    post:
+      tags:
+        - chats
+      summary: Regenerates the chat's token
+      description: Invalidates previous invite link
+      operationId: chats/[chatId]/regenerate-token
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+              $ref: "#/components/schemas/id"
+          required: true
+      responses:
+        "200":
+          description: Token regenerated succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    $ref: "#/components/schemas/token"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: user is not one of chat's administrator"
+        "404":
+          description: "Not Found: no chats found with specified chatId"
+        "422":
+          description: "Unprocessable Content"
 servers:
   - url: https://simplychat.ddns.net/api/

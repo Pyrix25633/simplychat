@@ -1,7 +1,7 @@
 import { ApiCallButton, ApiFeedbackInput, BooleanInput, Button, ImageInput, InfoSpan, Input, InputElement, InputSection, PasswordInput, StructuredForm } from "./form.js";
-import { loadSettings } from "./load-settings.js";
+import { loadCustomization } from "./load-customization.js";
 import { CssManager, Customization, defaultStatusCode } from "./utils.js";
-await loadSettings();
+await loadCustomization();
 const pfpInput = new ImageInput('pfp', 'Profile Picture', 'You can change your Profile Picture');
 class StatusInput extends Input {
     constructor() {
@@ -254,12 +254,12 @@ class CustomizationSection extends InputSection {
 }
 class SettingsForm extends StructuredForm {
     constructor() {
-        super('settings-form', '', '', [
+        super('settings-form', '/api/settings', '', [
             pfpInput,
             new InfoSection(),
             new SecuritySection(),
             new CustomizationSection()
-        ], new Button('Continue', '/img/continue.svg', true), () => { }, [], 'settings', '/api/settings');
+        ], new Button('Continue', '/img/continue.svg', true), () => { }, [], 'settings', true);
     }
     precompile(res) {
         pfpInput.precompile(res.pfp);
