@@ -12,7 +12,8 @@ import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailF
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
 import cookieParser from "cookie-parser";
 import { getSettings, getSettingsCustomization, patchSettings } from './lib/api/settings';
-import { getChatJoin, getChatSettings, postChat, postChatJoin, postChatRegenerateToken } from './lib/api/chats';
+import { getChatJoin, getChatSettings, patchChatSettings, postChat, postChatJoin, postChatRegenerateToken } from './lib/api/chats';
+import { getUser } from './lib/api/users';
 
 const main: Express = express();
 export const port: number = settings.https.port;
@@ -86,6 +87,10 @@ main.get('/api/settings/customization', getSettingsCustomization);
 
 main.patch('/api/settings', patchSettings);
 
+// users//
+
+main.get('/api/users/:userId', getUser);
+
 // chats //
 
 main.post('/api/chats', postChat);
@@ -95,6 +100,8 @@ main.get('/api/chats/:chatId/join', getChatJoin);
 main.post('/api/chats/:chatId/join', postChatJoin);
 
 main.get('/api/chats/:chatId/settings', getChatSettings);
+
+main.patch('/api/chats/:chatId/settings', patchChatSettings);
 
 main.post('/api/chats/:chatId/regenerate-token', postChatRegenerateToken);
 

@@ -30,6 +30,15 @@ export const defaultStatusCode: StatusCode = {
     }
 };
 
+export const imageButtonAnimationKeyframes: { transform: string; }[] = [
+    { transform: 'scale(0.6)' },
+    { transform: 'scale(1.4)' },
+    { transform: 'scale(1)' }
+];
+export const imageButtonAnimationOptions: { duration: number; } = {
+    duration: 250
+};
+
 export class RequireNonNull {
     static getElementById(id: string): HTMLElement {
         const element = document.getElementById(id);

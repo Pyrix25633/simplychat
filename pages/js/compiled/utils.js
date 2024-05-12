@@ -24,6 +24,14 @@ export const defaultStatusCode = {
         navigateToErrorPage(req);
     }
 };
+export const imageButtonAnimationKeyframes = [
+    { transform: 'scale(0.6)' },
+    { transform: 'scale(1.4)' },
+    { transform: 'scale(1)' }
+];
+export const imageButtonAnimationOptions = {
+    duration: 250
+};
 export class RequireNonNull {
     static getElementById(id) {
         const element = document.getElementById(id);

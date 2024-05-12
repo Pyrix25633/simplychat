@@ -53,7 +53,7 @@ div.read, div.unread, div.online, div.offline {
 }
 
 
-div.chat, div.user, div#chats, div#users, div#chat-topbar, div.dpl {
+div.chat, div.user, div#chats, div#users, div#chat-topbar, div.default-permission-level {
     padding: 2px;
 }
 

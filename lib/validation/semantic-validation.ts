@@ -1,6 +1,8 @@
+import { PermissionLevel } from "@prisma/client";
 import { Customization } from "../database/user";
-import { BadRequest } from "../web/response";
-import { getBoolean, getInt, getNonEmptyString } from "./type-validation";
+import { BadRequest, UnprocessableContent } from "../web/response";
+import { getArray, getBoolean, getInt, getNonEmptyString, getObject } from "./type-validation";
+import { doesUserOnChatExist } from "../database/users-on-chats";
 
 const usernameRegex = /^(?:\w|-| ){3,32}$/;
 const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -84,4 +86,54 @@ export function getDescription(raw: any): string {
     if(parsed.length < 3 || parsed.length > 128)
         throw new BadRequest();
     return parsed;
+}
+
+export function getTokenExpiration(raw: any): Date | null {
+    if(raw === null)
+        return null;
+    const parsed = getNonEmptyString(raw);
+    if(!parsed.match(/\d{4}\/\d{1,2}\/\d{1,2}/))
+        throw new BadRequest();
+    const tokenExpiration = new Date(parsed);
+    if(tokenExpiration.toString() == 'Invalid Date' || isNaN(tokenExpiration.getTime()))
+        throw new BadRequest();
+    return tokenExpiration;
+}
+
+export function getPermissionLevel(raw: any): PermissionLevel {
+    const parsed = getNonEmptyString(raw);
+    for(const permissionLevel of Object.values(PermissionLevel)) {
+        if(permissionLevel == parsed)
+            return permissionLevel;
+    }
+    throw new BadRequest();
+}
+
+type ModifiedUser = {
+    userId: number;
+    permissionLevel: PermissionLevel;
+};
+
+export function getModifiedUser(raw: any): ModifiedUser {
+    const parsed = getObject(raw);
+    return {
+        userId: getInt(parsed.userId),
+        permissionLevel: getPermissionLevel(parsed.permissionLevel)
+    };
+}
+
+export function getModifiedUsers(raw: any): ModifiedUser[] {
+    const parsed = getArray(raw);
+    const modifiedUsers: ModifiedUser[] = [];
+    for(const item of parsed)
+        modifiedUsers.push(getModifiedUser(item));
+    return modifiedUsers;
+}
+
+export function getRemovedUsers(raw: any): number[] {
+    const parsed = getArray(raw);
+    const removedUsers: number[] = [];
+    for(const item of parsed)
+        removedUsers.push(getInt(item));
+    return removedUsers;
 }

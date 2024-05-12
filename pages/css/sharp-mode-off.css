@@ -24,7 +24,7 @@ div.slider div.slider-circle {
     border-radius: 50%;
 }
 
-div.chat, div.user, div.dpl {
+div.chat, div.user, div.default-permission-level {
     border-radius: 10px;
 }
 

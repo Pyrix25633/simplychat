@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { Forbidden, NoContent, Ok, handleException } from "../web/response";
+import { Forbidden, NoContent, NotFound, Ok, handleException } from "../web/response";
 import { validateToken } from "./auth";
-import { getInt, getObject } from "../validation/type-validation";
-import { getDescription, getName, getToken } from "../validation/semantic-validation";
-import { createChat, findChat, updateChatToken } from "../database/chat";
+import { getInt, getObject, getOrUndefined } from "../validation/type-validation";
+import { getBase64EncodedImage, getDescription, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
+import { createChat, doesChatExist, findChat, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
 import { prisma, simplychat } from "../database/prisma";
-import { countUsersOnChat, createUserOnChat, findUsersOnChat, isUserOnChatAdministrator } from "../database/users-on-chats";
+import { countUsersOnChat, createUserOnChat, deleteUserOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
 import { PermissionLevel } from "@prisma/client";
 import { createMessage } from "../database/message";
 import { generateChatToken } from "../random";
@@ -77,9 +77,39 @@ export async function getChatSettings(req: Request, res: Response): Promise<void
             description: chat.description,
             token: chat.token,
             tokenExpiration: chat.tokenExpiration != null ? chat.tokenExpiration.toLocaleDateString('en-ZA') : null,
+            defaultPermissionLevel: chat.defaultPermissionLevel,
             logo: chat.logo.toString(),
-            users: await findUsersOnChat(chatId)
+            users: await findUsersOnChatExcept(chatId, partialUser.id)
         }).send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function patchChatSettings(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        if(!(await doesChatExist(chatId)))
+            throw new NotFound();
+        if(!(await isUserOnChatAdministrator(partialUser.id, chatId)))
+            throw new Forbidden();
+        const body = getObject(req.body);
+        const name = getName(body.name);
+        const description = getDescription(body.description);
+        const tokenExpiration = getTokenExpiration(body.tokenExpiration);
+        const defaultPermissionLevel = getPermissionLevel(body.defaultPermissionLevel);
+        const logo = getOrUndefined(body.logo, getBase64EncodedImage);
+        const modifiedUsers = getModifiedUsers(body.modifiedUsers);
+        const removedUsers = getRemovedUsers(body.removedUsers);
+        await updateChatSettings(chatId, name, description, tokenExpiration, defaultPermissionLevel);
+        if(logo != undefined)
+            await updateChatLogo(chatId, logo);
+        for(const modifiedUser of modifiedUsers)
+            await updateUserOnChatPermissionLevel(modifiedUser.userId, chatId, modifiedUser.permissionLevel);
+        for(const removedUser of removedUsers)
+            await deleteUserOnChat(removedUser, chatId);
+        new NoContent().send(res);
     } catch(e: any) {
         handleException(e, res);
     }

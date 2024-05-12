@@ -52,3 +52,65 @@ export async function findUsersOnChat(chatId: number): Promise<{ userId: number;
         }
     });
 }
+
+export async function findUsersOnChatExcept(chatId: number, userId: number): Promise<{ userId: number; permissionLevel: PermissionLevel; }[]> {
+    return prisma.usersOnChats.findMany({
+        select: {
+            userId: true,
+            permissionLevel: true
+        },
+        where: {
+            chatId: chatId,
+            userId: {
+                not: userId
+            }
+        }
+    });
+}
+
+export async function doesUserOnChatExist(userId: number, chatId: number): Promise<boolean> {
+    return await prisma.usersOnChats.findUnique({
+        select: {
+            userId: true
+        },
+        where: {
+            chatId_userId: {
+                chatId: chatId,
+                userId: userId
+            }
+        }
+    }) != null;
+}
+
+export async function updateUserOnChatPermissionLevel(userId: number, chatId: number, permissionLevel: PermissionLevel): Promise<UsersOnChats | undefined> {
+    try {
+        return await prisma.usersOnChats.update({
+            data: {
+                permissionLevel: permissionLevel
+            },
+            where: {
+                chatId_userId: {
+                    chatId: chatId,
+                    userId: userId
+                }
+            }
+        });
+    } catch(_: any) {
+        return undefined;
+    }
+}
+
+export async function deleteUserOnChat(userId: number, chatId: number): Promise<UsersOnChats | undefined> {
+    try {
+        return await prisma.usersOnChats.delete({
+            where: {
+                chatId_userId: {
+                    chatId: chatId,
+                    userId: userId
+                }
+            }
+        });
+    } catch(_: any) {
+        return undefined;
+    }
+}

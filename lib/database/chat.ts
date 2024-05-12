@@ -1,4 +1,4 @@
-import { Chat } from "@prisma/client";
+import { Chat, PermissionLevel } from "@prisma/client";
 import { NotFound, UnprocessableContent } from "../web/response";
 import { prisma } from "./prisma";
 import { generateChatLogo, generateChatToken } from "../random";
@@ -34,6 +34,50 @@ export async function updateChatToken(id: number, token: string): Promise<Chat> 
         return await prisma.chat.update({
             data: {
                 token: token
+            },
+            where: {
+                id: id
+            }
+        });
+    } catch(e: any) {
+        throw new UnprocessableContent();
+    }
+}
+
+export async function doesChatExist(id: number): Promise<boolean> {
+    return await prisma.chat.findUnique({
+        select: {
+            id: true
+        },
+        where: {
+            id: id
+        }
+    }) != null;
+}
+
+export async function updateChatSettings(id: number, name: string, description: string, tokenExpiration: Date | null, defaultPermissionLevel: PermissionLevel): Promise<Chat> {
+    try {
+        return await prisma.chat.update({
+            data: {
+                name: name,
+                description: description,
+                tokenExpiration: tokenExpiration,
+                defaultPermissionLevel: defaultPermissionLevel
+            },
+            where: {
+                id: id
+            }
+        });
+    } catch(e: any) {
+        throw new UnprocessableContent();
+    }
+}
+
+export async function updateChatLogo(id: number, logo: Buffer): Promise<Chat> {
+    try {
+        return await prisma.chat.update({
+            data: {
+                logo: logo
             },
             where: {
                 id: id

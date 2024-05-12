@@ -55,6 +55,32 @@ export async function findUser(id: number): Promise<User> {
     return user;
 }
 
+type UserInfo = {
+    username: string;
+    status: string;
+    online: boolean;
+    lastOnline: Date;
+    pfp: Buffer;
+};
+
+export async function findUserInfo(id: number): Promise<UserInfo> {
+    const userInfo: UserInfo | null = await prisma.user.findUnique({
+        select: {
+            username: true,
+            status: true,
+            online: true,
+            lastOnline: true,
+            pfp: true
+        },
+        where: {
+            id: id
+        }
+    });
+    if(userInfo == null)
+        throw new NotFound();
+    return userInfo;
+}
+
 export async function findUserWhereUsername(username: string): Promise<User> {
     const user: User | null = await prisma.user.findUnique({
         where: {

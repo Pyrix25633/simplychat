@@ -1,7 +1,13 @@
 import { BadRequest } from "../web/response";
 
-export function getObject(raw: any): any {
+export function getObject(raw: any): { [index: string]: any; } {
     if(raw == undefined || typeof raw != "object")
+        throw new BadRequest();
+    return raw;
+}
+
+export function getArray(raw: any): any[] {
+    if(raw == undefined || !Array.isArray(raw))
         throw new BadRequest();
     return raw;
 }
