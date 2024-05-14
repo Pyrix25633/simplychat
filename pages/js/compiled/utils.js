@@ -46,6 +46,12 @@ export class RequireNonNull {
     }
 }
 export class Auth {
+    static getCookie() {
+        const match = document.cookie.match(new RegExp(Auth._name + "=(.+)"));
+        if (match == null)
+            throw new Error('Auth Cookie not found!');
+        return match[1];
+    }
     static async validateToken() {
         return new Promise((resolve) => {
             $.ajax({
@@ -62,6 +68,7 @@ export class Auth {
         });
     }
 }
+Auth._name = 'simplychat-auth';
 export class Customization {
     constructor(json) {
         var _a, _b, _c, _d;

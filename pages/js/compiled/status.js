@@ -1,19 +1,6 @@
 import { loadCustomization } from "./load-customization.js";
 import { Auth, RequireNonNull } from "./utils.js";
-
-declare function io(): Socket;
-interface Data {
-    [index: string]: any;
-}
-interface Socket {
-    on(event: string, callback: (data: Data) => void ): void;
-    emit(event: string, data: Data): void;
-}
-
 class StatusDiv {
-    private readonly span: HTMLSpanElement;
-    private readonly img: HTMLImageElement;
-
     constructor() {
         this.span = document.createElement('span');
         this.span.classList.add('error');
@@ -23,9 +10,8 @@ class StatusDiv {
         div.appendChild(this.span);
         div.appendChild(this.img);
     }
-
-    setOnline(online: boolean): void {
-        if(online) {
+    setOnline(online) {
+        if (online) {
             this.span.classList.replace('error', 'success');
             this.img.classList.replace('error', 'success');
         }
@@ -37,16 +23,13 @@ class StatusDiv {
         this.img.src = '/img/' + (online ? 'online' : 'offline') + '.svg';
     }
 }
-
 const statusDiv = new StatusDiv();
 const customization = await loadCustomization();
 const socket = io();
-
-
-socket.on('connect', (data: Data): void => {
+socket.on('connect', (data) => {
     socket.emit('connect-status', { auth: Auth.getCookie() });
     statusDiv.setOnline(true);
 });
-socket.on('disconnect', (data: Data): void => {
+socket.on('disconnect', (data) => {
     statusDiv.setOnline(false);
 });

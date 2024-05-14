@@ -56,7 +56,7 @@ export class Auth {
     public static readonly _name = 'simplychat-auth';
 
     static getCookie(): string {
-        const match = document.cookie.match(Auth._name + /=(\w+)/);
+        const match = document.cookie.match(new RegExp(Auth._name + "=(.+)"));
         if(match == null)
             throw new Error('Auth Cookie not found!');
         return match[1];

@@ -14,6 +14,7 @@ import cookieParser from "cookie-parser";
 import { getSettings, getSettingsCustomization, patchSettings } from './lib/api/settings';
 import { getChatJoin, getChatSettings, patchChatSettings, postChat, postChatJoin, postChatRegenerateToken } from './lib/api/chats';
 import { getUser } from './lib/api/users';
+import { onConnect } from './lib/socket';
 
 const main: Express = express();
 export const port: number = settings.https.port;
@@ -118,7 +119,7 @@ server.listen(port, () => {
 });
 
 const io = new Server(server);
-//io.on('connect', onConnect);
+io.on('connect', onConnect);
 
 //initializeStatus();
 

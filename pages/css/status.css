@@ -15,10 +15,6 @@ div.chart {
     height: 200px;
 }
 
-div.container.status {
-    margin-top: 0 !important;
-}
-
 @media screen and (max-width: 1100px) {
     div.chart {
         width: 300px;

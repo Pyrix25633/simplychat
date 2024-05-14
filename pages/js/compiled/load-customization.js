@@ -5,4 +5,5 @@ export async function loadCustomization() {
     const customization = await Customization.get();
     cssManager.applyStyle(customization);
     customization.cache();
+    return customization;
 }
