@@ -53,6 +53,15 @@ export class RequireNonNull {
 }
 
 export class Auth {
+    public static readonly _name = 'simplychat-auth';
+
+    static getCookie(): string {
+        const match = document.cookie.match(Auth._name + /=(\w+)/);
+        if(match == null)
+            throw new Error('Auth Cookie not found!');
+        return match[1];
+    }
+
     static async validateToken(): Promise<void> {
         return new Promise((resolve): void => {
             $.ajax({

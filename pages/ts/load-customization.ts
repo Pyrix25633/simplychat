@@ -1,6 +1,6 @@
 import { Auth, CssManager, Customization } from "./utils.js";
 
-export async function loadCustomization(): Promise<void> {
+export async function loadCustomization(): Promise<Customization> {
     const cssManager = new CssManager();
 
     await Auth.validateToken();
@@ -9,4 +9,5 @@ export async function loadCustomization(): Promise<void> {
     
     cssManager.applyStyle(customization);
     customization.cache();
+    return customization;
 }
