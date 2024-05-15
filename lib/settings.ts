@@ -44,7 +44,9 @@ export const settings = {
         'message-send': true,
         'message-edit': true,
         'message-delete': true,
-        'mark-as-read': true
+        'mark-as-read': true,
+        'status-resources': true,
+        'status-database': true
     },
     tests: {
         run: false,

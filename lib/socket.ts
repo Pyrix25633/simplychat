@@ -2,8 +2,13 @@ import { Socket } from "socket.io";
 import { validateJsonWebToken } from "./auth";
 import { getNonEmptyString, getObject } from "./validation/type-validation";
 import { findUserToken } from "./database/user";
+import { settings } from "./settings";
+import { databaseStatuses, resourcesStatuses } from "./status";
 
 type Data = { [index: string]: any; };
+type Event = 'user-online' | 'user-settings' | 'user-join' | 'user-leave' |
+    'chat-settings' | 'message-send' | 'message-edit' | 'message-delete' | 'mark-as-read' |
+    'status-resources' | 'status-database';
 
 const mainSockets: Map<number, Socket[]> = new Map();
 const statusSockets: Socket[] = [];
@@ -45,6 +50,8 @@ export function onConnect(socket: Socket): void {
             socket.once('disconnect', (): void => {
                 statusSockets.splice(statusSockets.indexOf(socket), 1);
             });
+            socket.emit('status-resources-old', { resources: resourcesStatuses });
+            socket.emit('status-database-old', { database: databaseStatuses });
         } catch(e: any) {
             socket.disconnect();
         }
@@ -57,4 +64,11 @@ async function validateToken(data: Data): Promise<number> {
 
 function notifyUserOnline(id: number, online: boolean): void {
     //TODO
+}
+
+export function notifyAllStatusUsers(event: Event, data: Data): void {
+    if(!settings.dynamicUpdates[event])
+        return;
+    for(const statusSocket of statusSockets)
+        statusSocket.emit(event, data);
 }

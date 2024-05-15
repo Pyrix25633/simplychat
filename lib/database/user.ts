@@ -220,3 +220,15 @@ export async function regenerateUserToken(user: User): Promise<User> {
         }
     });
 }
+
+export async function countUsers(): Promise<number> {
+    return prisma.user.count();
+}
+
+export async function countOnlineUsers(): Promise<number> {
+    return prisma.user.count({
+        where: {
+            online: true
+        }
+    });
+}

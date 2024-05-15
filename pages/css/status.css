@@ -30,4 +30,7 @@ div.chart {
     div.panel:not(:first-child) {
         margin-left: 0 !important;
     }
+    div.panel:not(:last-child) {
+        margin-right: 0 !important;
+    }
 }

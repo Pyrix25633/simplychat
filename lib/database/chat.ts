@@ -87,3 +87,7 @@ export async function updateChatLogo(id: number, logo: Buffer): Promise<Chat> {
         throw new UnprocessableContent();
     }
 }
+
+export async function countChats(): Promise<number> {
+    return prisma.chat.count();
+}

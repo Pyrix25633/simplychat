@@ -98,6 +98,10 @@ div#emoji-selector {
     padding: 5px;
 }
 
+div.status {
+    gap: 20px;
+}
+
 canvas {
     padding: 5px;
 }
