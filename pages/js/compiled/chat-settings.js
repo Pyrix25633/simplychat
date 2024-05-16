@@ -146,7 +146,6 @@ class UsersInput extends InputElement {
         this.noUsersPlaceholder.classList.add('container', 'user');
         this.modifiedUsers = new Map();
         this.removedUsers = [];
-        this.userCount = 0;
     }
     appendTo(formOrSection) {
         const pfp = document.createElement('img');
@@ -162,7 +161,7 @@ class UsersInput extends InputElement {
         formOrSection.appendChild(this.users);
     }
     showNoUsersPlaceholder() {
-        this.noUsersPlaceholder.style.display = this.userCount > 0 ? 'none' : '';
+        this.noUsersPlaceholder.style.display = this.users.childNodes.length > 0 ? 'none' : '';
     }
     async parse() {
         const modifiedUsersArray = [];
@@ -174,7 +173,6 @@ class UsersInput extends InputElement {
         };
     }
     add(value) {
-        this.userCount++;
         const container = document.createElement('div');
         container.classList.add('container', 'user');
         const pfpUsername = document.createElement('div');
@@ -195,8 +193,7 @@ class UsersInput extends InputElement {
             this.modifiedUsers.delete(value.userId);
             if (!this.removedUsers.includes(value.userId))
                 this.removedUsers.push(value.userId);
-            container.style.display = 'none';
-            this.userCount--;
+            this.users.removeChild(container);
             this.showNoUsersPlaceholder();
         });
         const modifiedUsers = this.modifiedUsers;

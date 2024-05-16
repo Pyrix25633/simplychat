@@ -169,7 +169,6 @@ class UsersInput extends InputElement<UsersInputResult> {
     private readonly noUsersPlaceholder: HTMLDivElement;
     private modifiedUsers: Map<number, PermissionLevel>;
     private removedUsers: number[];
-    private userCount: number;
 
     constructor() {
         super('users');
@@ -180,7 +179,6 @@ class UsersInput extends InputElement<UsersInputResult> {
         this.noUsersPlaceholder.classList.add('container', 'user');
         this.modifiedUsers = new Map();
         this.removedUsers = [];
-        this.userCount = 0;
     }
 
     appendTo(formOrSection: Form | InputSection): void {
@@ -198,7 +196,7 @@ class UsersInput extends InputElement<UsersInputResult> {
     }
 
     showNoUsersPlaceholder(): void {
-        this.noUsersPlaceholder.style.display = this.userCount > 0 ? 'none' : '';
+        this.noUsersPlaceholder.style.display = this.users.childNodes.length > 0 ? 'none' : '';
     }
 
     async parse(): Promise<UsersInputResult> {
@@ -212,7 +210,6 @@ class UsersInput extends InputElement<UsersInputResult> {
     }
 
     add(value: UserPermissionLevel): void {
-        this.userCount++;
         const container = document.createElement('div');
         container.classList.add('container', 'user');
         const pfpUsername = document.createElement('div');
@@ -233,8 +230,7 @@ class UsersInput extends InputElement<UsersInputResult> {
             this.modifiedUsers.delete(value.userId);
             if(!this.removedUsers.includes(value.userId))
                 this.removedUsers.push(value.userId);
-            container.style.display = 'none';
-            this.userCount--;
+            this.users.removeChild(container);
             this.showNoUsersPlaceholder();
         });
         const modifiedUsers = this.modifiedUsers;
