@@ -614,6 +614,34 @@ paths:
         "404":
           description: "Not Found: no users found with specified userId"
   /chats:
+    get:
+      tags:
+        - chats
+      summary: Gets all chats
+      description: Returns all chats of which the user is member
+      responses:
+        "200":
+          description: All chats of which the user is member
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chats:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          $ref: "#/components/schemas/id"
+                        permissionLevel:
+                          $ref: "#/components/schemas/permissionLevel"
+                        lastMessageId:
+                          $ref: "#/components/schemas/id"
+                        lastReadMessageId:
+                          $ref: "#/components/schemas/id"
+        "401":
+          description: Unauthorized
     post:
       tags:
         - chats
@@ -650,6 +678,41 @@ paths:
           description: Unauthorized
         "422":
           description: "Unprocessable Content: chat cannot be created"
+  /chats/{userId}:
+    get:
+      tags:
+        - chats
+      summary: Gets the chat's info
+      description: Returns an object with name, description and logo
+      operationId: chats/[chatId]
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+              $ref: "#/components/schemas/id"
+          required: true
+      responses:
+        "200":
+          description: Name, description and logo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    $ref: "#/components/schemas/name"
+                  description:
+                    $ref: "#/components/schemas/description"
+                  logo:
+                    $ref: "#/components/schemas/base64Image"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: requesting user is not one of chat's members"
+        "404":
+          description: "Not Found: no chats found with specified chatId"
   /chats/{chatId}/join:
     get:
       tags:
@@ -874,5 +937,43 @@ paths:
           description: "Not Found: no chats found with specified chatId"
         "422":
           description: "Unprocessable Content"
+  /chats/{chatId}/users:
+    get:
+      tags:
+        - chats
+      summary: Gets all chat's members
+      description: Returns a list of all chat's members id and permission level
+      operationId: chats/[chatId]/users
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+              $ref: "#/components/schemas/id"
+          required: true
+      responses:
+        "200":
+          description: List of all chat's members id and permission level
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          $ref: "#/components/schemas/id"
+                        permissionLevel:
+                          $ref: "#/components/schemas/permissionLevel"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: requesting user is not one of chat's members"
+        "404":
+          description: "Not Found: no chats found with specified chatId"
 servers:
   - url: https://simplychat.ddns.net/api/

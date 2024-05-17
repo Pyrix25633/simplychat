@@ -3,12 +3,13 @@ import { Forbidden, NoContent, NotFound, Ok, handleException } from "../web/resp
 import { validateToken } from "./auth";
 import { getInt, getObject, getOrUndefined } from "../validation/type-validation";
 import { getBase64EncodedImage, getDescription, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
-import { createChat, doesChatExist, findChat, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
+import { createChat, doesChatExist, findChat, findChatInfo, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
 import { prisma, simplychat } from "../database/prisma";
-import { countUsersOnChat, createUserOnChat, deleteUserOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
+import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChatPermissionLevel, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
 import { PermissionLevel } from "@prisma/client";
-import { createMessage } from "../database/message";
+import { createMessage, findLastMessageId } from "../database/message";
 import { generateChatToken } from "../random";
+import { findUserInfo } from "../database/user";
 
 export async function postChat(req: Request, res: Response): Promise<void> {
     try {
@@ -127,6 +128,56 @@ export async function postChatRegenerateToken(req: Request, res: Response): Prom
         new Ok({
             token: token
         }).send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function getChats(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const userOnChats = await findUserOnChats(partialUser.id);
+        const chats: { id: number; permissionLevel: PermissionLevel; lastReadMessageId: number; lastMessageId: number; }[] = [];
+        for(const userOnChat of userOnChats) {
+            chats.push({
+                id: userOnChat.chatId,
+                permissionLevel: userOnChat.permissionLevel,
+                lastReadMessageId: userOnChat.lastReadMessageId ?? 0,
+                lastMessageId: await findLastMessageId(userOnChat.chatId)
+            });
+        }
+        new Ok({ chats: chats }).send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function getChat(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        const chatInfo = await findChatInfo(chatId);
+        if(!(await doesUserOnChatExist(partialUser.id, chatId)))
+            throw new Forbidden();
+        return new Ok({
+            name: chatInfo.name,
+            description: chatInfo.description,
+            logo: chatInfo.logo.toString()
+        }).send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function getChatUsers(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        if(!(await doesChatExist(chatId)))
+            throw new NotFound();
+        if(!(await doesUserOnChatExist(partialUser.id, chatId)))
+            throw new Forbidden();
+        new Ok({ users: await findUsersOnChat(chatId) }).send(res);
     } catch(e: any) {
         handleException(e, res);
     }

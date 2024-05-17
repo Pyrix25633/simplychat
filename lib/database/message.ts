@@ -1,5 +1,5 @@
 import { Message } from "@prisma/client";
-import { UnprocessableContent } from "../web/response";
+import { InternalServerError, UnprocessableContent } from "../web/response";
 import { prisma } from "./prisma";
 
 export async function createMessage(message: string, userId: number, chatId: number): Promise<Message> {
@@ -14,4 +14,23 @@ export async function createMessage(message: string, userId: number, chatId: num
     } catch(e: any) {
         throw new UnprocessableContent();
     }
+}
+
+export async function findLastMessageId(chatId: number): Promise<number> {
+    const lastMessage = await prisma.message.findFirst({
+        select: {
+            id: true
+        },
+        where: {
+            chatId: chatId
+        },
+        orderBy: [
+            {
+                id: 'desc'
+            }
+        ]
+    });
+    if(lastMessage == null)
+        throw new InternalServerError();
+    return lastMessage.id;
 }

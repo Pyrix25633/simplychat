@@ -91,3 +91,19 @@ export async function updateChatLogo(id: number, logo: Buffer): Promise<Chat> {
 export async function countChats(): Promise<number> {
     return prisma.chat.count();
 }
+
+export async function findChatInfo(id: number): Promise<{ name: string; description: string; logo: Buffer; }> {
+    const partialChat = await prisma.chat.findUnique({
+        select: {
+            name: true,
+            description: true,
+            logo: true
+        },
+        where: {
+            id: id
+        }
+    });
+    if(partialChat == null)
+        throw new NotFound();
+    return partialChat;
+}

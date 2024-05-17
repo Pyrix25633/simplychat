@@ -1,9 +1,11 @@
+import { RequireNonNull } from "./utils.js";
+
 class Chat {
     constructor() {
 
     }
 
-    appendTo(sidebar: Sidebar): void {
+    appendTo(page: Sidebar): void {
 
     }
 }
@@ -17,6 +19,10 @@ class Sidebar {
 
     appendChild(node: Node): void {
         this.sidebar.appendChild(node);
+    }
+
+    appendTo(page: Page): void {
+
     }
 
     expand(expand: boolean) {
@@ -49,7 +55,7 @@ class Topbar {
         this.expandUsers.classList.add('button');
     }
 
-    appendTo(main: Main) {
+    appendTo(page: Page) {
 
     }
 
@@ -87,18 +93,44 @@ class Topbar {
     }
 }
 
-class Main {
+class Messages {
+    constructor() {
+
+    }
+
+    appendTo(page: Page): void {
+
+    }
+}
+
+class Page {
+    private readonly page: HTMLDivElement;
     private readonly chats: Sidebar;
+    private readonly main: HTMLDivElement;
     private readonly topbar: Topbar;
+    private readonly messages: Messages;
     private readonly users: Sidebar;
 
     constructor() {
+        this.page = RequireNonNull.getElementById('page') as HTMLDivElement;
         this.chats = new Sidebar();
+        this.main = document.createElement('div');
+        this.main.classList.add('main');
         this.users = new Sidebar();
         this.topbar = new Topbar(this.chats, this.users);
+        this.messages = new Messages();
+        this.topbar.appendTo(this);
+        this.messages.appendTo(this);
+        this.chats.appendTo(this);
+        this.page.appendChild(this.main);
+        this.users.appendTo(this);
     }
 
-    appendTopbar(node: Node): void {
+    appendChild(node: Node): void {
+        this.page.appendChild(node);
+    }
 
+    appendMain(node: Node): void {
+        this.main.appendChild(node);
     }
 }

@@ -1,5 +1,5 @@
 import { PermissionLevel, UsersOnChats } from "@prisma/client";
-import { UnprocessableContent } from "../web/response";
+import { NotFound, UnprocessableContent } from "../web/response";
 import { prisma } from "./prisma";
 
 export async function createUserOnChat(userId: number, chatId: number, permissionLevel: PermissionLevel): Promise<UsersOnChats> {
@@ -113,4 +113,29 @@ export async function deleteUserOnChat(userId: number, chatId: number): Promise<
     } catch(_: any) {
         return undefined;
     }
+}
+
+export async function findUserOnChats(userId: number): Promise<UsersOnChats[]> {
+    return prisma.usersOnChats.findMany({
+        where: {
+            userId: userId
+        }
+    });
+}
+
+export async function findUserOnChatPermissionLevel(userId: number, chatId: number): Promise<PermissionLevel> {
+    const partialUserOnChat = await prisma.usersOnChats.findUnique({
+        select: {
+            permissionLevel: true
+        },
+        where: {
+            chatId_userId: {
+                chatId: chatId,
+                userId: userId
+            }
+        }
+    });
+    if(partialUserOnChat == null)
+        throw new NotFound();
+    return partialUserOnChat.permissionLevel;
 }
