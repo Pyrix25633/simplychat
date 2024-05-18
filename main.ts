@@ -12,7 +12,7 @@ import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailF
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
 import cookieParser from "cookie-parser";
 import { getSettings, getSettingsCustomization, patchSettings } from './lib/api/settings';
-import { getChatJoin, getChatSettings, patchChatSettings, postChat, postChatJoin, postChatRegenerateToken } from './lib/api/chats';
+import { getChat, getChatJoin, getChatSettings, getChatUsers, getChats, patchChatSettings, postChat, postChatJoin, postChatRegenerateToken } from './lib/api/chats';
 import { getUser } from './lib/api/users';
 import { onConnect } from './lib/socket';
 
@@ -46,7 +46,7 @@ main.use('/font', express.static('./pages/font'));
 main.use('/pfps', express.static('./pfps'));
 main.use('/chatLogos', express.static('./chatLogos'));
 
-//// api ////
+// --api-- //
 
 // feedbacks //
 
@@ -94,7 +94,11 @@ main.get('/api/users/:userId', getUser);
 
 // chats //
 
+main.get('/api/chats', getChats);
+
 main.post('/api/chats', postChat);
+
+main.get('/api/chats/:chatId', getChat);
 
 main.get('/api/chats/:chatId/join', getChatJoin);
 
@@ -106,7 +110,9 @@ main.patch('/api/chats/:chatId/settings', patchChatSettings);
 
 main.post('/api/chats/:chatId/regenerate-token', postChatRegenerateToken);
 
-//// server ////
+main.get('/api/chats/:chatId/users', getChatUsers);
+
+// --server-- //
 
 const options = {
     key: fs.readFileSync(path.resolve(__dirname, settings.https.key)),
@@ -123,7 +129,7 @@ io.on('connect', onConnect);
 
 //initializeStatus();
 
-//// pages ////
+// --pages-- //
 
 main.get('/register', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/register.html'));

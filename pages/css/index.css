@@ -1,8 +1,8 @@
 :root {
-    --color-permission-level-0: #FF4A40;
-    --color-permission-level-1: #FECF15;
-    --color-permission-level-2: #DDDDDD;
-    --color-permission-level-3: #b913fb;
+    --color-permission-level-administrator: #FF4A40;
+    --color-permission-level-moderator: #FECF15;
+    --color-permission-level-user: #DDDDDD;
+    --color-permission-level-viewer: #b913fb;
     --color-permission-level-removed: #666666;
 }
 
@@ -27,7 +27,7 @@ div#loading {
     justify-content: center;
 }
 
-div.chat-logo, div.pfp {
+div.logo, div.pfp {
     display: flex;
     position: relative;
 }
@@ -52,15 +52,15 @@ div.offline {
     background-color: var(--color-error);
 }
 
-img#show-chats, img#show-users {
+img.show-chats, img.show-users {
     display: none;
 }
 
-img.chat-logo, img.pfp {
+img.logo, img.pfp {
     height: 50px;
     background-color: var(--color-lighter);
 }
-img#chat-logo {
+img.topbar-logo {
     height: 70px;
     background-color: var(--color-lighter);
 }
@@ -69,21 +69,20 @@ div.chat, div.user {
     background-color: var(--color-lighter);
 }
 
-div#chats, div#users {
+div.sidebar {
     height: var(--sidebars-height);
     overflow-y: scroll;
     background-color: var(--color-background);
 }
-div#chats {
+div.sidebar:first-child {
     border-right: var(--color-lighter) 2px solid;
     left: 0;
 }
-div#users {
+div.sidebar:last-child {
     border-left: var(--color-lighter) 2px solid;
     right: 0;
 }
-div#chats::-webkit-scrollbar-track, div#chats::-webkit-scrollbar, div#chats::-webkit-scrollbar-thumb,
-div#users::-webkit-scrollbar-track, div#users::-webkit-scrollbar, div#users::-webkit-scrollbar-thumb {
+div.sidebar::-webkit-scrollbar-track, div.sidebar::-webkit-scrollbar, div.sidebar::-webkit-scrollbar-thumb {
     width: 0;
     height: 0;
 }
@@ -99,22 +98,22 @@ span.user-status {
     word-wrap: break-word;
 }
 
-div#main {
+div.main {
     height: 100%;
     justify-content: start;
 }
 
-div#messages {
+div.messages {
     height: 100%;
     width: var(--messages-width);
     border-bottom: var(--color-lighter) 2px solid;
     overflow-y: scroll;
 }
-div#messages::-webkit-scrollbar-track, div#messages::-webkit-scrollbar, div#messages::-webkit-scrollbar-thumb {
+div.messages::-webkit-scrollbar-track, div.messages::-webkit-scrollbar, div.messages::-webkit-scrollbar-thumb {
     display: none;
 }
 
-div#chat-topbar {
+div.chat-topbar {
     width: var(--chat-topbar-width);
     border-bottom: var(--color-lighter) 2px solid;
 }
@@ -125,6 +124,7 @@ div.marquee {
     white-space: nowrap;
     box-sizing: border-box;
     align-items: start;
+    gap: 0 !important;
 }
 div.marquee span {
     display: inline-block;
@@ -157,20 +157,20 @@ div.marquee-big span {
     100% {transform: translate(-100%, 0);}
 }
 
-span.chat-name, span.username {
+span.name, span.username {
     font-size: 30px;
     line-height: 32px;
 }
-span.chat-description, span.status {
+span.description, span.status {
     font-size: 15px;
     line-height: 20px;
     margin-bottom: 2px;
 }
-span#chat-name {
+span.topbar-name {
     font-size: 35px;
     line-height: 37px;
 }
-span#chat-description {
+span.topbar-description {
     font-size: 20px;
     line-height: 25px;
     margin-bottom: 3px;
@@ -181,17 +181,17 @@ div.selected, span.selected {
     background-color: var(--color-simplychat-dark) !important;
 }
 
-span.permission-level-0 {
-    color: var(--color-permission-level-0);
+span.permission-level-administrator {
+    color: var(--color-permission-level-adimistrator);
 }
-span.permission-level-1 {
-    color: var(--color-permission-level-1);
+span.permission-level-moderator {
+    color: var(--color-permission-level--moderator);
 }
-span.permission-level-2 {
-    color: var(--color-permission-level-2);
+span.permission-level-user {
+    color: var(--color-permission-level-user);
 }
-span.permission-level-3 {
-    color: var(--color-permission-level-3);
+span.permission-level-viewer {
+    color: var(--color-permission-level-viewer);
 }
 span.permission-level-removed {
     color: var(--color-permission-level-removed);
@@ -297,15 +297,15 @@ span.emoji {
 }
 
 @media screen and (max-width: 1200px) {
-    div#chats, div#users {
+    div.sidebar {
         display: none;
         position: fixed;
         z-index: 100;
     }
-    div#chat-topbar {
+    div.topbar {
         width: var(--chat-topbar-mobile-width);
     }
-    img#show-chats, img#show-users {
+    img.show-chats, img.show-users {
         display: block;
     }
     div.marquee-big {
@@ -343,33 +343,33 @@ span.emoji {
             60% {transform: translate(calc(var(--marquee-big-mobile-small-width) * -1), 0);}
             100% {transform: translate(-100%, 0);}
         }
-        span#chat-name {
+        span.topbar-name {
             font-size: 25px;
             line-height: 27px;
         }
-        span#chat-description {
+        span.topbar-description {
             font-size: 17px;
             line-height: 22px;
         }
-        span.chat-name, span.username {
+        span.name, span.username {
             font-size: 20px;
             line-height: 25px;
         }
-        span.chat-description, span.status {
+        span.description, span.status {
             font-size: 12px;
             line-height: 17px;
         }
-        img#chat-logo {
+        img.topbar-logo {
             height: 50px;
         }
-        img.chat-logo, img.pfp {
+        img.logo, img.pfp {
             height: 40px;
         }
         span.message-text, span.user-tag {
             font-size: 17px;
             line-height: 18px;
         }
-        div#emoji-selector {
+        div.emoji-selector {
             grid-template-columns: auto auto auto auto auto auto auto auto;
             height: 200px;
         }

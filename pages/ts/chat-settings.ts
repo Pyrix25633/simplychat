@@ -1,7 +1,7 @@
 import { DescriptionInput, NameInput } from "./chat-inputs.js";
 import { ActionButton, ApiCallButton, Button, Form, ImageInput, InfoSpan, Input, InputElement, InputSection, StructuredForm } from "./form.js";
 import { loadCustomization } from "./load-customization.js";
-import { Response, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
+import { PermissionLevel, PermissionLevels, Response, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
 
 await loadCustomization();
 
@@ -64,9 +64,6 @@ class TokenExpirationInput extends Input<string | null> {
         super.precompile(value);
     }
 }
-
-const PermissionLevels = ["ADMINISTRATOR", "MODERATOR", "USER", "VIEWER"];
-type PermissionLevel = typeof PermissionLevels[number];
 
 namespace PermissionLevel {
     export function increase(permissionLevel: PermissionLevel | undefined): PermissionLevel {

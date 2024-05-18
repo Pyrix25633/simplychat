@@ -52,8 +52,20 @@ div.read, div.unread, div.online, div.offline {
     right: 5px;
 }
 
-div.chat, div.user, div#chats, div#users, div#chat-topbar, div.default-permission-level {
+div.chat, div.user, div.sidebar, div.topbar, div.default-permission-level {
     padding: 5px;
+}
+
+div.chat, div.user {
+    gap: 3px;
+}
+
+div.logo-marquee, div.pfp-marquee {
+    gap: 5px;
+}
+
+div.actions {
+    gap: 5px;
 }
 
 button {
@@ -61,11 +73,11 @@ button {
     gap: 5px;
 }
 
-img#show-chats {
+img.show-chats {
     margin-right: 5px;
 }
 
-div#messages {
+div.messages {
     padding: 5px;
 }
 div.message {
@@ -75,17 +87,17 @@ span.message-text {
     padding: 5px;
 }
 
-div#unread-messages {
+div.unread-messages {
     width: calc(100% - 10px);
     height: 20px;
     margin: 0 5px 20px 5px;
 }
-div#unread-messages span {
+div.unread-messages span {
     line-height: 40px;
     padding: 0 10px;
 }
 
-div#textarea {
+div.textarea {
     margin: 5px 0;
 }
 
@@ -93,7 +105,7 @@ textarea {
     padding: 5px;
 }
 
-div#emoji-selector {
+div.emoji-selector {
     gap: 5px;
     padding: 5px;
 }

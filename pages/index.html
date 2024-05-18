@@ -16,54 +16,7 @@
         <script defer type="module" src="/js/compiled/index.js"></script>
     </head>
     <body>
-        <div class="container page">
-            <div class="box" id="chats">
-                <div class="container chat">
-                    <img src="./img/unknown.svg" class="pfp">
-                    <div class="box marquee">
-                        <span class="name">0 Chats</span>
-                        <span class="description">Create a Chat!</span>
-                    </div>
-                </div>
-            </div>
-            <div class="box" id="main">
-                <div class="container" id="chat-topbar">
-                    <img src="./img/expand-right.svg" class="button" id="show-chats">
-                    <img src="./img/unknown.svg" id="chat-logo">
-                    <div class="box marquee-big">
-                        <span id="chat-name">0 Chats</span>
-                        <span id="chat-description">Create a Chat!</span>
-                    </div>
-                    <img src="./img/expand-left.svg" class="button" id="show-users">
-                </div>
-                <div id="messages">
-                </div>
-                <div class="container" id="textarea">
-                    <textarea id="message" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
-                    <div class="box textarea-extras">
-                        <div class="container">
-                            <img src="./img/send.svg" class="button" id="send">
-                            <img src="./img/emoji.svg" class="button" id="emoji">
-                        </div>
-                        <span class="char-counter"><span id="message-chars">0</span>/2048</span>
-                        <div class="box" id="emoji-selector"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="box" id="users">
-                <div class="box user">
-                    <div class="container">
-                        <img src="./img/unknown.svg" class="pfp">
-                        <div class="box marquee">
-                            <span class="username">0 Users</span>
-                            <span class="status">Create a Chat!</span>
-                        </div>
-                    </div>
-                    <div class="container user-settings">
-                        <a href="/create-chat" style="display: flex; width: min-content; height: min-content;"><img src="./img/create-chat.svg" class="button"></a>
-                    </div>
-                </div>
-            </div>
+        <div class="container page" id="page">
         </div>
     </body>
 </html>

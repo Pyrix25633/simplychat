@@ -112,3 +112,4 @@ export class CssManager {
         return '/css/' + name + '-' + (on ? 'on' : 'off') + '.css';
     }
 }
+export const PermissionLevels = ["ADMINISTRATOR", "MODERATOR", "USER", "VIEWER"];

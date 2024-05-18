@@ -1,7 +1,7 @@
 import { DescriptionInput, NameInput } from "./chat-inputs.js";
 import { ActionButton, ApiCallButton, Button, ImageInput, InfoSpan, Input, InputElement, InputSection, StructuredForm } from "./form.js";
 import { loadCustomization } from "./load-customization.js";
-import { defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
+import { PermissionLevels, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
 await loadCustomization();
 const chatIdMatch = window.location.href.match(/^.+\/chats\/(\d+)\/settings.*$/);
 if (chatIdMatch == null) {
@@ -56,7 +56,6 @@ class TokenExpirationInput extends Input {
         super.precompile(value);
     }
 }
-const PermissionLevels = ["ADMINISTRATOR", "MODERATOR", "USER", "VIEWER"];
 var PermissionLevel;
 (function (PermissionLevel) {
     function increase(permissionLevel) {
