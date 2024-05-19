@@ -9,9 +9,10 @@
 body {
     height: 100dvh;
 }
-div.page {
+div#page {
     width: 100vw;
     height: 100dvh;
+    gap: 0;
 }
 
 div#loading {
@@ -30,6 +31,10 @@ div#loading {
 div.logo, div.pfp {
     display: flex;
     position: relative;
+}
+
+div.logo-marquee, div.pfp-marquee {
+    cursor: pointer;
 }
 
 div.read, div.unread, div.online, div.offline {
@@ -52,7 +57,7 @@ div.offline {
     background-color: var(--color-error);
 }
 
-img.show-chats, img.show-users {
+img.expand-chats, img.expand-users {
     display: none;
 }
 
@@ -113,8 +118,8 @@ div.messages::-webkit-scrollbar-track, div.messages::-webkit-scrollbar, div.mess
     display: none;
 }
 
-div.chat-topbar {
-    width: var(--chat-topbar-width);
+div.topbar {
+    width: var(--topbar-width);
     border-bottom: var(--color-lighter) 2px solid;
 }
 
@@ -303,9 +308,9 @@ span.emoji {
         z-index: 100;
     }
     div.topbar {
-        width: var(--chat-topbar-mobile-width);
+        width: var(--topbar-mobile-width);
     }
-    img.show-chats, img.show-users {
+    img.expand-chats, img.expand-users {
         display: block;
     }
     div.marquee-big {

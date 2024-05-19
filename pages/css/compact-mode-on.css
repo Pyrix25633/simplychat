@@ -1,15 +1,15 @@
 :root {
     --sidebars-height: calc(100dvh - 4px);
-    --chat-topbar-width: calc(100vw - 262px*2 - 4px);
-    --marquee-big-width: calc(var(--chat-topbar-width) - 70px - 2px);
+    --topbar-width: calc(100vw - 262px*2 - 4px);
+    --marquee-big-width: calc(var(--topbar-width) - 70px - 2px);
     --messages-width: calc(100% - 4px);
-    --message-max-width: calc(var(--chat-topbar-width) - 50px);
-    --textarea-width: calc(var(--chat-topbar-width) - 60px);
-    --chat-topbar-mobile-width: calc(100vw - 4px);
-    --marquee-big-mobile-width: calc(var(--chat-topbar-mobile-width) - 70px - 6px - 25px*2);
-    --message-mobile-max-width: calc(var(--chat-topbar-mobile-width) - 50px);
-    --textarea-mobile-width: calc(var(--chat-topbar-mobile-width) - 60px);
-    --marquee-big-mobile-small-width: calc(var(--chat-topbar-mobile-width) - 50px - 6px - 25px*2);
+    --message-max-width: calc(var(--topbar-width) - 50px);
+    --textarea-width: calc(var(--topbar-width) - 60px);
+    --topbar-mobile-width: calc(100vw - 4px);
+    --marquee-big-mobile-width: calc(var(--topbar-mobile-width) - 70px - 6px - 25px*2);
+    --message-mobile-max-width: calc(var(--topbar-mobile-width) - 50px);
+    --textarea-mobile-width: calc(var(--topbar-mobile-width) - 60px);
+    --marquee-big-mobile-small-width: calc(var(--topbar-mobile-width) - 50px - 6px - 25px*2);
 }
 
 nav#navbar {
@@ -53,7 +53,7 @@ div.read, div.unread, div.online, div.offline {
 }
 
 
-div.chat, div.user, div.sidebar, div#chat-topbar, div.default-permission-level {
+div.chat, div.user, div.sidebar, div.topbar, div.default-permission-level {
     padding: 2px;
 }
 
@@ -72,10 +72,6 @@ div.actions {
 button {
     padding: 2px 4px 2px 4px;
     gap: 2px;
-}
-
-img.show-chats {
-    margin-right: 2px;
 }
 
 div.messages {

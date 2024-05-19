@@ -47,6 +47,7 @@ class Chat {
         this.actions.appendChild(this.leave);
         this.actions.appendChild(this.settings);
         this.actions.appendChild(this.markAsRead);
+        this.updateSelected(false);
         this.updateRead(lastMessageId, lastReadMessageId);
         $.ajax({
             url: '/api/chats/' + this.id,
@@ -146,8 +147,9 @@ class Topbar {
         this.expanded = '';
         this.chatsSidebar = chats;
         this.expandChats = document.createElement('img');
-        this.expandChats.classList.add('button');
+        this.expandChats.classList.add('button', 'expand-chats');
         this.expandChats.alt = 'Expand Chats';
+        this.expandChats.src = '/img/expand-right.svg';
         this.logo = document.createElement('img');
         this.logo.classList.add('topbar-logo');
         this.logo.alt = 'Logo';
@@ -157,8 +159,9 @@ class Topbar {
         this.description.classList.add('topbar-description');
         this.usersSidebar = users;
         this.expandUsers = document.createElement('img');
-        this.expandUsers.classList.add('button');
+        this.expandUsers.classList.add('button', 'expand-users');
         this.expandUsers.alt = 'Expand Users';
+        this.expandUsers.src = '/img/expand-left.svg';
     }
     appendTo(page) {
         const topbar = document.createElement('div');
