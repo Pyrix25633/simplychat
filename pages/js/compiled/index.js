@@ -1,16 +1,23 @@
 import { loadCustomization } from "./load-customization.js";
 import { RequireNonNull, defaultStatusCode } from "./utils.js";
 await loadCustomization();
+function reloadAnimations() {
+    const animations = document.getAnimations();
+    for (let animation of animations)
+        animation.cancel();
+    for (let animation of animations)
+        animation.play();
+}
 class Chat {
-    constructor(id, permissionLevel, lastMessageId, lastReadMessageId) {
-        this.id = id;
-        this.permissionLevel = permissionLevel;
-        this.lastMessageId = lastMessageId;
-        this.lastReadMessageId = lastReadMessageId;
+    constructor(chat, topbar, navigator) {
+        this.id = chat.id;
+        this.permissionLevel = chat.permissionLevel;
+        this.lastMessageId = chat.lastMessageId;
+        this.lastReadMessageId = chat.lastReadMessageId;
         this.box = document.createElement('div');
         this.box.classList.add('box', 'chat');
         this.box.addEventListener('click', () => {
-            this.updateSelected(true);
+            navigator.selectChat(this.id);
         });
         this.name = document.createElement('span');
         this.name.classList.add('name');
@@ -47,13 +54,14 @@ class Chat {
         this.actions.appendChild(this.leave);
         this.actions.appendChild(this.settings);
         this.actions.appendChild(this.markAsRead);
+        this.topbar = topbar;
         this.updateSelected(false);
-        this.updateRead(lastMessageId, lastReadMessageId);
+        this.updateRead(this.lastMessageId, this.lastReadMessageId);
         $.ajax({
             url: '/api/chats/' + this.id,
             method: 'GET',
             success: (res) => {
-                this.updateSettings(permissionLevel, res.name, res.description, res.logo);
+                this.updateSettings(this.permissionLevel, res.name, res.description, res.logo);
             },
             statusCode: defaultStatusCode
         });
@@ -91,6 +99,8 @@ class Chat {
         this.name.innerText = name;
         this.description.innerText = description;
         this.logo.src = logo;
+        if (this.topbar.id == this.id)
+            this.topbar.update(this);
     }
     updateRead(lastMessageId, lastReadMessageId) {
         this.lastMessageId = lastMessageId;
@@ -110,7 +120,7 @@ class User {
             this.updateSelected(true);
         });
         $.ajax({
-            url: '/api/chats/' + id,
+            url: '/api/users/' + id,
             method: 'GET',
             success: (res) => {
             },
@@ -144,6 +154,7 @@ class Sidebar {
 }
 class Topbar {
     constructor(chats, users) {
+        this.id = undefined;
         this.expanded = '';
         this.chatsSidebar = chats;
         this.expandChats = document.createElement('img');
@@ -162,13 +173,28 @@ class Topbar {
         this.expandUsers.classList.add('button', 'expand-users');
         this.expandUsers.alt = 'Expand Users';
         this.expandUsers.src = '/img/expand-left.svg';
+        window.addEventListener('resize', () => {
+            let temp = this.name.style.animation;
+            this.name.style.display = 'none';
+            this.name.style.animation = 'none';
+            this.name.offsetHeight;
+            this.name.style.animation = temp;
+            this.name.style.display = '';
+            this.description.style.display = 'none';
+            temp = this.description.style.animation;
+            this.description.style.animation = 'none';
+            this.description.offsetHeight;
+            this.description.style.animation = temp;
+            this.description.style.display = '';
+            reloadAnimations();
+        });
     }
     appendTo(page) {
         const topbar = document.createElement('div');
         topbar.classList.add('container', 'topbar');
         const marquee = document.createElement('div');
         marquee.classList.add('box', 'marquee-big');
-        marquee.appendChild(this.logo);
+        marquee.appendChild(this.name);
         marquee.appendChild(this.description);
         topbar.appendChild(this.expandChats);
         topbar.appendChild(this.logo);
@@ -176,10 +202,10 @@ class Topbar {
         topbar.appendChild(this.expandUsers);
         page.appendMain(topbar);
     }
-    set(name, description, logo) {
-        this.name.innerText = name;
-        this.description.innerText = description;
-        this.logo.src = logo;
+    update(chat) {
+        this.name.innerText = chat.name.innerText;
+        this.description.innerText = chat.description.innerText;
+        this.logo.src = chat.logo.src;
     }
     expand(sidebar) {
         if (this.expanded == sidebar)
@@ -214,6 +240,27 @@ class Messages {
     appendTo(page) {
     }
 }
+class Navigator {
+    constructor(chats, topbar, users) {
+        this.chats = chats;
+        this.topbar = topbar;
+        this.users = users;
+    }
+    selectChat(id) {
+        this.topbar.id = id;
+        for (const chat of this.chats.values())
+            chat.updateSelected(chat.id == id);
+    }
+    selectUser(id) {
+    }
+}
+class Updater {
+    constructor(chats, users) {
+        this.chats = chats;
+        this.users = users;
+        //TODO
+    }
+}
 class Page {
     constructor() {
         this.chats = new Map();
@@ -230,15 +277,20 @@ class Page {
         this.chatsSidebar.appendTo(this);
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
+        this.navigator = new Navigator(this.chats, this.topbar, this.users);
         $.ajax({
             url: '/api/chats',
             method: 'GET',
             success: (res) => {
+                res.chats.sort((a, b) => {
+                    return a.lastMessageId - b.lastMessageId;
+                });
                 for (const c of res.chats) {
-                    const chat = new Chat(c.id, c.permissionLevel, c.lastMessageId, c.lastReadMessageId);
+                    const chat = new Chat(c, this.topbar, this.navigator);
                     this.chats.set(chat.id, chat);
                     chat.appendTo(this.chatsSidebar);
                 }
+                this.navigator.selectChat(res.chats[0].id);
             },
             statusCode: defaultStatusCode
         });

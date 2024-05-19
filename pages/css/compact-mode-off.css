@@ -52,6 +52,9 @@ div.read, div.unread, div.online, div.offline {
     right: 5px;
 }
 
+div.topbar {
+    gap: 5px !important;
+}
 div.chat, div.user, div.sidebar, div.topbar, div.default-permission-level {
     padding: 5px;
 }

@@ -149,6 +149,7 @@ div.marquee-big {
     white-space: nowrap;
     box-sizing: border-box;
     align-items: start;
+    gap: 0 !important;
 }
 div.marquee-big span {
     display: inline-block;

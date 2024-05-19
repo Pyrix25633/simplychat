@@ -9,7 +9,7 @@ button, input {
 img.rounded {
     border-radius: 5%;
 }
-img#pfp, img#change-pfp, img.logo, img.pfp, img#logo, img#change-logo {
+img#pfp, img#change-pfp, img.logo, img.topbar-logo, img.pfp, img#logo, img#change-logo {
     border-radius: 20%;
 }
 
