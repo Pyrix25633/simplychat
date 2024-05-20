@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { Created, UnprocessableContent, handleException } from "../web/response";
+import { createTempUser, deleteTempUser, findTempUser } from "../database/temp-user";
+import { createUserFromTempUser } from "../database/user";
+import { sendEmail } from "../email";
+import { generateVerificationCode } from "../random";
+import { settings } from "../settings";
 import { getEmail, getSixDigitCode, getUsername } from "../validation/semantic-validation";
 import { getNonEmptyString, getObject } from "../validation/type-validation";
-import { generateVerificationCode } from "../random";
-import { createTempUser, deleteTempUser, findTempUser } from "../database/temp-user";
-import { sendEmail } from "../email";
-import { settings } from "../settings";
-import { createUserFromTempUser } from "../database/user";
+import { Created, UnprocessableContent, handleException } from "../web/response";
 
 export async function postTempUser(req: Request, res: Response): Promise<void> {
     try {

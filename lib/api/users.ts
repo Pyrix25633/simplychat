@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { Ok, handleException } from "../web/response";
-import { validateToken } from "./auth";
 import { findUserInfo } from "../database/user";
 import { getInt } from "../validation/type-validation";
+import { Ok, handleException } from "../web/response";
+import { validateToken } from "./auth";
 
 export async function getUser(req: Request, res: Response): Promise<void> {
     try {

@@ -1,20 +1,20 @@
-import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import helmet from 'helmet';
-import path from 'path';
+import cookieParser from "cookie-parser";
 import cors from 'cors';
+import express, { Express, Request, Response } from 'express';
+import fs from 'fs';
+import helmet from 'helmet';
 import http from 'http';
 import https from 'https';
-import fs from 'fs';
+import path from 'path';
 import { Server } from 'socket.io';
-import { settings } from './lib/settings';
-import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
-import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
-import cookieParser from "cookie-parser";
-import { getSettings, getSettingsCustomization, patchSettings } from './lib/api/settings';
 import { getChat, getChatJoin, getChatSettings, getChatUsers, getChats, patchChatSettings, postChat, postChatJoin, postChatRegenerateToken } from './lib/api/chats';
+import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
+import { getSettings, getSettingsCustomization, getSettingsId, patchSettings } from './lib/api/settings';
+import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
 import { getUser } from './lib/api/users';
+import { settings } from './lib/settings';
 import { onConnect } from './lib/socket';
 
 const main: Express = express();
@@ -85,9 +85,11 @@ main.post('/api/auth/regenerate-token', postRegenerateToken);
 
 main.get('/api/settings', getSettings);
 
+main.patch('/api/settings', patchSettings);
+
 main.get('/api/settings/customization', getSettingsCustomization);
 
-main.patch('/api/settings', patchSettings);
+main.get('/api/settings/id', getSettingsId);
 
 // users//
 

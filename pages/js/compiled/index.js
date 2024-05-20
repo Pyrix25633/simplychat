@@ -1,6 +1,16 @@
 import { loadCustomization } from "./load-customization.js";
-import { Auth, RequireNonNull, defaultStatusCode } from "./utils.js";
+import { Auth, RequireNonNull, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
 await loadCustomization();
+const userId = new Promise((resolve) => {
+    $.ajax({
+        url: '/api/settings/id',
+        method: 'GET',
+        success: (res) => {
+            resolve(res.id);
+        },
+        statusCode: defaultStatusCode
+    });
+});
 function reloadAnimations() {
     const animations = document.getAnimations();
     for (let animation of animations)
@@ -35,6 +45,7 @@ class Chat {
         this.leave.alt = 'Leave';
         this.leave.src = '/img/leave.svg';
         this.leave.addEventListener('click', () => {
+            this.leave.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             //TODO
         });
         this.settings = document.createElement('img');
@@ -42,6 +53,7 @@ class Chat {
         this.settings.alt = 'Settings';
         this.settings.src = '/img/settings.svg';
         this.settings.addEventListener('click', () => {
+            this.settings.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             window.location.href = '/chats/' + this.id + '/settings';
         });
         this.markAsRead = document.createElement('img');
@@ -49,6 +61,7 @@ class Chat {
         this.markAsRead.alt = 'Mark as Read';
         this.markAsRead.src = '/img/mark-as-read.svg';
         this.markAsRead.addEventListener('click', () => {
+            this.markAsRead.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             //TODO
         });
         this.actions.appendChild(this.leave);
@@ -170,6 +183,7 @@ class Topbar {
         this.expandChats.alt = 'Expand Chats';
         this.expandChats.src = '/img/expand-right.svg';
         this.expandChats.addEventListener('click', () => {
+            this.expandChats.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             this.expand('chats');
         });
         this.logo = document.createElement('img');
@@ -185,6 +199,7 @@ class Topbar {
         this.expandUsers.alt = 'Expand Users';
         this.expandUsers.src = '/img/expand-left.svg';
         this.expandUsers.addEventListener('click', () => {
+            this.expandUsers.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             this.expand('users');
         });
         window.addEventListener('resize', () => {

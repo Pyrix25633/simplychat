@@ -13,6 +13,9 @@ install:
 > cp settings/template.json settings/settings.json
 > nano settings/settings.json
 
+compile-pages:
+> cd pages && npx tsc -w
+
 fix-mysql:
 > sudo chown -R mysql:mysql /var/lib/mysql /var/run/mysqld
 

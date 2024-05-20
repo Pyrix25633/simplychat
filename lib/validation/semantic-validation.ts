@@ -1,8 +1,7 @@
 import { PermissionLevel } from "@prisma/client";
 import { Customization } from "../database/user";
-import { BadRequest, UnprocessableContent } from "../web/response";
+import { BadRequest } from "../web/response";
 import { getArray, getBoolean, getInt, getNonEmptyString, getObject } from "./type-validation";
-import { doesUserOnChatExist } from "../database/users-on-chats";
 
 const usernameRegex = /^(?:\w|-| ){3,32}$/;
 const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

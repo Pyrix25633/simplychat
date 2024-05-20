@@ -502,7 +502,7 @@ paths:
       operationId: settings(get)
       responses:
         "200":
-          description: User settings
+          description: User's settings
           content:
             application/json:
               schema:
@@ -576,6 +576,41 @@ paths:
           description: Unauthorized
         "403":
           description: "Forbidden: wrong oldPassword"
+  /settings/customization:
+    get:
+      tags:
+        - settings
+      summary: Gets the user's customization
+      description: Returns an object with user's customization
+      operationId: settings/customization
+      responses:
+        "200":
+          description: User's customization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/customization"
+        "401":
+          description: Unauthorized
+  /settings/id:
+    get:
+      tags:
+        - settings
+      summary: Gets the user's id
+      description: Returns the user's id
+      operationId: settings/id
+      responses:
+        "200":
+          description: User's id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: "#/components/schemas/id"
+        "401":
+          description: Unauthorized
   /users/{userId}:
     get:
       tags:

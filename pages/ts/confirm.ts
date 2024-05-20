@@ -1,4 +1,4 @@
-import { ApiFeedbackInput, Form, Input, Button } from './form.js';
+import { ApiFeedbackInput, Button, Form, Input } from './form.js';
 import { defaultStatusCode } from './utils.js';
 
 class VerificationCodeInput extends Input<number> {

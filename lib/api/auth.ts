@@ -1,16 +1,16 @@
-import { Request, Response } from "express";
-import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleException } from "../web/response";
-import { getNonEmptyString, getObject } from "../validation/type-validation";
-import { getSixDigitCode, getTfaKey, getToken, getUsername } from "../validation/semantic-validation";
+import { User } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import qrcode from "qrcode";
+import tfa from "speakeasy";
+import { AuthTokenPayload, FindFunction, validateJsonWebToken } from "../auth";
 import { findUser, findUserToken, findUserTokenAndUsername, findUserWhereUsername, regenerateUserToken } from "../database/user";
 import { encodeSvgToBase64, generateTfaToken } from "../random";
 import { settings } from "../settings";
-import { User } from "@prisma/client";
-import jwt from "jsonwebtoken";
-import tfa from "speakeasy";
-import qrcode from "qrcode";
-import { AuthTokenPayload, FindFunction, validateJsonWebToken } from "../auth";
+import { getSixDigitCode, getTfaKey, getToken, getUsername } from "../validation/semantic-validation";
+import { getNonEmptyString, getObject } from "../validation/type-validation";
+import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleException } from "../web/response";
 
 const pendingTfas: { [index: string]: number; } = {};
 

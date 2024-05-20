@@ -1,9 +1,9 @@
 import { TempUser, User } from "@prisma/client";
-import { prisma } from "./prisma";
-import { NotFound, UnprocessableContent } from "../web/response";
-import { generatePfp, generateUserToken } from "../random";
 import * as bcrypt from "bcrypt";
+import { generatePfp, generateUserToken } from "../random";
 import { settings } from "../settings";
+import { NotFound, UnprocessableContent } from "../web/response";
+import { prisma } from "./prisma";
 
 export async function createUserFromTempUser(tempUser: TempUser): Promise<User> {
     try {

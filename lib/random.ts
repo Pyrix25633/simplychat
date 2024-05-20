@@ -1,4 +1,4 @@
-import { randomInt, createHash } from 'crypto';
+import { createHash, randomInt } from 'crypto';
 
 export function generateVerificationCode(): number {
     return randomInt(100000, 1000000);

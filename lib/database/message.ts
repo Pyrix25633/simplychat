@@ -1,7 +1,7 @@
 import { Message } from "@prisma/client";
+import { notifyAllUsersOnChat } from "../socket";
 import { InternalServerError, UnprocessableContent } from "../web/response";
 import { prisma } from "./prisma";
-import { notifyAllUsersOnChat } from "../socket";
 
 export async function createMessage(messageText: string, userId: number, chatId: number): Promise<Message> {
     try {

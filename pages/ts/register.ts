@@ -1,4 +1,4 @@
-import { ApiFeedbackInput, Form, PasswordInput, Button } from './form.js';
+import { ApiFeedbackInput, Button, Form, PasswordInput } from './form.js';
 import { Response, defaultStatusCode } from './utils.js';
 
 const usernameInput = new ApiFeedbackInput('username', 'text', 'Username:', 'Input Username', '/api/feedbacks/register-username');

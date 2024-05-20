@@ -1,10 +1,10 @@
 import { Socket } from "socket.io";
 import { validateJsonWebToken } from "./auth";
-import { getNonEmptyString, getObject } from "./validation/type-validation";
 import { findUserToken } from "./database/user";
+import { findUsersOnChat } from "./database/users-on-chats";
 import { settings } from "./settings";
 import { databaseStatuses, resourcesStatuses } from "./status";
-import { findUsersOnChat } from "./database/users-on-chats";
+import { getNonEmptyString, getObject } from "./validation/type-validation";
 
 type Data = { [index: string]: any; };
 type Event = 'user-online' | 'user-settings' | 'chat-user-join' | 'chat-user-leave' |

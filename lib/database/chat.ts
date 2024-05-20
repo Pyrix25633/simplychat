@@ -1,8 +1,8 @@
 import { Chat, PermissionLevel } from "@prisma/client";
-import { NotFound, UnprocessableContent } from "../web/response";
-import { prisma } from "./prisma";
 import { generateChatLogo, generateChatToken } from "../random";
 import { notifyAllUsersOnChat } from "../socket";
+import { NotFound, UnprocessableContent } from "../web/response";
+import { prisma } from "./prisma";
 
 export async function createChat(name: string, description: string): Promise<Chat> {
     try {

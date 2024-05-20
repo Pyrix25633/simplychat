@@ -1,14 +1,14 @@
+import { PermissionLevel } from "@prisma/client";
 import { Request, Response } from "express";
-import { Forbidden, NoContent, NotFound, Ok, handleException } from "../web/response";
-import { validateToken } from "./auth";
-import { getInt, getObject, getOrUndefined } from "../validation/type-validation";
-import { getBase64EncodedImage, getDescription, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
 import { createChat, doesChatExist, findChat, findChatInfo, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
+import { createMessage, findLastMessageId } from "../database/message";
 import { prisma, simplychat } from "../database/prisma";
 import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
-import { PermissionLevel } from "@prisma/client";
-import { createMessage, findLastMessageId } from "../database/message";
 import { generateChatToken } from "../random";
+import { getBase64EncodedImage, getDescription, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
+import { getInt, getObject, getOrUndefined } from "../validation/type-validation";
+import { Forbidden, NoContent, NotFound, Ok, handleException } from "../web/response";
+import { validateToken } from "./auth";
 
 export async function postChat(req: Request, res: Response): Promise<void> {
     try {
