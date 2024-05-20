@@ -93,6 +93,7 @@ class Chat {
         this.topbar = topbar;
         this.updateSelected(false);
         this.updateRead(this.lastMessageId, this.lastReadMessageId);
+        this.updatePermissionLevel(this.permissionLevel);
         $.ajax({
             url: '/api/chats/' + this.id,
             method: 'GET',
@@ -135,7 +136,7 @@ class Chat {
 
     updatePermissionLevel(permissionLevel: PermissionLevel): void {
         this.permissionLevel = permissionLevel;
-        this.settings.style.display = permissionLevel == 'ADMINISTRATOR' ? 'none' : '';
+        this.settings.style.display = permissionLevel == 'ADMINISTRATOR' ? '' : 'none';
     }
 
     updateNameDescription(name: string, description: string): void {
@@ -219,7 +220,7 @@ class Sidebar {
     }
 
     expand(expand: boolean) {
-        this.sidebar.style.display = expand ? '' : 'flex';
+        this.sidebar.style.display = expand ? 'flex' : '';
     }
 }
 
@@ -240,6 +241,9 @@ class Topbar {
         this.expandChats.classList.add('button', 'expand-chats');
         this.expandChats.alt = 'Expand Chats';
         this.expandChats.src = '/img/expand-right.svg';
+        this.expandChats.addEventListener('click', (): void => {
+            this.expand('chats');
+        });
         this.logo = document.createElement('img');
         this.logo.classList.add('topbar-logo');
         this.logo.alt = 'Logo';
@@ -252,6 +256,9 @@ class Topbar {
         this.expandUsers.classList.add('button', 'expand-users');
         this.expandUsers.alt = 'Expand Users';
         this.expandUsers.src = '/img/expand-left.svg';
+        this.expandUsers.addEventListener('click', (): void => {
+            this.expand('users');
+        });
         window.addEventListener('resize', (): void => {
             let temp = this.name.style.animation;
             this.name.style.display = 'none';
@@ -284,6 +291,7 @@ class Topbar {
     }
 
     update(chat: Chat): void {
+        this.id = chat.id;
         this.name.innerText = chat.name.innerText;
         this.description.innerText = chat.description.innerText;
         this.logo.src = chat.logo.src;
@@ -339,7 +347,10 @@ class Navigator {
     }
 
     selectChat(id: number): void {
-        this.topbar.id = id;
+        const chat = this.chats.get(id);
+        if(chat == undefined)
+            return;
+        this.topbar.update(chat);
         for(const chat of this.chats.values())
             chat.updateSelected(chat.id == id);
     }
@@ -375,8 +386,10 @@ class Updater {
             const chat = chats.get(data.chatId);
             if(chat == undefined)
                 return;
-            if(data.userId == 0) //TODO
             chat.updatePermissionLevel(data.permissionLevel);
+            if(data.userId == 0) {
+                //TODO
+            }
         });
     }
 }

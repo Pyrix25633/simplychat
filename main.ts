@@ -3,8 +3,9 @@ import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import path from 'path';
 import cors from 'cors';
-import * as https from 'https';
-import * as fs from 'fs';
+import http from 'http';
+import https from 'https';
+import fs from 'fs';
 import { Server } from 'socket.io';
 import { settings } from './lib/settings';
 import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
@@ -17,7 +18,7 @@ import { getUser } from './lib/api/users';
 import { onConnect } from './lib/socket';
 
 const main: Express = express();
-export const port: number = settings.https.port;
+const upgradeMain: Express = express();
 
 main.set('trust proxy', true);
 main.use(cookieParser());
@@ -119,15 +120,20 @@ const options = {
     cert: fs.readFileSync(path.resolve(__dirname, settings.https.cert)),
     passphrase: settings.https.passphrase
 };
-export const server = https.createServer(options, main);
-server.listen(port, () => {
-    console.log('Server listening on port ' + port);
+const server = https.createServer(options, main);
+server.listen(settings.https.port, (): void => {
+    console.log('Server listening on Port ' + settings.https.port);
+});
+upgradeMain.all('*', (req, res): void => {
+    res.redirect(301, 'https://' + req.hostname + ':' + settings.https.port);
+});
+const upgradeServer = http.createServer(upgradeMain);
+upgradeServer.listen(settings.https.upgradePort, (): void => {
+    console.log('Upgrade Server listening on Port ' + settings.https.upgradePort);
 });
 
 const io = new Server(server);
 io.on('connect', onConnect);
-
-//initializeStatus();
 
 // --pages-- //
 

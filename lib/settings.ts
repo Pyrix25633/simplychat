@@ -7,7 +7,8 @@ export const settings = {
         passphrase: "",
         suppressRejectUnauthorized: true,
         hostname: "simplychat.ddns.net",
-        port: 4443
+        port: 4443,
+        upgradePort: 8080
     },
     jwt: {
         cookieName: "simplychat-auth",

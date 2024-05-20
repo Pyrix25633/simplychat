@@ -1,5 +1,5 @@
 import { loadCustomization } from "./load-customization.js";
-import { RequireNonNull, defaultStatusCode } from "./utils.js";
+import { Auth, RequireNonNull, defaultStatusCode } from "./utils.js";
 await loadCustomization();
 function reloadAnimations() {
     const animations = document.getAnimations();
@@ -57,11 +57,13 @@ class Chat {
         this.topbar = topbar;
         this.updateSelected(false);
         this.updateRead(this.lastMessageId, this.lastReadMessageId);
+        this.updatePermissionLevel(this.permissionLevel);
         $.ajax({
             url: '/api/chats/' + this.id,
             method: 'GET',
             success: (res) => {
-                this.updateSettings(this.permissionLevel, res.name, res.description, res.logo);
+                this.updateNameDescription(res.name, res.description);
+                this.updateLogo(res.logo);
             },
             statusCode: defaultStatusCode
         });
@@ -93,11 +95,17 @@ class Chat {
             this.actions.style.display = 'none';
         }
     }
-    updateSettings(permissionLevel, name, description, logo) {
+    updatePermissionLevel(permissionLevel) {
         this.permissionLevel = permissionLevel;
-        this.settings.style.display = permissionLevel == 'ADMINISTRATOR' ? 'none' : '';
+        this.settings.style.display = permissionLevel == 'ADMINISTRATOR' ? '' : 'none';
+    }
+    updateNameDescription(name, description) {
         this.name.innerText = name;
         this.description.innerText = description;
+        if (this.topbar.id == this.id)
+            this.topbar.update(this);
+    }
+    updateLogo(logo) {
         this.logo.src = logo;
         if (this.topbar.id == this.id)
             this.topbar.update(this);
@@ -149,7 +157,7 @@ class Sidebar {
         page.appendChild(this.sidebar);
     }
     expand(expand) {
-        this.sidebar.style.display = expand ? '' : 'flex';
+        this.sidebar.style.display = expand ? 'flex' : '';
     }
 }
 class Topbar {
@@ -161,6 +169,9 @@ class Topbar {
         this.expandChats.classList.add('button', 'expand-chats');
         this.expandChats.alt = 'Expand Chats';
         this.expandChats.src = '/img/expand-right.svg';
+        this.expandChats.addEventListener('click', () => {
+            this.expand('chats');
+        });
         this.logo = document.createElement('img');
         this.logo.classList.add('topbar-logo');
         this.logo.alt = 'Logo';
@@ -173,6 +184,9 @@ class Topbar {
         this.expandUsers.classList.add('button', 'expand-users');
         this.expandUsers.alt = 'Expand Users';
         this.expandUsers.src = '/img/expand-left.svg';
+        this.expandUsers.addEventListener('click', () => {
+            this.expand('users');
+        });
         window.addEventListener('resize', () => {
             let temp = this.name.style.animation;
             this.name.style.display = 'none';
@@ -203,6 +217,7 @@ class Topbar {
         page.appendMain(topbar);
     }
     update(chat) {
+        this.id = chat.id;
         this.name.innerText = chat.name.innerText;
         this.description.innerText = chat.description.innerText;
         this.logo.src = chat.logo.src;
@@ -247,7 +262,10 @@ class Navigator {
         this.users = users;
     }
     selectChat(id) {
-        this.topbar.id = id;
+        const chat = this.chats.get(id);
+        if (chat == undefined)
+            return;
+        this.topbar.update(chat);
         for (const chat of this.chats.values())
             chat.updateSelected(chat.id == id);
     }
@@ -258,7 +276,29 @@ class Updater {
     constructor(chats, users) {
         this.chats = chats;
         this.users = users;
-        //TODO
+        this.socket = io();
+        this.socket.on('connect', (data) => {
+            this.socket.emit('connect-main', { auth: Auth.getCookie() });
+        });
+        this.socket.on('chat-name-description', (data) => {
+            const chat = chats.get(data.id);
+            if (chat != undefined)
+                chat.updateNameDescription(data.name, data.description);
+        });
+        this.socket.on('chat-logo', (data) => {
+            const chat = chats.get(data.id);
+            if (chat != undefined)
+                chat.updateLogo(data.logo);
+        });
+        this.socket.on('chat-user-permission-level', (data) => {
+            const chat = chats.get(data.chatId);
+            if (chat == undefined)
+                return;
+            chat.updatePermissionLevel(data.permissionLevel);
+            if (data.userId == 0) {
+                //TODO
+            }
+        });
     }
 }
 class Page {
@@ -278,6 +318,7 @@ class Page {
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
         this.navigator = new Navigator(this.chats, this.topbar, this.users);
+        this.updater = new Updater(this.chats, this.users);
         $.ajax({
             url: '/api/chats',
             method: 'GET',
