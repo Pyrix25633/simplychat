@@ -1,16 +1,23 @@
 import { PermissionLevel, UsersOnChats } from "@prisma/client";
 import { NotFound, UnprocessableContent } from "../web/response";
 import { prisma } from "./prisma";
+import { notifyAllUsersOnChat } from "../socket";
 
 export async function createUserOnChat(userId: number, chatId: number, permissionLevel: PermissionLevel): Promise<UsersOnChats> {
     try {
-        return await prisma.usersOnChats.create({
+        const userOnChat = await prisma.usersOnChats.create({
             data: {
                 userId: userId,
                 chatId: chatId,
                 permissionLevel: permissionLevel
             }
         });
+        notifyAllUsersOnChat(chatId, 'chat-user-join', {
+            chatId: chatId,
+            userId: userId,
+            permissionLevel: permissionLevel
+        });
+        return userOnChat;
     } catch(e: any) {
         throw new UnprocessableContent();
     }
@@ -84,7 +91,7 @@ export async function doesUserOnChatExist(userId: number, chatId: number): Promi
 
 export async function updateUserOnChatPermissionLevel(userId: number, chatId: number, permissionLevel: PermissionLevel): Promise<UsersOnChats | undefined> {
     try {
-        return await prisma.usersOnChats.update({
+        const userOnChat = await prisma.usersOnChats.update({
             data: {
                 permissionLevel: permissionLevel
             },
@@ -95,6 +102,12 @@ export async function updateUserOnChatPermissionLevel(userId: number, chatId: nu
                 }
             }
         });
+        notifyAllUsersOnChat(chatId, 'chat-user-permission-level', {
+            chatId: chatId,
+            userId: userId,
+            permissionLevel: permissionLevel
+        });
+        return userOnChat;
     } catch(_: any) {
         return undefined;
     }
@@ -102,7 +115,7 @@ export async function updateUserOnChatPermissionLevel(userId: number, chatId: nu
 
 export async function deleteUserOnChat(userId: number, chatId: number): Promise<UsersOnChats | undefined> {
     try {
-        return await prisma.usersOnChats.delete({
+        const userOnChat = await prisma.usersOnChats.delete({
             where: {
                 chatId_userId: {
                     chatId: chatId,
@@ -110,6 +123,11 @@ export async function deleteUserOnChat(userId: number, chatId: number): Promise<
                 }
             }
         });
+        notifyAllUsersOnChat(chatId, 'chat-user-leave', {
+            chatId: chatId,
+            userId: userId
+        });
+        return userOnChat;
     } catch(_: any) {
         return undefined;
     }

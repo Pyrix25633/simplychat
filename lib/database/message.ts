@@ -1,16 +1,25 @@
 import { Message } from "@prisma/client";
 import { InternalServerError, UnprocessableContent } from "../web/response";
 import { prisma } from "./prisma";
+import { notifyAllUsersOnChat } from "../socket";
 
-export async function createMessage(message: string, userId: number, chatId: number): Promise<Message> {
+export async function createMessage(messageText: string, userId: number, chatId: number): Promise<Message> {
     try {
-        return await prisma.message.create({
+        const message = await prisma.message.create({
             data: {
-                message: Buffer.from(message),
+                message: Buffer.from(messageText),
                 userId: userId,
                 chatId: chatId
             }
         });
+        notifyAllUsersOnChat(chatId, 'message-new', {
+            id: message.id,
+            chatId: chatId,
+            userId: userId,
+            message: messageText,
+            createdAt: message.createdAt
+        });
+        return message;
     } catch(e: any) {
         throw new UnprocessableContent();
     }

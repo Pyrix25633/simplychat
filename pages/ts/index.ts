@@ -1,5 +1,16 @@
 import { loadCustomization } from "./load-customization.js";
-import { PermissionLevel, RequireNonNull, Response, defaultStatusCode } from "./utils.js";
+import { Auth, PermissionLevel, RequireNonNull, Response, defaultStatusCode } from "./utils.js";
+
+declare function io(): Socket;
+type Event = 'user-online' | 'user-settings' | 'chat-user-join' | 'chat-user-leave' |
+    'chat-name-description' | 'chat-logo' | 'chat-user-permission-level' |
+    'message-new' | 'message-edit' | 'message-delete' | 'mark-as-read' |
+    'connect';
+type Data = { [index: string]: any; };
+type Socket = {
+    on(event: Event, callback: (data: Data) => void ): void;
+    emit(event: 'connect-main', data: Data): void;
+};
 
 await loadCustomization();
 
@@ -86,7 +97,8 @@ class Chat {
             url: '/api/chats/' + this.id,
             method: 'GET',
             success: (res: Response): void => {
-                this.updateSettings(this.permissionLevel, res.name, res.description, res.logo);
+                this.updateNameDescription(res.name, res.description);
+                this.updateLogo(res.logo);
             },
             statusCode: defaultStatusCode
         });
@@ -121,11 +133,19 @@ class Chat {
         }
     }
 
-    updateSettings(permissionLevel: PermissionLevel, name: string, description: string, logo: string): void {
+    updatePermissionLevel(permissionLevel: PermissionLevel): void {
         this.permissionLevel = permissionLevel;
         this.settings.style.display = permissionLevel == 'ADMINISTRATOR' ? 'none' : '';
+    }
+
+    updateNameDescription(name: string, description: string): void {
         this.name.innerText = name;
         this.description.innerText = description;
+        if(this.topbar.id == this.id)
+            this.topbar.update(this);
+    }
+
+    updateLogo(logo: string): void {
         this.logo.src = logo;
         if(this.topbar.id == this.id)
             this.topbar.update(this);
@@ -332,11 +352,32 @@ class Navigator {
 class Updater {
     private readonly chats: Map<number, Chat>;
     private readonly users: Map<number, User>;
+    private readonly socket: Socket;
 
     constructor(chats: Map<number, Chat>, users: Map<number, User>) {
         this.chats = chats;
         this.users = users;
-        //TODO
+        this.socket = io();
+        this.socket.on('connect', (data: Data): void => {
+            this.socket.emit('connect-main', { auth: Auth.getCookie() });
+        });
+        this.socket.on('chat-name-description', (data: Data): void => {
+            const chat = chats.get(data.id);
+            if(chat != undefined)
+                chat.updateNameDescription(data.name, data.description);
+        });
+        this.socket.on('chat-logo', (data: Data): void => {
+            const chat = chats.get(data.id);
+            if(chat != undefined)
+                chat.updateLogo(data.logo);
+        });
+        this.socket.on('chat-user-permission-level', (data: Data): void => {
+            const chat = chats.get(data.chatId);
+            if(chat == undefined)
+                return;
+            if(data.userId == 0) //TODO
+            chat.updatePermissionLevel(data.permissionLevel);
+        });
     }
 }
 
@@ -350,6 +391,7 @@ class Page {
     private readonly users: Map<number, User> = new Map();
     private readonly usersSidebar: Sidebar;
     private readonly navigator: Navigator;
+    private readonly updater: Updater;
 
     constructor() {
         this.page = RequireNonNull.getElementById('page') as HTMLDivElement;
@@ -365,6 +407,7 @@ class Page {
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
         this.navigator = new Navigator(this.chats, this.topbar, this.users);
+        this.updater = new Updater(this.chats, this.users);
         $.ajax({
             url: '/api/chats',
             method: 'GET',

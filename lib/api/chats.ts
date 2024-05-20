@@ -5,11 +5,10 @@ import { getInt, getObject, getOrUndefined } from "../validation/type-validation
 import { getBase64EncodedImage, getDescription, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
 import { createChat, doesChatExist, findChat, findChatInfo, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
 import { prisma, simplychat } from "../database/prisma";
-import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChatPermissionLevel, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
+import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
 import { PermissionLevel } from "@prisma/client";
 import { createMessage, findLastMessageId } from "../database/message";
 import { generateChatToken } from "../random";
-import { findUserInfo } from "../database/user";
 
 export async function postChat(req: Request, res: Response): Promise<void> {
     try {
@@ -103,14 +102,16 @@ export async function patchChatSettings(req: Request, res: Response): Promise<vo
         const logo = getOrUndefined(body.logo, getBase64EncodedImage);
         const modifiedUsers = getModifiedUsers(body.modifiedUsers);
         const removedUsers = getRemovedUsers(body.removedUsers);
-        await updateChatSettings(chatId, name, description, tokenExpiration, defaultPermissionLevel);
-        if(logo != undefined)
-            await updateChatLogo(chatId, logo);
-        for(const modifiedUser of modifiedUsers)
-            await updateUserOnChatPermissionLevel(modifiedUser.userId, chatId, modifiedUser.permissionLevel);
-        for(const removedUser of removedUsers)
-            await deleteUserOnChat(removedUser, chatId);
-        new NoContent().send(res);
+        await prisma.$transaction(async (): Promise<void> => {
+            await updateChatSettings(chatId, name, description, tokenExpiration, defaultPermissionLevel);
+            if(logo != undefined)
+                await updateChatLogo(chatId, logo);
+            for(const modifiedUser of modifiedUsers)
+                await updateUserOnChatPermissionLevel(modifiedUser.userId, chatId, modifiedUser.permissionLevel);
+            for(const removedUser of removedUsers)
+                await deleteUserOnChat(removedUser, chatId);
+            new NoContent().send(res);
+        });
     } catch(e: any) {
         handleException(e, res);
     }

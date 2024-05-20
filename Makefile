@@ -16,9 +16,9 @@ install:
 fix-mysql:
 > sudo chown -R mysql:mysql /var/lib/mysql /var/run/mysqld
 
-generate-certificates:
+generate-certificate:
 > sudo certbot certonly --standalone
 
-generate-selfsigned-certificates:
+generate-selfsigned-certificate:
 > mkdir -p ./certs
 > openssl req -newkey rsa:4096 -x509 -sha512 -days 365 -nodes -out ./certs/cert.pem -keyout ./certs/key.pem

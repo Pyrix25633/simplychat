@@ -4,10 +4,12 @@ import { getNonEmptyString, getObject } from "./validation/type-validation";
 import { findUserToken } from "./database/user";
 import { settings } from "./settings";
 import { databaseStatuses, resourcesStatuses } from "./status";
+import { findUsersOnChat } from "./database/users-on-chats";
 
 type Data = { [index: string]: any; };
-type Event = 'user-online' | 'user-settings' | 'user-join' | 'user-leave' |
-    'chat-settings' | 'message-send' | 'message-edit' | 'message-delete' | 'mark-as-read' |
+type Event = 'user-online' | 'user-settings' | 'chat-user-join' | 'chat-user-leave' |
+    'chat-name-description' | 'chat-logo' | 'chat-user-permission-level' |
+    'message-new' | 'message-edit' | 'message-delete' | 'mark-as-read' |
     'status-resources' | 'status-database';
 
 const mainSockets: Map<number, Socket[]> = new Map();
@@ -71,4 +73,17 @@ export function notifyAllStatusUsers(event: Event, data: Data): void {
         return;
     for(const statusSocket of statusSockets)
         statusSocket.emit(event, data);
+}
+
+export async function notifyAllUsersOnChat(chatId: number, event: Event, data: Data): Promise<void> {
+    if(!settings.dynamicUpdates[event])
+        return;
+    const usersOnChat = await findUsersOnChat(chatId);
+    for(const userOnChat of usersOnChat) {
+        const userSockets = mainSockets.get(userOnChat.userId);
+        if(userSockets == undefined)
+            continue;
+        for(const userSocket of userSockets)
+            userSocket.emit(event, data);
+    }
 }

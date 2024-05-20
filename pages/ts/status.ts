@@ -2,10 +2,11 @@ import { loadCustomization } from "./load-customization.js";
 import { Auth, RequireNonNull } from "./utils.js";
 
 declare function io(): Socket;
+type Event = 'status-resources' | 'status-resources-old' | 'status-database' | 'status-database-old' | 'connect' | 'disconnect';
 type Data = { [index: string]: any; };
 type Socket = {
-    on(event: string, callback: (data: Data) => void ): void;
-    emit(event: string, data: Data): void;
+    on(event: Event, callback: (data: Data) => void ): void;
+    emit(event: 'connect-status', data: Data): void;
 };
 type ChartData = {
     labels: string[];
