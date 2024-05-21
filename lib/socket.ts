@@ -1,14 +1,14 @@
 import { Socket } from "socket.io";
 import { validateJsonWebToken } from "./auth";
-import { findUserToken } from "./database/user";
-import { findUsersOnChat } from "./database/users-on-chats";
+import { findUserToken, updateUserOnline } from "./database/user";
+import { findUserOnChats, findUsersOnChat } from "./database/users-on-chats";
 import { settings } from "./settings";
 import { databaseStatuses, resourcesStatuses } from "./status";
 import { getNonEmptyString, getObject } from "./validation/type-validation";
 
 type Data = { [index: string]: any; };
-type Event = 'user-online' | 'user-settings' | 'chat-user-join' | 'chat-user-leave' |
-    'chat-name-description' | 'chat-logo' | 'chat-user-permission-level' |
+type Event = 'user-online' | 'user-username-status' | 'user-pfp' |
+    'chat-user-join' | 'chat-user-leave' | 'chat-name-description' | 'chat-logo' | 'chat-user-permission-level' |
     'message-new' | 'message-edit' | 'message-delete' | 'mark-as-read' |
     'status-resources' | 'status-database';
 
@@ -30,13 +30,14 @@ export function onConnect(socket: Socket): void {
                 mainSockets.set(userId, userSockets);
             }
             if(userSockets.length == 0)
-                notifyUserOnline(userId, true);
+                updateUserOnline(userId, true);
             userSockets.push(socket);
             socket.once('disconnect', (): void => {
                 const userSockets = mainSockets.get(userId);
                 if(userSockets != undefined) {
                     userSockets.splice(userSockets.indexOf(socket), 1);
-                    notifyUserOnline(userId, false);
+                    if(userSockets.length == 0)
+                    updateUserOnline(userId, false);
                 }
             });
         } catch(e: any) {
@@ -64,10 +65,6 @@ async function validateToken(data: Data): Promise<number> {
     return (await validateJsonWebToken(getNonEmptyString(data.auth), findUserToken)).id;
 }
 
-function notifyUserOnline(id: number, online: boolean): void {
-    //TODO
-}
-
 export function notifyAllStatusUsers(event: Event, data: Data): void {
     if(!settings.dynamicUpdates[event])
         return;
@@ -85,5 +82,23 @@ export async function notifyAllUsersOnChat(chatId: number, event: Event, data: D
             continue;
         for(const userSocket of userSockets)
             userSocket.emit(event, data);
+    }
+}
+
+export async function notifyAllRelatedUsers(userId: number, event: Event, data: Data): Promise<void> {
+    const notified = new Map<number, boolean>();
+    const userOnChats = await findUserOnChats(userId);
+    for(const userOnChat of userOnChats) {
+        const usersOnChat = await findUsersOnChat(userOnChat.chatId);
+        for(const relatedUser of usersOnChat) {
+            if(notified.get(relatedUser.userId) == true)
+                continue;
+            const userSockets = mainSockets.get(relatedUser.userId);
+            if(userSockets == undefined)
+                continue;
+            for(const userSocket of userSockets)
+                userSocket.emit(event, data);
+            notified.set(relatedUser.userId, true);
+        }
     }
 }

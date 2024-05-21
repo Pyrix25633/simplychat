@@ -138,3 +138,32 @@ export class CssManager {
 
 export const PermissionLevels = ["ADMINISTRATOR", "MODERATOR", "USER", "VIEWER"];
 export type PermissionLevel = typeof PermissionLevels[number];
+export namespace PermissionLevel {
+    export function increase(permissionLevel: PermissionLevel | undefined): PermissionLevel {
+        switch(permissionLevel) {
+            case "MODERATOR": return "ADMINISTRATOR";
+            case "USER": return "MODERATOR";
+            case "VIEWER": return "USER";
+            default: return "ADMINISTRATOR";
+        }
+    }
+
+    export function decrease(permissionLevel: PermissionLevel | undefined): PermissionLevel {
+        switch(permissionLevel) {
+            case "ADMINISTRATOR": return "MODERATOR";
+            case "MODERATOR": return "USER";
+            case "USER": return "VIEWER";
+            default: return "VIEWER";
+        }
+    }
+
+    export function compare(a: PermissionLevel, b: PermissionLevel): number {
+        if(a == b) return 0;
+        if(a == "ADMINISTRATOR") return -1;
+        if(b == "ADMINISTRATOR") return 1;
+        if(a == "MODERATOR") return -1;
+        if(b == "MODERATOR") return 1;
+        if(a == "USER") return -1;
+        else return 1;
+    }
+}

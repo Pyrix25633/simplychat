@@ -1,6 +1,5 @@
 import { ExecException, exec } from "child_process";
-import { countChats } from "./database/chat";
-import { countOnlineUsers, countUsers } from "./database/user";
+import { prisma } from "./database/prisma";
 import { notifyAllStatusUsers } from "./socket";
 
 type ResourcesStatus = {
@@ -68,3 +67,19 @@ sendDatabaseStatus();
 
 setInterval(sendResourcesStatus, 6000);
 setInterval(sendDatabaseStatus, 60000);
+
+async function countUsers(): Promise<number> {
+    return prisma.user.count();
+}
+
+async function countOnlineUsers(): Promise<number> {
+    return prisma.user.count({
+        where: {
+            online: true
+        }
+    });
+}
+
+async function countChats(): Promise<number> {
+    return prisma.chat.count();
+}

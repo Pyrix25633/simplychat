@@ -2,6 +2,7 @@ import { TempUser, User } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { generatePfp, generateUserToken } from "../random";
 import { settings } from "../settings";
+import { notifyAllRelatedUsers } from "../socket";
 import { NotFound, UnprocessableContent } from "../web/response";
 import { prisma } from "./prisma";
 
@@ -160,7 +161,7 @@ export type Customization = {
 
 export async function updateUserSettings(id: number, username: string, email: string, status: string, customization: Customization, sessionDuration: number): Promise<User> {
     try {
-        return prisma.user.update({
+        const user = await prisma.user.update({
             data: {
                 username: username,
                 email: email,
@@ -172,6 +173,12 @@ export async function updateUserSettings(id: number, username: string, email: st
                 id: id
             }
         });
+        notifyAllRelatedUsers(id, 'user-username-status', {
+            id: id,
+            username: username,
+            status: status
+        });
+        return user;
     } catch(e: any) {
         throw new UnprocessableContent();
     }
@@ -189,7 +196,7 @@ export async function updateUserPassword(id: number, password: string): Promise<
 }
 
 export async function updateUserPfp(id: number, pfp: Buffer): Promise<User> {
-    return prisma.user.update({
+    const user = await prisma.user.update({
         data: {
             pfp: pfp
         },
@@ -197,6 +204,11 @@ export async function updateUserPfp(id: number, pfp: Buffer): Promise<User> {
             id: id
         }
     });
+    notifyAllRelatedUsers(id, 'user-pfp', {
+        id: id,
+        pfp: pfp.toString()
+    });
+    return user;
 }
 
 export async function updateUserTfaKey(id: number, tfaKey: string | null): Promise<User> {
@@ -221,14 +233,20 @@ export async function regenerateUserToken(user: User): Promise<User> {
     });
 }
 
-export async function countUsers(): Promise<number> {
-    return prisma.user.count();
-}
-
-export async function countOnlineUsers(): Promise<number> {
-    return prisma.user.count({
+export async function updateUserOnline(id: number, online: boolean): Promise<User> {
+    const user = await prisma.user.update({
+        data: {
+            online: online,
+            lastOnline: online ? undefined : new Date()
+        },
         where: {
-            online: true
+            id: id
         }
     });
+    notifyAllRelatedUsers(id, 'user-online', {
+        id: id,
+        online: online,
+        lastOnline: user.lastOnline.toLocaleString('en-AZ')
+    });
+    return user;
 }

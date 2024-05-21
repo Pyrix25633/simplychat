@@ -1,7 +1,7 @@
 import { DescriptionInput, NameInput } from "./chat-inputs.js";
 import { ActionButton, ApiCallButton, Button, ImageInput, InfoSpan, Input, InputElement, InputSection, StructuredForm } from "./form.js";
 import { loadCustomization } from "./load-customization.js";
-import { PermissionLevels, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
+import { PermissionLevel, PermissionLevels, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
 await loadCustomization();
 const chatIdMatch = window.location.href.match(/^.+\/chats\/(\d+)\/settings.*$/);
 if (chatIdMatch == null) {
@@ -56,27 +56,6 @@ class TokenExpirationInput extends Input {
         super.precompile(value);
     }
 }
-var PermissionLevel;
-(function (PermissionLevel) {
-    function increase(permissionLevel) {
-        switch (permissionLevel) {
-            case "MODERATOR": return "ADMINISTRATOR";
-            case "USER": return "MODERATOR";
-            case "VIEWER": return "USER";
-            default: return "ADMINISTRATOR";
-        }
-    }
-    PermissionLevel.increase = increase;
-    function decrease(permissionLevel) {
-        switch (permissionLevel) {
-            case "ADMINISTRATOR": return "MODERATOR";
-            case "MODERATOR": return "USER";
-            case "USER": return "VIEWER";
-            default: return "VIEWER";
-        }
-    }
-    PermissionLevel.decrease = decrease;
-})(PermissionLevel || (PermissionLevel = {}));
 class DefaultPermissionLevelInput extends InputElement {
     constructor() {
         super('default-permission-level');

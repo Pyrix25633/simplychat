@@ -38,7 +38,8 @@ export const settings = {
     },
     dynamicUpdates: {
         'user-online': true,
-        'user-settings': true,
+        'user-username-status': true,
+        'user-pfp': true,
         'chat-user-join': true,
         'chat-user-leave': true,
         'chat-name-description': true,

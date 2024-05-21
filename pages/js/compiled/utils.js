@@ -113,3 +113,41 @@ export class CssManager {
     }
 }
 export const PermissionLevels = ["ADMINISTRATOR", "MODERATOR", "USER", "VIEWER"];
+export var PermissionLevel;
+(function (PermissionLevel) {
+    function increase(permissionLevel) {
+        switch (permissionLevel) {
+            case "MODERATOR": return "ADMINISTRATOR";
+            case "USER": return "MODERATOR";
+            case "VIEWER": return "USER";
+            default: return "ADMINISTRATOR";
+        }
+    }
+    PermissionLevel.increase = increase;
+    function decrease(permissionLevel) {
+        switch (permissionLevel) {
+            case "ADMINISTRATOR": return "MODERATOR";
+            case "MODERATOR": return "USER";
+            case "USER": return "VIEWER";
+            default: return "VIEWER";
+        }
+    }
+    PermissionLevel.decrease = decrease;
+    function compare(a, b) {
+        if (a == b)
+            return 0;
+        if (a == "ADMINISTRATOR")
+            return -1;
+        if (b == "ADMINISTRATOR")
+            return 1;
+        if (a == "MODERATOR")
+            return -1;
+        if (b == "MODERATOR")
+            return 1;
+        if (a == "USER")
+            return -1;
+        else
+            return 1;
+    }
+    PermissionLevel.compare = compare;
+})(PermissionLevel || (PermissionLevel = {}));

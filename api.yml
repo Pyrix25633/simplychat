@@ -998,7 +998,7 @@ paths:
                     items:
                       type: object
                       properties:
-                        id:
+                        userId:
                           $ref: "#/components/schemas/id"
                         permissionLevel:
                           $ref: "#/components/schemas/permissionLevel"

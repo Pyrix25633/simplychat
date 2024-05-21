@@ -65,26 +65,6 @@ class TokenExpirationInput extends Input<string | null> {
     }
 }
 
-namespace PermissionLevel {
-    export function increase(permissionLevel: PermissionLevel | undefined): PermissionLevel {
-        switch(permissionLevel) {
-            case "MODERATOR": return "ADMINISTRATOR";
-            case "USER": return "MODERATOR";
-            case "VIEWER": return "USER";
-            default: return "ADMINISTRATOR";
-        }
-    }
-
-    export function decrease(permissionLevel: PermissionLevel | undefined): PermissionLevel {
-        switch(permissionLevel) {
-            case "ADMINISTRATOR": return "MODERATOR";
-            case "MODERATOR": return "USER";
-            case "USER": return "VIEWER";
-            default: return "VIEWER";
-        }
-    }
-}
-
 class DefaultPermissionLevelInput extends InputElement<PermissionLevel> {
     private readonly span: HTMLSpanElement;
     private readonly increase: HTMLImageElement;
