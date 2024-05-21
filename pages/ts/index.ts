@@ -1,5 +1,5 @@
 import { loadCustomization } from "./load-customization.js";
-import { Auth, PermissionLevel, RequireNonNull, Response, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
+import { Auth, PermissionLevel, PermissionLevels, RequireNonNull, Response, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
 
 declare function io(): Socket;
 type Event = 'user-online' | 'user-settings' | 'chat-user-join' | 'chat-user-leave' |
@@ -14,7 +14,7 @@ type Socket = {
 
 await loadCustomization();
 
-const userId = new Promise<number>((resolve: (id: number) => void): void => {
+const userId = await new Promise<number>((resolve: (id: number) => void): void => {
     $.ajax({
         url: '/api/settings/id',
         method: 'GET',
@@ -176,40 +176,125 @@ class Chat {
     }
 }
 
+type JsonUser = {
+    id: number;
+    permissionLevel: PermissionLevel;
+};
+
 class User {
     public readonly id: number;
-    
+    private permissionLevel: PermissionLevel;
     public readonly box: HTMLDivElement;
-    
+    public readonly username: HTMLSpanElement;
+    public readonly status: HTMLSpanElement;
+    public readonly pfp: HTMLImageElement;
+    private readonly online: HTMLDivElement;
+    private readonly actions: HTMLDivElement;
+    private readonly at: HTMLImageElement;
 
-    constructor(id: number) {
-        this.id = id;
-        
+    constructor(user: JsonUser, navigator: Navigator) {
+        this.id = user.id;
+        this.permissionLevel = user.permissionLevel;
         this.box = document.createElement('div');
-        this.box.classList.add('box', 'chat');
+        this.box.classList.add('box', 'user');
         this.box.addEventListener('click', (): void => {
-            this.updateSelected(true);
+            navigator.selectChat(this.id);
         });
-        
+        this.username = document.createElement('span');
+        this.username.classList.add('name');
+        this.status = document.createElement('span');
+        this.status.classList.add('description');
+        this.pfp = document.createElement('img');
+        this.pfp.classList.add('logo');
+        this.pfp.alt = 'Logo';
+        this.online = document.createElement('div');
+        this.online.classList.add('read');
+        this.actions = document.createElement('div');
+        this.actions.classList.add('container', 'actions');
+        this.at = document.createElement('img');
+        this.at.classList.add('button');
+        this.at.alt = 'Leave';
+        this.at.src = '/img/leave.svg';
+        this.at.addEventListener('click', (): void => {
+            this.at.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+            //TODO
+        });
+        this.actions.appendChild(this.at);
+        if(this.id == userId) {
+            const settings = document.createElement('img');
+            settings.classList.add('button');
+            settings.alt = 'Settings';
+            settings.src = '/img/settings.svg';
+            settings.addEventListener('click', (): void => {
+                settings.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+                window.location.href = '/settings';
+            });
+            this.actions.appendChild(settings);
+        }
+        this.updateSelected(false);
+        this.updatePermissionLevel(this.permissionLevel);
         $.ajax({
-            url: '/api/users/' + id,
+            url: '/api/users/' + this.id,
             method: 'GET',
             success: (res: Response): void => {
+                this.updateUsernameStatus(res.username, res.status);
+                this.updatePpf(res.pfp);
+                this.updateOnline(res.online);
             },
             statusCode: defaultStatusCode
         });
     }
 
-    appendTo(page: Sidebar): void {
-        
+    appendTo(sidebar: Sidebar): void {
+        const logoMarquee = document.createElement('div');
+        logoMarquee.classList.add('container', 'logo-marquee');
+        const logoRead = document.createElement('div');
+        logoRead.classList.add('logo');
+        logoRead.appendChild(this.pfp);
+        logoRead.appendChild(this.online);
+        const marquee = document.createElement('div');
+        marquee.classList.add('box', 'marquee');
+        marquee.appendChild(this.username);
+        marquee.appendChild(this.status);
+        logoMarquee.appendChild(logoRead);
+        logoMarquee.appendChild(marquee);
+        this.box.appendChild(logoMarquee);
+        this.box.appendChild(this.actions);
+        sidebar.appendChild(this.box);
     }
 
     updateSelected(selected: boolean): void {
-        
+        if(selected) {
+            this.box.classList.add('selected');
+            this.actions.style.display = '';
+        }
+        else {
+            this.box.classList.remove('selected');
+            this.actions.style.display = 'none';
+        }
     }
 
-    updateSettings(permissionLevel: PermissionLevel, name: string, description: string, logo: string): void {
-        
+    updatePermissionLevel(permissionLevel: PermissionLevel): void {
+        this.permissionLevel = permissionLevel;
+        for(const pl of PermissionLevels)
+            this.username.classList.remove('permission-level-' + pl.toLowerCase());
+        this.username.classList.add('permission-level' + permissionLevel.toLowerCase());
+    }
+
+    updateUsernameStatus(username: string, status: string): void {
+        this.username.innerText = username;
+        this.status.innerText = status;
+    }
+
+    updatePpf(pfp: string): void {
+        this.pfp.src = pfp;
+    }
+
+    updateOnline(online: boolean): void {
+        if(online)
+            this.online.classList.replace('offline', 'online');
+        else
+            this.online.classList.replace('online', 'offline');
     }
 }
 

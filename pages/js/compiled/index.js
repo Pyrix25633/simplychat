@@ -1,7 +1,7 @@
 import { loadCustomization } from "./load-customization.js";
-import { Auth, RequireNonNull, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
+import { Auth, PermissionLevels, RequireNonNull, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
 await loadCustomization();
-const userId = new Promise((resolve) => {
+const userId = await new Promise((resolve) => {
     $.ajax({
         url: '/api/settings/id',
         method: 'GET',
@@ -133,26 +133,103 @@ class Chat {
     }
 }
 class User {
-    constructor(id) {
-        this.id = id;
+    constructor(user, navigator) {
+        this.id = user.id;
+        this.permissionLevel = user.permissionLevel;
         this.box = document.createElement('div');
-        this.box.classList.add('box', 'chat');
+        this.box.classList.add('box', 'user');
         this.box.addEventListener('click', () => {
-            this.updateSelected(true);
+            navigator.selectChat(this.id);
         });
+        this.username = document.createElement('span');
+        this.username.classList.add('name');
+        this.status = document.createElement('span');
+        this.status.classList.add('description');
+        this.pfp = document.createElement('img');
+        this.pfp.classList.add('logo');
+        this.pfp.alt = 'Logo';
+        this.online = document.createElement('div');
+        this.online.classList.add('read');
+        this.actions = document.createElement('div');
+        this.actions.classList.add('container', 'actions');
+        this.at = document.createElement('img');
+        this.at.classList.add('button');
+        this.at.alt = 'Leave';
+        this.at.src = '/img/leave.svg';
+        this.at.addEventListener('click', () => {
+            this.at.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+            //TODO
+        });
+        this.actions.appendChild(this.at);
+        if (this.id == userId) {
+            const settings = document.createElement('img');
+            settings.classList.add('button');
+            settings.alt = 'Settings';
+            settings.src = '/img/settings.svg';
+            settings.addEventListener('click', () => {
+                settings.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+                window.location.href = '/settings';
+            });
+            this.actions.appendChild(settings);
+        }
+        this.updateSelected(false);
+        this.updatePermissionLevel(this.permissionLevel);
         $.ajax({
-            url: '/api/users/' + id,
+            url: '/api/users/' + this.id,
             method: 'GET',
             success: (res) => {
+                this.updateUsernameStatus(res.username, res.status);
+                this.updatePpf(res.pfp);
+                this.updateOnline(res.online);
             },
             statusCode: defaultStatusCode
         });
     }
-    appendTo(page) {
+    appendTo(sidebar) {
+        const logoMarquee = document.createElement('div');
+        logoMarquee.classList.add('container', 'logo-marquee');
+        const logoRead = document.createElement('div');
+        logoRead.classList.add('logo');
+        logoRead.appendChild(this.pfp);
+        logoRead.appendChild(this.online);
+        const marquee = document.createElement('div');
+        marquee.classList.add('box', 'marquee');
+        marquee.appendChild(this.username);
+        marquee.appendChild(this.status);
+        logoMarquee.appendChild(logoRead);
+        logoMarquee.appendChild(marquee);
+        this.box.appendChild(logoMarquee);
+        this.box.appendChild(this.actions);
+        sidebar.appendChild(this.box);
     }
     updateSelected(selected) {
+        if (selected) {
+            this.box.classList.add('selected');
+            this.actions.style.display = '';
+        }
+        else {
+            this.box.classList.remove('selected');
+            this.actions.style.display = 'none';
+        }
     }
-    updateSettings(permissionLevel, name, description, logo) {
+    updatePermissionLevel(permissionLevel) {
+        this.permissionLevel = permissionLevel;
+        for (const pl of PermissionLevels)
+            this.username.classList.remove('permission-level-' + pl.toLowerCase());
+        this.username.classList.add('permission-level' + permissionLevel.toLowerCase());
+    }
+    updateUsernameStatus(username, status) {
+        this.username.innerText = username;
+        this.status.innerText = status;
+    }
+    updatePpf(pfp) {
+        this.pfp.src = pfp;
+    }
+    updateOnline(online) {
+        if (online)
+            this.online.classList.replace('offline', 'online');
+        else
+            this.online.classList.replace('online', 'offline');
     }
 }
 class Sidebar {
