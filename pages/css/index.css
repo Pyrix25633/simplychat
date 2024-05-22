@@ -27,6 +27,17 @@ div#loading {
     align-items: center;
     justify-content: center;
 }
+@keyframes rotation {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(359deg);
+    }
+}
+img.loading {
+    animation: rotation 1s infinite cubic-bezier(0.46, 0.03, 0.52, 0.96);
+}
 
 div.logo, div.pfp {
     display: flex;
@@ -40,6 +51,7 @@ div.logo-marquee, div.pfp-marquee {
 div.read, div.unread, div.online, div.offline {
     position: absolute;
     bottom: 0;
+    right: 0;
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -92,11 +104,11 @@ div.sidebar::-webkit-scrollbar-track, div.sidebar::-webkit-scrollbar, div.sideba
     height: 0;
 }
 
-span.user-last-online {
+span.last-online {
     font-size: 10px !important;
-    max-width: 200px;
+    max-width: 220px;
 }
-span.user-status {
+span.status-extended {
     margin-left: 0 !important;
     font-size: 15px !important;
     max-width: 250px;
@@ -188,10 +200,10 @@ div.selected, span.selected {
 }
 
 span.permission-level-administrator {
-    color: var(--color-permission-level-adimistrator);
+    color: var(--color-permission-level-administrator);
 }
 span.permission-level-moderator {
-    color: var(--color-permission-level--moderator);
+    color: var(--color-permission-level-moderator);
 }
 span.permission-level-user {
     color: var(--color-permission-level-user);

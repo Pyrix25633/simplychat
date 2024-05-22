@@ -48,18 +48,16 @@ div.small-gap {
     gap: 2px;
 }
 
-div.read, div.unread, div.online, div.offline {
-    right: 2px;
-}
-
 div.topbar, div.sidebar {
     gap: 5px !important;
 }
 div.chat, div.user, div.sidebar, div.topbar, div.default-permission-level {
     padding: 2px;
 }
-
 div.chat, div.user {
+    gap: 2px;
+}
+div.info {
     gap: 2px;
 }
 

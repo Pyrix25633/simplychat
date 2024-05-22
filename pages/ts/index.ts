@@ -1,5 +1,5 @@
 import { loadCustomization } from "./load-customization.js";
-import { Auth, PermissionLevel, PermissionLevels, RequireNonNull, Response, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
+import { Auth, PermissionLevel, PermissionLevels, RequireNonNull, Response, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions, setDynamicallyUpdatedDate } from "./utils.js";
 
 declare function io(): Socket;
 type Event = 'user-online' | 'user-username-status' | 'user-pfp' |
@@ -43,7 +43,7 @@ type JsonChat = {
 class Chat {
     public readonly id: number;
     private permissionLevel: PermissionLevel;
-    private lastMessageId: number;
+    public lastMessageId: number;
     private lastReadMessageId: number;
     public readonly box: HTMLDivElement;
     public readonly name: HTMLSpanElement;
@@ -83,7 +83,12 @@ class Chat {
         this.leave.src = '/img/leave.svg';
         this.leave.addEventListener('click', (): void => {
             this.leave.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
-            //TODO
+            $.ajax({
+                url: '/api/chats/' + this.id + '/leave',
+                method: 'POST',
+                success: (): void => {},
+                statusCode: defaultStatusCode
+            });
         });
         this.settings = document.createElement('img');
         this.settings.classList.add('button');
@@ -169,7 +174,7 @@ class Chat {
     updateRead(lastMessageId: number, lastReadMessageId: number): void {
         this.lastMessageId = lastMessageId;
         this.lastReadMessageId = lastReadMessageId;
-        if(lastMessageId > lastReadMessageId)
+        if(lastMessageId < lastReadMessageId)
             this.read.classList.replace('unread', 'read');
         else
             this.read.classList.replace('read', 'unread');
@@ -210,10 +215,10 @@ class User {
         this.pfp.classList.add('logo');
         this.pfp.alt = 'Logo';
         this.online = document.createElement('div');
-        this.online.classList.add('read');
+        this.online.classList.add('offline');
         this.info = document.createElement('div');
-        this.info.classList.add('container', 'info');
-        this.lastOnline = document.createElement('div');
+        this.info.classList.add('box', 'info');
+        this.lastOnline = document.createElement('span');
         this.lastOnline.classList.add('last-online');
         this.statusExtended = document.createElement('span');
         this.statusExtended.classList.add('status-extended');
@@ -228,9 +233,9 @@ class User {
             //TODO
         });
         actions.appendChild(this.at);
-        this.info.appendChild(actions);
         this.info.appendChild(this.lastOnline);
         this.info.appendChild(this.statusExtended);
+        this.info.appendChild(actions);
         if(this.id == userId) {
             const settings = document.createElement('img');
             settings.classList.add('button');
@@ -298,7 +303,7 @@ class User {
         this.permissionLevel = permissionLevel;
         for(const pl of PermissionLevels)
             this.username.classList.remove('permission-level-' + pl.toLowerCase());
-        this.username.classList.add('permission-level' + permissionLevel.toLowerCase());
+        this.username.classList.add('permission-level-' + permissionLevel.toLowerCase());
     }
 
     updateUsernameStatus(username: string, status: string): void {
@@ -312,7 +317,7 @@ class User {
     }
 
     updateOnline(online: boolean, lastOnline: string): void {
-        this.lastOnline.innerText = lastOnline;
+        setDynamicallyUpdatedDate(this.lastOnline, new Date(lastOnline), 'Last Online: $');
         if(online) {
             this.online.classList.replace('offline', 'online');
             this.lastOnline.style.display = 'none';
@@ -468,21 +473,27 @@ class Messages {
 
 class Navigator {
     private readonly chats: Map<number, Chat>;
+    public selectedChatId: number;
     private readonly topbar: Topbar;
     private readonly users: Map<number, User>;
     private readonly usersSidebar: Sidebar;
+    private readonly loading: Loading;
 
-    constructor(chats: Map<number, Chat>, topbar: Topbar, users: Map<number, User>, usersSidebar: Sidebar) {
+    constructor(chats: Map<number, Chat>, topbar: Topbar, users: Map<number, User>, usersSidebar: Sidebar, loading: Loading) {
         this.chats = chats;
+        this.selectedChatId = chats.keys().next().value.id;
         this.topbar = topbar;
         this.users = users;
         this.usersSidebar = usersSidebar;
+        this.loading = loading;
     }
 
     selectChat(id: number): void {
         const chat = this.chats.get(id);
         if(chat == undefined)
             return;
+        this.selectedChatId = id;
+        this.loading.show(true);
         this.topbar.update(chat);
         this.users.clear();
         this.usersSidebar.empty();
@@ -502,10 +513,11 @@ class Navigator {
                 });
                 for(const u of res.users) {
                     const user = new User(u, this);
-                    this.chats.set(chat.id, chat);
+                    this.users.set(user.id, user);
                     user.appendTo(this.usersSidebar);
                 }
                 this.selectUser(userId);
+                this.loading.show(false);
             },
             statusCode: defaultStatusCode
         });
@@ -519,12 +531,18 @@ class Navigator {
 
 class Updater {
     private readonly chats: Map<number, Chat>;
+    private readonly chatsSidebar: Sidebar;
     private readonly users: Map<number, User>;
+    private readonly usersSidebar: Sidebar;
     private readonly socket: Socket;
+    private readonly navigator: Navigator;
 
-    constructor(chats: Map<number, Chat>, users: Map<number, User>) {
+    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, users: Map<number, User>, usersSidebar: Sidebar, navigator: Navigator) {
         this.chats = chats;
+        this.chatsSidebar = chatsSidebar;
         this.users = users;
+        this.usersSidebar = usersSidebar;
+        this.navigator = navigator;
         this.socket = io();
         this.socket.on('connect', (data: Data): void => {
             this.socket.emit('connect-main', { auth: Auth.getCookie() });
@@ -549,6 +567,15 @@ class Updater {
             if(user != undefined)
                 user.updatePermissionLevel(data.permissionLevel);
         });
+        this.socket.on('chat-user-leave', (data: Data): void => {
+            if(data.userId == userId) {
+                this.chats.delete(data.chatId);
+
+            }
+            else {
+
+            }
+        });
         this.socket.on('user-online', (data: Data): void => {
             const user = this.users.get(data.id);
             if(user != undefined)
@@ -565,6 +592,37 @@ class Updater {
                 user.updatePpf(data.pfp);
         });
     }
+
+    removeChat(id: number): void {
+        const chat = this.chats.get(id);
+        if(chat == undefined)
+            return;
+        this.chats.delete(id);
+        this.chatsSidebar.removeChild(chat.box);
+        if(this.navigator.selectedChatId == id) {
+            //TODO
+        }
+    }
+
+    reorderChats(modifiedChatId: number): void {
+        const c = Array.from(this.chats.values());
+        c.sort((a: Chat, b: Chat): number => {
+            return a.lastMessageId - b.lastMessageId;
+        });
+        //TODO
+    }
+}
+
+class Loading {
+    private readonly loading: HTMLDivElement;
+
+    constructor() {
+        this.loading = RequireNonNull.getElementById('loading') as HTMLDivElement;
+    }
+
+    show(show: boolean): void {
+        this.loading.style.display = show ? '' : 'none';
+    }
 }
 
 class Page {
@@ -576,6 +634,7 @@ class Page {
     private readonly messages: Messages;
     private readonly users: Map<number, User> = new Map();
     private readonly usersSidebar: Sidebar;
+    private readonly loading: Loading;
     private readonly navigator: Navigator;
     private readonly updater: Updater;
 
@@ -592,8 +651,9 @@ class Page {
         this.chatsSidebar.appendTo(this);
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
-        this.navigator = new Navigator(this.chats, this.topbar, this.users, this.usersSidebar);
-        this.updater = new Updater(this.chats, this.users);
+        this.loading = new Loading();
+        this.navigator = new Navigator(this.chats, this.topbar, this.users, this.usersSidebar, this.loading);
+        this.updater = new Updater(this.chats, this.chatsSidebar, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
             method: 'GET',
@@ -607,6 +667,7 @@ class Page {
                     chat.appendTo(this.chatsSidebar);
                 }
                 this.navigator.selectChat(res.chats[0].id);
+                this.loading.show(true);
             },
             statusCode: defaultStatusCode
         });

@@ -1010,5 +1010,29 @@ paths:
           description: "Forbidden: requesting user is not one of chat's members"
         "404":
           description: "Not Found: no chats found with specified chatId"
+  /chats/{chatId}/leave:
+    get:
+      tags:
+        - chats
+      summary: Removes the user from the chat
+      description: Performed by the user when he wants to leave a chat
+      operationId: chats/[chatId]/leave
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+              $ref: "#/components/schemas/id"
+          required: true
+      responses:
+        "204":
+          description: User succesfully removed
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: requesting user is not one of chat's members"
+        "404":
+          description: "Not Found: no chats found with specified chatId"
 servers:
   - url: https://simplychat.ddns.net/api/

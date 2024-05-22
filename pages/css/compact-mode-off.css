@@ -48,19 +48,17 @@ div.small-gap {
     gap: 5px;
 }
 
-div.read, div.unread, div.online, div.offline {
-    right: 5px;
-}
-
 div.topbar, div.sidebar {
     gap: 5px !important;
 }
 div.chat, div.user, div.sidebar, div.topbar, div.default-permission-level {
     padding: 5px;
 }
-
-div.chat, div.user {
+div.chat, div.user, div.info {
     gap: 3px;
+}
+div.info {
+    gap: 5px;
 }
 
 div.logo-marquee, div.pfp-marquee {

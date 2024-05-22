@@ -1,5 +1,5 @@
 import { loadCustomization } from "./load-customization.js";
-import { Auth, PermissionLevel, PermissionLevels, RequireNonNull, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from "./utils.js";
+import { Auth, PermissionLevel, PermissionLevels, RequireNonNull, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions, setDynamicallyUpdatedDate } from "./utils.js";
 await loadCustomization();
 const userId = await new Promise((resolve) => {
     $.ajax({
@@ -46,7 +46,12 @@ class Chat {
         this.leave.src = '/img/leave.svg';
         this.leave.addEventListener('click', () => {
             this.leave.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
-            //TODO
+            $.ajax({
+                url: '/api/chats/' + this.id + '/leave',
+                method: 'POST',
+                success: () => { },
+                statusCode: defaultStatusCode
+            });
         });
         this.settings = document.createElement('img');
         this.settings.classList.add('button');
@@ -126,7 +131,7 @@ class Chat {
     updateRead(lastMessageId, lastReadMessageId) {
         this.lastMessageId = lastMessageId;
         this.lastReadMessageId = lastReadMessageId;
-        if (lastMessageId > lastReadMessageId)
+        if (lastMessageId < lastReadMessageId)
             this.read.classList.replace('unread', 'read');
         else
             this.read.classList.replace('read', 'unread');
@@ -139,7 +144,7 @@ class User {
         this.box = document.createElement('div');
         this.box.classList.add('box', 'user');
         this.box.addEventListener('click', () => {
-            navigator.selectUser(this.id);
+            navigator.selectUser(this.id); //! FIX
         });
         this.username = document.createElement('span');
         this.username.classList.add('name');
@@ -149,10 +154,10 @@ class User {
         this.pfp.classList.add('logo');
         this.pfp.alt = 'Logo';
         this.online = document.createElement('div');
-        this.online.classList.add('read');
+        this.online.classList.add('offline');
         this.info = document.createElement('div');
-        this.info.classList.add('container', 'info');
-        this.lastOnline = document.createElement('div');
+        this.info.classList.add('box', 'info');
+        this.lastOnline = document.createElement('span');
         this.lastOnline.classList.add('last-online');
         this.statusExtended = document.createElement('span');
         this.statusExtended.classList.add('status-extended');
@@ -167,9 +172,9 @@ class User {
             //TODO
         });
         actions.appendChild(this.at);
-        this.info.appendChild(actions);
         this.info.appendChild(this.lastOnline);
         this.info.appendChild(this.statusExtended);
+        this.info.appendChild(actions);
         if (this.id == userId) {
             const settings = document.createElement('img');
             settings.classList.add('button');
@@ -234,7 +239,7 @@ class User {
         this.permissionLevel = permissionLevel;
         for (const pl of PermissionLevels)
             this.username.classList.remove('permission-level-' + pl.toLowerCase());
-        this.username.classList.add('permission-level' + permissionLevel.toLowerCase());
+        this.username.classList.add('permission-level-' + permissionLevel.toLowerCase());
     }
     updateUsernameStatus(username, status) {
         this.username.innerText = username;
@@ -245,7 +250,7 @@ class User {
         this.pfp.src = pfp;
     }
     updateOnline(online, lastOnline) {
-        this.lastOnline.innerText = lastOnline;
+        setDynamicallyUpdatedDate(this.lastOnline, new Date(lastOnline), 'Last Online: $');
         if (online) {
             this.online.classList.replace('offline', 'online');
             this.lastOnline.style.display = 'none';
@@ -375,16 +380,20 @@ class Messages {
     }
 }
 class Navigator {
-    constructor(chats, topbar, users, usersSidebar) {
+    constructor(chats, topbar, users, usersSidebar, loading) {
         this.chats = chats;
+        this.selectedChatId = chats.keys().next().value.id;
         this.topbar = topbar;
         this.users = users;
         this.usersSidebar = usersSidebar;
+        this.loading = loading;
     }
     selectChat(id) {
         const chat = this.chats.get(id);
         if (chat == undefined)
             return;
+        this.selectedChatId = id;
+        this.loading.show(true);
         this.topbar.update(chat);
         this.users.clear();
         this.usersSidebar.empty();
@@ -406,10 +415,11 @@ class Navigator {
                 });
                 for (const u of res.users) {
                     const user = new User(u, this);
-                    this.chats.set(chat.id, chat);
+                    this.users.set(user.id, user);
                     user.appendTo(this.usersSidebar);
                 }
                 this.selectUser(userId);
+                this.loading.show(false);
             },
             statusCode: defaultStatusCode
         });
@@ -420,9 +430,12 @@ class Navigator {
     }
 }
 class Updater {
-    constructor(chats, users) {
+    constructor(chats, chatsSidebar, users, usersSidebar, navigator) {
         this.chats = chats;
+        this.chatsSidebar = chatsSidebar;
         this.users = users;
+        this.usersSidebar = usersSidebar;
+        this.navigator = navigator;
         this.socket = io();
         this.socket.on('connect', (data) => {
             this.socket.emit('connect-main', { auth: Auth.getCookie() });
@@ -447,6 +460,13 @@ class Updater {
             if (user != undefined)
                 user.updatePermissionLevel(data.permissionLevel);
         });
+        this.socket.on('chat-user-leave', (data) => {
+            if (data.userId == userId) {
+                this.chats.delete(data.chatId);
+            }
+            else {
+            }
+        });
         this.socket.on('user-online', (data) => {
             const user = this.users.get(data.id);
             if (user != undefined)
@@ -462,6 +482,31 @@ class Updater {
             if (user != undefined)
                 user.updatePpf(data.pfp);
         });
+    }
+    removeChat(id) {
+        const chat = this.chats.get(id);
+        if (chat == undefined)
+            return;
+        this.chats.delete(id);
+        this.chatsSidebar.removeChild(chat.box);
+        if (this.navigator.selectedChatId == id) {
+            //TODO
+        }
+    }
+    reorderChats(modifiedChatId) {
+        const c = Array.from(this.chats.values());
+        c.sort((a, b) => {
+            return a.lastMessageId - b.lastMessageId;
+        });
+        //TODO
+    }
+}
+class Loading {
+    constructor() {
+        this.loading = RequireNonNull.getElementById('loading');
+    }
+    show(show) {
+        this.loading.style.display = show ? '' : 'none';
     }
 }
 class Page {
@@ -480,8 +525,9 @@ class Page {
         this.chatsSidebar.appendTo(this);
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
-        this.navigator = new Navigator(this.chats, this.topbar, this.users, this.usersSidebar);
-        this.updater = new Updater(this.chats, this.users);
+        this.loading = new Loading();
+        this.navigator = new Navigator(this.chats, this.topbar, this.users, this.usersSidebar, this.loading);
+        this.updater = new Updater(this.chats, this.chatsSidebar, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
             method: 'GET',
@@ -495,6 +541,7 @@ class Page {
                     chat.appendTo(this.chatsSidebar);
                 }
                 this.navigator.selectChat(res.chats[0].id);
+                this.loading.show(true);
             },
             statusCode: defaultStatusCode
         });

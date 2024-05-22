@@ -151,3 +151,48 @@ export var PermissionLevel;
     }
     PermissionLevel.compare = compare;
 })(PermissionLevel || (PermissionLevel = {}));
+export function setDynamicallyUpdatedDate(span, date, text) {
+    const minute = 60, hour = minute * 60, day = hour * 24;
+    let difference = Math.floor((Date.now() - date.getTime()) / 1000);
+    const seconds = difference % minute;
+    difference -= seconds;
+    const minutes = Math.floor(difference / minute) % 60;
+    difference -= minutes;
+    const hours = Math.floor(difference / hour) % 24;
+    difference -= hours;
+    const days = Math.floor(difference / day);
+    if (days < 7) {
+        let delay = 1000;
+        let readableDate;
+        if (days == 0) {
+            if (hours == 0) {
+                if (minutes == 0)
+                    readableDate = seconds + ' Second' + (seconds == 1 ? '' : 's');
+                else {
+                    readableDate = minutes + ' Minute' + (minutes == 1 ? '' : 's');
+                    delay *= minute;
+                }
+            }
+            else {
+                readableDate = hours + ' Hour' + (hours == 1 ? '' : 's');
+                delay *= hour;
+            }
+        }
+        else {
+            readableDate = days + ' Day' + (days == 1 ? '' : 's');
+            delay *= day;
+        }
+        readableDate += ' ago';
+        span.innerText = text.replace('$', readableDate);
+        if (span.timeout != undefined)
+            clearTimeout(span.timeout);
+        span.timeout = setTimeout(() => {
+            setDynamicallyUpdatedDate(span, date, text);
+        }, delay);
+    }
+    else {
+        if (span.timeout != undefined)
+            clearTimeout(span.timeout);
+        span.innerText = text.replace('$', date.toLocaleString('en-AZ'));
+    }
+}

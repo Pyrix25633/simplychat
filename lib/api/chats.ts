@@ -183,3 +183,18 @@ export async function getChatUsers(req: Request, res: Response): Promise<void> {
         handleException(e, res);
     }
 }
+
+export async function postChatLeave(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        if(!(await doesChatExist(chatId)))
+            throw new NotFound();
+        if(!(await doesUserOnChatExist(partialUser.id, chatId)))
+            throw new Forbidden();
+        await deleteUserOnChat(partialUser.id, chatId);
+        new NoContent().send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
