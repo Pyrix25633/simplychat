@@ -108,8 +108,10 @@ export async function patchChatSettings(req: Request, res: Response): Promise<vo
                 await updateChatLogo(chatId, logo);
             for(const modifiedUser of modifiedUsers)
                 await updateUserOnChatPermissionLevel(modifiedUser.userId, chatId, modifiedUser.permissionLevel);
-            for(const removedUser of removedUsers)
+            for(const removedUser of removedUsers) {
                 await deleteUserOnChat(removedUser, chatId);
+                await createMessage('@' + partialUser.id + ' removed @' + removedUser + '.', (await simplychat).id, chatId);
+            }
             new NoContent().send(res);
         });
     } catch(e: any) {
@@ -192,8 +194,11 @@ export async function postChatLeave(req: Request, res: Response): Promise<void> 
             throw new NotFound();
         if(!(await doesUserOnChatExist(partialUser.id, chatId)))
             throw new Forbidden();
-        await deleteUserOnChat(partialUser.id, chatId);
-        new NoContent().send(res);
+        await prisma.$transaction(async (): Promise<void> => {
+            await deleteUserOnChat(partialUser.id, chatId);
+            await createMessage('@' + partialUser.id + ' left the Chat.', (await simplychat).id, chatId);
+            new NoContent().send(res);
+        });
     } catch(e: any) {
         handleException(e, res);
     }

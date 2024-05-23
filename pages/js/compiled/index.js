@@ -86,7 +86,7 @@ class Chat {
             statusCode: defaultStatusCode
         });
     }
-    appendTo(sidebar) {
+    appendTo(sidebar, position = undefined) {
         const logoMarquee = document.createElement('div');
         logoMarquee.classList.add('container', 'logo-marquee');
         const logoRead = document.createElement('div');
@@ -101,7 +101,7 @@ class Chat {
         logoMarquee.appendChild(marquee);
         this.box.appendChild(logoMarquee);
         this.box.appendChild(this.actions);
-        sidebar.appendChild(this.box);
+        sidebar.insertAtPosition(this.box, position);
     }
     updateSelected(selected) {
         if (selected) {
@@ -208,7 +208,7 @@ class User {
             statusCode: [] //TODO
         });
     }
-    appendTo(sidebar) {
+    appendTo(sidebar, position = undefined) {
         const logoMarquee = document.createElement('div');
         logoMarquee.classList.add('container', 'logo-marquee');
         const logoRead = document.createElement('div');
@@ -223,7 +223,7 @@ class User {
         logoMarquee.appendChild(marquee);
         this.box.appendChild(logoMarquee);
         this.box.appendChild(this.info);
-        sidebar.appendChild(this.box);
+        sidebar.insertAtPosition(this.box, position);
     }
     updateSelected(selected) {
         if (selected) {
@@ -269,8 +269,20 @@ class Sidebar {
     appendChild(node) {
         this.sidebar.appendChild(node);
     }
+    insertAtPosition(node, position = undefined) {
+        if (position == undefined || position == this.getNumberOfChilds() - 1)
+            this.appendChild(node);
+        else
+            this.sidebar.insertBefore(node, this.getNthChild(position + 1));
+    }
     removeChild(node) {
         this.sidebar.removeChild(node);
+    }
+    getNumberOfChilds() {
+        return this.sidebar.childNodes.length;
+    }
+    getNthChild(position) {
+        return this.sidebar.childNodes[position];
     }
     empty() {
         this.sidebar.innerHTML = '';
@@ -382,9 +394,10 @@ class Messages {
 class Navigator {
     constructor(chats, topbar, users, usersSidebar, loading) {
         this.chats = chats;
-        this.selectedChatId = chats.keys().next().value.id;
+        this.selectedChatId = 0;
         this.topbar = topbar;
         this.users = users;
+        this.selectedUserId = 0;
         this.usersSidebar = usersSidebar;
         this.loading = loading;
     }
@@ -425,14 +438,16 @@ class Navigator {
         });
     }
     selectUser(id) {
+        this.selectedUserId = id;
         for (const user of this.users.values())
             user.updateSelected(user.id == id);
     }
 }
 class Updater {
-    constructor(chats, chatsSidebar, users, usersSidebar, navigator) {
+    constructor(chats, chatsSidebar, topbar, users, usersSidebar, navigator) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
+        this.topbar = topbar;
         this.users = users;
         this.usersSidebar = usersSidebar;
         this.navigator = navigator;
@@ -460,12 +475,27 @@ class Updater {
             if (user != undefined)
                 user.updatePermissionLevel(data.permissionLevel);
         });
-        this.socket.on('chat-user-leave', (data) => {
+        this.socket.on('chat-user-join', (data) => {
             if (data.userId == userId) {
-                this.chats.delete(data.chatId);
+                this.addChat({
+                    id: data.chatId,
+                    permissionLevel: data.permissionLevel,
+                    lastMessageId: data.lastMessageId,
+                    lastReadMessageId: data.lastReadMessageId
+                });
             }
-            else {
+            else if (data.chatId == navigator.selectedChatId) {
+                this.addUser({
+                    userId: data.userId,
+                    permissionLevel: data.permissionLevel
+                });
             }
+        });
+        this.socket.on('chat-user-leave', (data) => {
+            if (data.userId == userId)
+                this.removeChat(data.chatId); //TODO: only 1 chat
+            else if (data.chatId == navigator.selectedChatId)
+                this.removeUser(data.userId);
         });
         this.socket.on('user-online', (data) => {
             const user = this.users.get(data.id);
@@ -483,22 +513,48 @@ class Updater {
                 user.updatePpf(data.pfp);
         });
     }
+    addChat(c) {
+        const chat = new Chat(c, this.topbar, this.navigator);
+        this.chats.set(chat.id, chat);
+        const chats = Array.from(this.chats.values());
+        chats.sort((a, b) => {
+            return b.lastMessageId - a.lastMessageId;
+        });
+        chat.appendTo(this.chatsSidebar, chats.indexOf(chat));
+    }
+    addUser(u) {
+        const user = new User(u, this.navigator);
+        this.users.set(user.id, user);
+        const users = Array.from(this.users.values());
+        users.sort((a, b) => {
+            if (a.id == userId)
+                return -1;
+            if (b.id == userId)
+                return 1;
+            const p = PermissionLevel.compare(a.permissionLevel, b.permissionLevel);
+            if (p == 0)
+                return a.id - b.id;
+            return p;
+        });
+        user.appendTo(this.usersSidebar, users.indexOf(user));
+    }
     removeChat(id) {
         const chat = this.chats.get(id);
         if (chat == undefined)
             return;
         this.chats.delete(id);
         this.chatsSidebar.removeChild(chat.box);
-        if (this.navigator.selectedChatId == id) {
-            //TODO
-        }
+        if (this.navigator.selectedChatId == id)
+            this.navigator.selectChat(this.chats.values().next().value.id);
     }
-    reorderChats(modifiedChatId) {
-        const c = Array.from(this.chats.values());
-        c.sort((a, b) => {
-            return a.lastMessageId - b.lastMessageId;
-        });
-        //TODO
+    removeUser(id) {
+        const user = this.users.get(id);
+        if (user == undefined)
+            return;
+        this.users.delete(id);
+        this.usersSidebar.removeChild(user.box);
+        if (this.navigator.selectedUserId == id)
+            this.navigator.selectUser(this.users.values().next().value.id);
     }
 }
 class Loading {
@@ -527,13 +583,13 @@ class Page {
         this.usersSidebar.appendTo(this);
         this.loading = new Loading();
         this.navigator = new Navigator(this.chats, this.topbar, this.users, this.usersSidebar, this.loading);
-        this.updater = new Updater(this.chats, this.chatsSidebar, this.users, this.usersSidebar, this.navigator);
+        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
             method: 'GET',
             success: (res) => {
                 res.chats.sort((a, b) => {
-                    return a.lastMessageId - b.lastMessageId;
+                    return b.lastMessageId - a.lastMessageId;
                 });
                 for (const c of res.chats) {
                     const chat = new Chat(c, this.topbar, this.navigator);

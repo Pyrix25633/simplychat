@@ -1,7 +1,8 @@
 import { Socket } from "socket.io";
 import { validateJsonWebToken } from "./auth";
+import { findLastMessageId } from "./database/message";
 import { findUserToken, updateUserOnline } from "./database/user";
-import { findUserOnChats, findUsersOnChat } from "./database/users-on-chats";
+import { findUserOnChatLastReadMessageId, findUserOnChats, findUsersOnChat } from "./database/users-on-chats";
 import { settings } from "./settings";
 import { databaseStatuses, resourcesStatuses } from "./status";
 import { getNonEmptyString, getObject } from "./validation/type-validation";
@@ -72,6 +73,14 @@ export function notifyAllStatusUsers(event: Event, data: Data): void {
         statusSocket.emit(event, data);
 }
 
+export function notifyMainUser(id: number, event: Event, data: Data): void {
+    const userSockets = mainSockets.get(id);
+    if(userSockets == undefined)
+        return;
+    for(const userSocket of userSockets)
+        userSocket.emit(event, data);
+}
+
 export async function notifyAllUsersOnChat(chatId: number, event: Event, data: Data): Promise<void> {
     if(!settings.dynamicUpdates[event])
         return;
@@ -80,8 +89,16 @@ export async function notifyAllUsersOnChat(chatId: number, event: Event, data: D
         const userSockets = mainSockets.get(userOnChat.userId);
         if(userSockets == undefined)
             continue;
+        let d = data;
+        if(event == 'chat-user-join' && userOnChat.userId == data.userId) {
+            d = {
+                ...data,
+                lastMessageId: await findLastMessageId(chatId),
+                lastReadMessageId: await findUserOnChatLastReadMessageId(data.userId, chatId)
+            };
+        }
         for(const userSocket of userSockets)
-            userSocket.emit(event, data);
+            userSocket.emit(event, d);
     }
 }
 

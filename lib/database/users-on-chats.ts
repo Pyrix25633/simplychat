@@ -1,5 +1,5 @@
 import { PermissionLevel, UsersOnChats } from "@prisma/client";
-import { notifyAllUsersOnChat } from "../socket";
+import { notifyAllUsersOnChat, notifyMainUser } from "../socket";
 import { NotFound, UnprocessableContent } from "../web/response";
 import { prisma } from "./prisma";
 
@@ -123,10 +123,12 @@ export async function deleteUserOnChat(userId: number, chatId: number): Promise<
                 }
             }
         });
-        notifyAllUsersOnChat(chatId, 'chat-user-leave', {
+        const data = {
             chatId: chatId,
             userId: userId
-        });
+        };
+        notifyAllUsersOnChat(chatId, 'chat-user-leave', data);
+        notifyMainUser(userId, 'chat-user-leave', data);
         return userOnChat;
     } catch(_: any) {
         return undefined;
@@ -156,4 +158,21 @@ export async function findUserOnChatPermissionLevel(userId: number, chatId: numb
     if(partialUserOnChat == null)
         throw new NotFound();
     return partialUserOnChat.permissionLevel;
+}
+
+export async function findUserOnChatLastReadMessageId(userId: number, chatId: number): Promise<number> {
+    const partialUserOnChat = await prisma.usersOnChats.findUnique({
+        select: {
+            lastReadMessageId: true
+        },
+        where: {
+            chatId_userId: {
+                chatId: chatId,
+                userId: userId
+            }
+        }
+    });
+    if(partialUserOnChat == null)
+        throw new NotFound();
+    return partialUserOnChat.lastReadMessageId ?? 0;
 }

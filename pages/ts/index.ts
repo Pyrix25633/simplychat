@@ -124,7 +124,7 @@ class Chat {
         });
     }
 
-    appendTo(sidebar: Sidebar): void {
+    appendTo(sidebar: Sidebar, position: number | undefined = undefined): void {
         const logoMarquee = document.createElement('div');
         logoMarquee.classList.add('container', 'logo-marquee');
         const logoRead = document.createElement('div');
@@ -139,7 +139,7 @@ class Chat {
         logoMarquee.appendChild(marquee);
         this.box.appendChild(logoMarquee);
         this.box.appendChild(this.actions);
-        sidebar.appendChild(this.box);
+        sidebar.insertAtPosition(this.box, position);
     }
 
     updateSelected(selected: boolean): void {
@@ -188,7 +188,7 @@ type JsonUser = {
 
 class User {
     public readonly id: number;
-    private permissionLevel: PermissionLevel;
+    public permissionLevel: PermissionLevel;
     public readonly box: HTMLDivElement;
     public readonly username: HTMLSpanElement;
     public readonly status: HTMLSpanElement;
@@ -270,7 +270,7 @@ class User {
         });
     }
 
-    appendTo(sidebar: Sidebar): void {
+    appendTo(sidebar: Sidebar, position: number | undefined = undefined): void {
         const logoMarquee = document.createElement('div');
         logoMarquee.classList.add('container', 'logo-marquee');
         const logoRead = document.createElement('div');
@@ -285,7 +285,7 @@ class User {
         logoMarquee.appendChild(marquee);
         this.box.appendChild(logoMarquee);
         this.box.appendChild(this.info);
-        sidebar.appendChild(this.box);
+        sidebar.insertAtPosition(this.box, position);
     }
 
     updateSelected(selected: boolean): void {
@@ -341,8 +341,23 @@ class Sidebar {
         this.sidebar.appendChild(node);
     }
 
+    insertAtPosition(node: Node, position: number | undefined = undefined): void {
+        if(position == undefined || position == this.getNumberOfChilds() - 1)
+            this.appendChild(node);
+        else
+            this.sidebar.insertBefore(node, this.getNthChild(position + 1));
+    }
+
     removeChild(node: Node): void {
         this.sidebar.removeChild(node);
+    }
+
+    getNumberOfChilds(): number {
+        return this.sidebar.childNodes.length;
+    }
+
+    getNthChild(position: number): Node {
+        return this.sidebar.childNodes[position];
     }
 
     empty(): void {
@@ -476,14 +491,16 @@ class Navigator {
     public selectedChatId: number;
     private readonly topbar: Topbar;
     private readonly users: Map<number, User>;
+    public selectedUserId: number;
     private readonly usersSidebar: Sidebar;
     private readonly loading: Loading;
 
     constructor(chats: Map<number, Chat>, topbar: Topbar, users: Map<number, User>, usersSidebar: Sidebar, loading: Loading) {
         this.chats = chats;
-        this.selectedChatId = chats.keys().next().value.id;
+        this.selectedChatId = 0;
         this.topbar = topbar;
         this.users = users;
+        this.selectedUserId = 0;
         this.usersSidebar = usersSidebar;
         this.loading = loading;
     }
@@ -524,6 +541,7 @@ class Navigator {
     }
 
     selectUser(id: number): void {
+        this.selectedUserId = id;
         for(const user of this.users.values())
             user.updateSelected(user.id == id);
     }
@@ -532,14 +550,16 @@ class Navigator {
 class Updater {
     private readonly chats: Map<number, Chat>;
     private readonly chatsSidebar: Sidebar;
+    private readonly topbar: Topbar;
     private readonly users: Map<number, User>;
     private readonly usersSidebar: Sidebar;
     private readonly socket: Socket;
     private readonly navigator: Navigator;
 
-    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, users: Map<number, User>, usersSidebar: Sidebar, navigator: Navigator) {
+    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, users: Map<number, User>, usersSidebar: Sidebar, navigator: Navigator) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
+        this.topbar = topbar;
         this.users = users;
         this.usersSidebar = usersSidebar;
         this.navigator = navigator;
@@ -567,14 +587,27 @@ class Updater {
             if(user != undefined)
                 user.updatePermissionLevel(data.permissionLevel);
         });
-        this.socket.on('chat-user-leave', (data: Data): void => {
+        this.socket.on('chat-user-join', (data: Data): void => {
             if(data.userId == userId) {
-                this.chats.delete(data.chatId);
-
+                this.addChat({ //! Not working
+                    id: data.chatId,
+                    permissionLevel: data.permissionLevel,
+                    lastMessageId: data.lastMessageId,
+                    lastReadMessageId: data.lastReadMessageId
+                });
             }
-            else {
-
+            else if(data.chatId == navigator.selectedChatId) {
+                this.addUser({
+                    userId: data.userId,
+                    permissionLevel: data.permissionLevel
+                });
             }
+        });
+        this.socket.on('chat-user-leave', (data: Data): void => {
+            if(data.userId == userId)
+                this.removeChat(data.chatId); //TODO: only 1 chat
+            else if(data.chatId == navigator.selectedChatId)
+                this.removeUser(data.userId);
         });
         this.socket.on('user-online', (data: Data): void => {
             const user = this.users.get(data.id);
@@ -593,23 +626,49 @@ class Updater {
         });
     }
 
+    addChat(c: JsonChat): void {
+        const chat = new Chat(c, this.topbar, this.navigator);
+        this.chats.set(chat.id, chat);
+        const chats = Array.from(this.chats.values());
+        chats.sort((a: Chat, b: Chat): number => {
+            return b.lastMessageId - a.lastMessageId;
+        });
+        chat.appendTo(this.chatsSidebar, chats.indexOf(chat));
+    }
+
+    addUser(u: JsonUser): void {
+        const user = new User(u, this.navigator);
+        this.users.set(user.id, user);
+        const users = Array.from(this.users.values());
+        users.sort((a: User, b: User): number => {
+            if(a.id == userId) return -1;
+            if(b.id == userId) return 1;
+            const p = PermissionLevel.compare(a.permissionLevel, b.permissionLevel);
+            if(p == 0)
+                return a.id - b.id;
+            return p;
+        });
+        user.appendTo(this.usersSidebar, users.indexOf(user));
+    }
+
     removeChat(id: number): void {
         const chat = this.chats.get(id);
         if(chat == undefined)
             return;
         this.chats.delete(id);
         this.chatsSidebar.removeChild(chat.box);
-        if(this.navigator.selectedChatId == id) {
-            //TODO
-        }
+        if(this.navigator.selectedChatId == id)
+            this.navigator.selectChat(this.chats.values().next().value.id);
     }
 
-    reorderChats(modifiedChatId: number): void {
-        const c = Array.from(this.chats.values());
-        c.sort((a: Chat, b: Chat): number => {
-            return a.lastMessageId - b.lastMessageId;
-        });
-        //TODO
+    removeUser(id: number): void {
+        const user = this.users.get(id);
+        if(user == undefined)
+            return;
+        this.users.delete(id);
+        this.usersSidebar.removeChild(user.box);
+        if(this.navigator.selectedUserId == id)
+            this.navigator.selectUser(this.users.values().next().value.id);
     }
 }
 
@@ -653,13 +712,13 @@ class Page {
         this.usersSidebar.appendTo(this);
         this.loading = new Loading();
         this.navigator = new Navigator(this.chats, this.topbar, this.users, this.usersSidebar, this.loading);
-        this.updater = new Updater(this.chats, this.chatsSidebar, this.users, this.usersSidebar, this.navigator);
+        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
             method: 'GET',
             success: (res: Response): void => {
                 res.chats.sort((a: JsonChat, b: JsonChat): number => {
-                    return a.lastMessageId - b.lastMessageId;
+                    return b.lastMessageId - a.lastMessageId;
                 });
                 for(const c of res.chats) {
                     const chat = new Chat(c, this.topbar, this.navigator);
