@@ -181,6 +181,44 @@ class Chat {
     }
 }
 
+class NoChats {
+    public readonly box: HTMLDivElement;
+    public readonly name: HTMLSpanElement;
+    public readonly description: HTMLSpanElement;
+    public readonly logo: HTMLImageElement;
+
+    constructor() {
+        this.box = document.createElement('div');
+        this.box.classList.add('box', 'chat', 'selected');
+        this.name = document.createElement('span');
+        this.name.classList.add('name');
+        this.name.innerText = 'No Chats';
+        this.description = document.createElement('span');
+        this.description.classList.add('description');
+        this.description.innerText = 'Create a new Chat!';
+        this.logo = document.createElement('img');
+        this.logo.classList.add('logo');
+        this.logo.alt = 'Logo';
+        this.logo.src = '/img/unknown.svg';
+    }
+
+    appendTo(sidebar: Sidebar): void {
+        const logoMarquee = document.createElement('div');
+        logoMarquee.classList.add('container', 'logo-marquee');
+        const logoRead = document.createElement('div');
+        logoRead.classList.add('logo');
+        logoRead.appendChild(this.logo);
+        const marquee = document.createElement('div');
+        marquee.classList.add('box', 'marquee');
+        marquee.appendChild(this.name);
+        marquee.appendChild(this.description);
+        logoMarquee.appendChild(logoRead);
+        logoMarquee.appendChild(marquee);
+        this.box.appendChild(logoMarquee);
+        sidebar.appendChild(this.box);
+    }
+}
+
 type JsonUser = {
     userId: number;
     permissionLevel: PermissionLevel;
@@ -441,8 +479,9 @@ class Topbar {
         page.appendMain(topbar);
     }
 
-    update(chat: Chat): void {
-        this.id = chat.id;
+    update(chat: Chat | NoChats): void {
+        if(chat instanceof Chat)
+            this.id = chat.id;
         this.name.innerText = chat.name.innerText;
         this.description.innerText = chat.description.innerText;
         this.logo.src = chat.logo.src;
@@ -488,6 +527,8 @@ class Messages {
 
 class Navigator {
     private readonly chats: Map<number, Chat>;
+    private readonly chatsSidebar: Sidebar;
+    private readonly noChats: NoChats;
     public selectedChatId: number;
     private readonly topbar: Topbar;
     private readonly users: Map<number, User>;
@@ -495,8 +536,10 @@ class Navigator {
     private readonly usersSidebar: Sidebar;
     private readonly loading: Loading;
 
-    constructor(chats: Map<number, Chat>, topbar: Topbar, users: Map<number, User>, usersSidebar: Sidebar, loading: Loading) {
+    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, users: Map<number, User>, usersSidebar: Sidebar, loading: Loading) {
         this.chats = chats;
+        this.chatsSidebar = chatsSidebar;
+        this.noChats = new NoChats();
         this.selectedChatId = 0;
         this.topbar = topbar;
         this.users = users;
@@ -534,6 +577,7 @@ class Navigator {
                     user.appendTo(this.usersSidebar);
                 }
                 this.selectUser(userId);
+                reloadAnimations();
                 this.loading.show(false);
             },
             statusCode: defaultStatusCode
@@ -544,6 +588,27 @@ class Navigator {
         this.selectedUserId = id;
         for(const user of this.users.values())
             user.updateSelected(user.id == id);
+    }
+
+    handleZeroChats(): void {
+        if(this.chats.size > 0) {
+            if(this.chats.size < this.chatsSidebar.getNumberOfChilds()) {
+                this.chatsSidebar.removeChild(this.noChats.box);
+                this.selectChat(this.chats.values().next().value.id);
+            }
+        }
+        else {
+            if(this.chatsSidebar.getNumberOfChilds() == 0) {
+                this.noChats.appendTo(this.chatsSidebar);
+                const user = new User({ userId: userId, permissionLevel: "USER" }, this);
+                this.usersSidebar.empty();
+                user.appendTo(this.usersSidebar);
+                user.updateSelected(true);
+                this.topbar.update(this.noChats);
+                reloadAnimations();
+                this.loading.show(false);
+            }
+        }
     }
 }
 
@@ -589,7 +654,7 @@ class Updater {
         });
         this.socket.on('chat-user-join', (data: Data): void => {
             if(data.userId == userId) {
-                this.addChat({ //! Not working
+                this.addChat({
                     id: data.chatId,
                     permissionLevel: data.permissionLevel,
                     lastMessageId: data.lastMessageId,
@@ -634,6 +699,7 @@ class Updater {
             return b.lastMessageId - a.lastMessageId;
         });
         chat.appendTo(this.chatsSidebar, chats.indexOf(chat));
+        this.navigator.handleZeroChats();
     }
 
     addUser(u: JsonUser): void {
@@ -657,8 +723,9 @@ class Updater {
             return;
         this.chats.delete(id);
         this.chatsSidebar.removeChild(chat.box);
-        if(this.navigator.selectedChatId == id)
+        if(this.navigator.selectedChatId == id && this.chats.size > 0)
             this.navigator.selectChat(this.chats.values().next().value.id);
+        this.navigator.handleZeroChats();
     }
 
     removeUser(id: number): void {
@@ -670,6 +737,8 @@ class Updater {
         if(this.navigator.selectedUserId == id)
             this.navigator.selectUser(this.users.values().next().value.id);
     }
+
+    
 }
 
 class Loading {
@@ -711,7 +780,8 @@ class Page {
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
         this.loading = new Loading();
-        this.navigator = new Navigator(this.chats, this.topbar, this.users, this.usersSidebar, this.loading);
+        this.loading.show(true);
+        this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.loading);
         this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
@@ -725,8 +795,10 @@ class Page {
                     this.chats.set(chat.id, chat);
                     chat.appendTo(this.chatsSidebar);
                 }
-                this.navigator.selectChat(res.chats[0].id);
-                this.loading.show(true);
+                if(res.chats.length > 0)
+                    this.navigator.selectChat(res.chats[0].id);
+                else
+                    this.navigator.handleZeroChats();
             },
             statusCode: defaultStatusCode
         });

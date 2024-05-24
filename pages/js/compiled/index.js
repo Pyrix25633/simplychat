@@ -137,6 +137,37 @@ class Chat {
             this.read.classList.replace('read', 'unread');
     }
 }
+class NoChats {
+    constructor() {
+        this.box = document.createElement('div');
+        this.box.classList.add('box', 'chat', 'selected');
+        this.name = document.createElement('span');
+        this.name.classList.add('name');
+        this.name.innerText = 'No Chats';
+        this.description = document.createElement('span');
+        this.description.classList.add('description');
+        this.description.innerText = 'Create a new Chat!';
+        this.logo = document.createElement('img');
+        this.logo.classList.add('logo');
+        this.logo.alt = 'Logo';
+        this.logo.src = '/img/unknown.svg';
+    }
+    appendTo(sidebar) {
+        const logoMarquee = document.createElement('div');
+        logoMarquee.classList.add('container', 'logo-marquee');
+        const logoRead = document.createElement('div');
+        logoRead.classList.add('logo');
+        logoRead.appendChild(this.logo);
+        const marquee = document.createElement('div');
+        marquee.classList.add('box', 'marquee');
+        marquee.appendChild(this.name);
+        marquee.appendChild(this.description);
+        logoMarquee.appendChild(logoRead);
+        logoMarquee.appendChild(marquee);
+        this.box.appendChild(logoMarquee);
+        sidebar.appendChild(this.box);
+    }
+}
 class User {
     constructor(user, navigator) {
         this.id = user.userId;
@@ -353,7 +384,8 @@ class Topbar {
         page.appendMain(topbar);
     }
     update(chat) {
-        this.id = chat.id;
+        if (chat instanceof Chat)
+            this.id = chat.id;
         this.name.innerText = chat.name.innerText;
         this.description.innerText = chat.description.innerText;
         this.logo.src = chat.logo.src;
@@ -392,8 +424,10 @@ class Messages {
     }
 }
 class Navigator {
-    constructor(chats, topbar, users, usersSidebar, loading) {
+    constructor(chats, chatsSidebar, topbar, users, usersSidebar, loading) {
         this.chats = chats;
+        this.chatsSidebar = chatsSidebar;
+        this.noChats = new NoChats();
         this.selectedChatId = 0;
         this.topbar = topbar;
         this.users = users;
@@ -432,6 +466,7 @@ class Navigator {
                     user.appendTo(this.usersSidebar);
                 }
                 this.selectUser(userId);
+                reloadAnimations();
                 this.loading.show(false);
             },
             statusCode: defaultStatusCode
@@ -441,6 +476,26 @@ class Navigator {
         this.selectedUserId = id;
         for (const user of this.users.values())
             user.updateSelected(user.id == id);
+    }
+    handleZeroChats() {
+        if (this.chats.size > 0) {
+            if (this.chats.size < this.chatsSidebar.getNumberOfChilds()) {
+                this.chatsSidebar.removeChild(this.noChats.box);
+                this.selectChat(this.chats.values().next().value.id);
+            }
+        }
+        else {
+            if (this.chatsSidebar.getNumberOfChilds() == 0) {
+                this.noChats.appendTo(this.chatsSidebar);
+                const user = new User({ userId: userId, permissionLevel: "USER" }, this);
+                this.usersSidebar.empty();
+                user.appendTo(this.usersSidebar);
+                user.updateSelected(true);
+                this.topbar.update(this.noChats);
+                reloadAnimations();
+                this.loading.show(false);
+            }
+        }
     }
 }
 class Updater {
@@ -521,6 +576,7 @@ class Updater {
             return b.lastMessageId - a.lastMessageId;
         });
         chat.appendTo(this.chatsSidebar, chats.indexOf(chat));
+        this.navigator.handleZeroChats();
     }
     addUser(u) {
         const user = new User(u, this.navigator);
@@ -544,8 +600,9 @@ class Updater {
             return;
         this.chats.delete(id);
         this.chatsSidebar.removeChild(chat.box);
-        if (this.navigator.selectedChatId == id)
+        if (this.navigator.selectedChatId == id && this.chats.size > 0)
             this.navigator.selectChat(this.chats.values().next().value.id);
+        this.navigator.handleZeroChats();
     }
     removeUser(id) {
         const user = this.users.get(id);
@@ -582,7 +639,8 @@ class Page {
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
         this.loading = new Loading();
-        this.navigator = new Navigator(this.chats, this.topbar, this.users, this.usersSidebar, this.loading);
+        this.loading.show(true);
+        this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.loading);
         this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
@@ -596,8 +654,10 @@ class Page {
                     this.chats.set(chat.id, chat);
                     chat.appendTo(this.chatsSidebar);
                 }
-                this.navigator.selectChat(res.chats[0].id);
-                this.loading.show(true);
+                if (res.chats.length > 0)
+                    this.navigator.selectChat(res.chats[0].id);
+                else
+                    this.navigator.handleZeroChats();
             },
             statusCode: defaultStatusCode
         });
