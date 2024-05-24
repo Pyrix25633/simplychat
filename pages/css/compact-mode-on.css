@@ -96,12 +96,14 @@ div.unread-messages span {
 
 div.textarea {
     margin: 2px 0;
+    gap: 2px;
 }
-
 textarea {
     padding: 2px;
 }
-
+div.actions-counter {
+    gap: 2px;
+}
 div.emoji-selector {
     gap: 2px;
     padding: 2px;

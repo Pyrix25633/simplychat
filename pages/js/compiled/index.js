@@ -1,3 +1,4 @@
+import { emojis } from "./emoji.js";
 import { loadCustomization } from "./load-customization.js";
 import { Auth, PermissionLevel, PermissionLevels, RequireNonNull, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions, setDynamicallyUpdatedDate } from "./utils.js";
 await loadCustomization();
@@ -419,8 +420,114 @@ class Topbar {
 }
 class Messages {
     constructor() {
+        this.messages = document.createElement('div');
+        this.messages.classList.add('box', 'messages');
     }
     appendTo(page) {
+        page.appendMain(this.messages);
+    }
+}
+class Textarea {
+    constructor() {
+        this.max = 2048;
+        this.emojiSelectorVisible = false;
+        this.textarea = document.createElement('textarea');
+        this.textarea.autocapitalize = 'none';
+        this.textarea.spellcheck = false;
+        this.textarea.rows = 2;
+        this.textarea.addEventListener('keydown', (ev) => {
+            this.updateTextarea(ev);
+        });
+        this.textarea.addEventListener('keyup', (ev) => {
+            this.updateTextarea(ev);
+        });
+        this.send = document.createElement('img');
+        this.send.classList.add('button');
+        this.send.alt = 'Send';
+        this.send.src = '/img/send.svg';
+        this.send.addEventListener('click', () => {
+            this.sendMessage();
+        });
+        this.emoji = document.createElement('img');
+        this.emoji.classList.add('button');
+        this.emoji.alt = 'Emoji';
+        this.emoji.src = '/img/emoji.svg';
+        this.emoji.addEventListener('click', () => {
+            this.emoji.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+            this.showEmojiSelector(!this.emojiSelectorVisible);
+        });
+        this.counter = document.createElement('span');
+        this.counter.classList.add('counter');
+        this.updateCounter(0);
+        this.emojiSelector = document.createElement('div');
+        this.emojiSelector.classList.add('box', 'emoji-selector');
+        for (const e of emojis) {
+            const span = document.createElement('span');
+            span.classList.add('emoji');
+            span.innerText = e;
+            span.addEventListener('click', () => {
+                this.updateTextarea(e);
+            });
+            this.emojiSelector.appendChild(span);
+        }
+        this.showEmojiSelector(false);
+    }
+    appendTo(page) {
+        const container = document.createElement('div');
+        container.classList.add('container', 'textarea');
+        const actionsCounter = document.createElement('div');
+        actionsCounter.classList.add('box', 'actions-counter');
+        const actions = document.createElement('div');
+        actions.classList.add('container', 'actions');
+        actions.appendChild(this.send);
+        actions.appendChild(this.emoji);
+        actionsCounter.appendChild(actions);
+        actionsCounter.appendChild(this.counter);
+        actionsCounter.appendChild(this.emojiSelector);
+        container.appendChild(this.textarea);
+        container.appendChild(actionsCounter);
+        page.appendMain(container);
+    }
+    updateTextarea(ev) {
+        if (typeof ev == 'string')
+            this.textarea.value += ev;
+        let message = '';
+        for (const line of this.textarea.value.split('\n'))
+            message += line.trim() + '\n';
+        message = message.trim();
+        const chars = message.length;
+        const lines = this.textarea.value.split('\n').length;
+        this.updateCounter(chars);
+        this.textarea.rows = lines < 2 ? 2 : (lines > 6 ? 6 : lines);
+        if (typeof ev != 'string' && ev.code == 'Enter' && !ev.shiftKey && ev.type == 'keydown') {
+            if (ev.type == 'keydown')
+                this.sendMessage();
+            else
+                this.textarea.value = '';
+        }
+    }
+    updateCounter(count) {
+        this.counter.innerText = count + '/' + this.max;
+        if (count > this.max)
+            this.counter.classList.add('error');
+        else
+            this.counter.classList.remove('error');
+    }
+    showEmojiSelector(show) {
+        this.emojiSelectorVisible = show;
+        this.emojiSelector.style.display = show ? '' : 'none';
+    }
+    sendMessage() {
+        this.send.animate([
+            { transform: 'rotate(0deg)', offset: 0 },
+            { transform: 'rotate(-90deg)', offset: 0.2 },
+            { transform: 'translate(0, -10px) rotate(-90deg)', offset: 0.3 },
+            { transform: 'translate(0, -10px) rotate(-270deg)', offset: 0.6 },
+            { transform: 'translate(0, 0) rotate(-270deg)', offset: 0.9 },
+            { transform: 'rotate(0deg)', offset: 1 }
+        ], { duration: 700 });
+        //TODO
+        this.textarea.value = '';
     }
 }
 class Navigator {
@@ -626,20 +733,22 @@ class Page {
     constructor() {
         this.chats = new Map();
         this.users = new Map();
+        this.loading = new Loading();
+        this.loading.show(true);
         this.page = RequireNonNull.getElementById('page');
         this.chatsSidebar = new Sidebar();
         this.main = document.createElement('div');
-        this.main.classList.add('main');
+        this.main.classList.add('box', 'main');
         this.usersSidebar = new Sidebar();
         this.topbar = new Topbar(this.chatsSidebar, this.usersSidebar);
         this.messages = new Messages();
+        this.textarea = new Textarea();
         this.topbar.appendTo(this);
         this.messages.appendTo(this);
+        this.textarea.appendTo(this);
         this.chatsSidebar.appendTo(this);
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
-        this.loading = new Loading();
-        this.loading.show(true);
         this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.loading);
         this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.navigator);
         $.ajax({
