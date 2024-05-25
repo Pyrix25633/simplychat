@@ -91,7 +91,7 @@ export async function postLoginTfa(req: Request, res: Response): Promise<void> {
     }
 }
 
-export async function validateToken<T extends { token: string; }>(req: Request, findFunction: FindFunction<T> = findUserToken as FindFunction<T>): Promise<T & { id: number; sessionExpiration: number; }> {
+export async function validateToken<T extends { token: string; }>(req: Request, findFunction: FindFunction<T> = findUserToken as FindFunction<T>): Promise<T & { id: number; sessionExpiration: Date; }> {
     const authToken: string | undefined = req.cookies[settings.jwt.cookieName];
     if(authToken == undefined)
         throw new Unauthorized();

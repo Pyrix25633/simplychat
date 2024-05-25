@@ -170,13 +170,13 @@ class NoChats {
     }
 }
 class User {
-    constructor(user, navigator) {
+    constructor(user, navigator, textarea) {
         this.id = user.userId;
         this.permissionLevel = user.permissionLevel;
         this.box = document.createElement('div');
         this.box.classList.add('box', 'user');
         this.box.addEventListener('click', () => {
-            navigator.selectUser(this.id); //! FIX
+            navigator.selectUser(this.id);
         });
         this.username = document.createElement('span');
         this.username.classList.add('name');
@@ -201,7 +201,7 @@ class User {
         this.at.src = '/img/at.svg';
         this.at.addEventListener('click', () => {
             this.at.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
-            //TODO
+            textarea.atUser(this.id);
         });
         actions.appendChild(this.at);
         this.info.appendChild(this.lastOnline);
@@ -237,7 +237,7 @@ class User {
                 this.updatePpf(res.pfp);
                 this.updateOnline(res.online, res.lastOnline);
             },
-            statusCode: [] //TODO
+            statusCode: defaultStatusCode
         });
     }
     appendTo(sidebar, position = undefined) {
@@ -418,13 +418,64 @@ class Topbar {
         }
     }
 }
+class Message {
+    constructor(message) {
+        this.id = message.id;
+        this.userId = message.userId;
+        this.box = document.createElement('div');
+        this.box.classList.add('box', 'message');
+        this.pfp = document.createElement('img');
+        this.pfp.classList.add('message-pfp');
+        this.username = document.createElement('span');
+        this.username.classList.add('message-username');
+        this.createdAt = document.createElement('span');
+        this.createdAt.classList.add('message-meta');
+        setDynamicallyUpdatedDate(this.createdAt, new Date(message.createdAt));
+        this.editedAt = document.createElement('span');
+        this.editedAt.classList.add('message-meta');
+        this.deletedAt = document.createElement('span');
+        this.deletedAt.classList.add('message-meta');
+        this.message = document.createElement('span');
+        this.message.classList.add('message');
+        this.update(message.message, message.editedAt, message.deletedAt);
+        this.actions = document.createElement('div');
+        this.actions.classList.add('container', 'actions');
+        this.edit = document.createElement('img');
+        this.edit.classList.add('button');
+        this.edit.alt = 'Edit';
+        this.edit.src = '/img/edit.svg';
+        this.edit.addEventListener('click', () => {
+            this.edit.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+            //TODO
+        });
+        this.delete = document.createElement('img');
+        this.delete.classList.add('button');
+        this.delete.alt = 'Delete';
+        this.delete.src = '/img/delete.svg';
+        this.delete.addEventListener('click', () => {
+            this.delete.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+            //TODO
+        });
+    }
+    appendTo(messages) {
+        //TODO
+    }
+    update(message, editedAt, deletedAt) {
+        this.message.innerText = message; //TODO
+        if (editedAt != null)
+            setDynamicallyUpdatedDate(this.editedAt, new Date(editedAt));
+        if (deletedAt != null)
+            setDynamicallyUpdatedDate(this.deletedAt, new Date(deletedAt));
+    }
+}
 class Messages {
     constructor() {
-        this.messages = document.createElement('div');
-        this.messages.classList.add('box', 'messages');
+        this.messages = new Map();
+        this.box = document.createElement('div');
+        this.box.classList.add('box', 'messages');
     }
     appendTo(page) {
-        page.appendMain(this.messages);
+        page.appendMain(this.box);
     }
 }
 class Textarea {
@@ -506,6 +557,14 @@ class Textarea {
                 this.textarea.value = '';
         }
     }
+    atUser(id) {
+        if (this.textarea.value != '') {
+            const lastChar = this.textarea.value[this.textarea.value.length - 1];
+            if (lastChar != ' ' && lastChar != '\n')
+                this.textarea.value += ' ';
+        }
+        this.textarea.value += '@' + id;
+    }
     updateCounter(count) {
         this.counter.innerText = count + '/' + this.max;
         if (count > this.max)
@@ -531,12 +590,13 @@ class Textarea {
     }
 }
 class Navigator {
-    constructor(chats, chatsSidebar, topbar, users, usersSidebar, loading) {
+    constructor(chats, chatsSidebar, topbar, textarea, users, usersSidebar, loading) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
         this.noChats = new NoChats();
         this.selectedChatId = 0;
         this.topbar = topbar;
+        this.textarea = textarea;
         this.users = users;
         this.selectedUserId = 0;
         this.usersSidebar = usersSidebar;
@@ -568,7 +628,7 @@ class Navigator {
                     return p;
                 });
                 for (const u of res.users) {
-                    const user = new User(u, this);
+                    const user = new User(u, this, this.textarea);
                     this.users.set(user.id, user);
                     user.appendTo(this.usersSidebar);
                 }
@@ -594,7 +654,7 @@ class Navigator {
         else {
             if (this.chatsSidebar.getNumberOfChilds() == 0) {
                 this.noChats.appendTo(this.chatsSidebar);
-                const user = new User({ userId: userId, permissionLevel: "USER" }, this);
+                const user = new User({ userId: userId, permissionLevel: "USER" }, this, this.textarea);
                 this.usersSidebar.empty();
                 user.appendTo(this.usersSidebar);
                 user.updateSelected(true);
@@ -606,10 +666,11 @@ class Navigator {
     }
 }
 class Updater {
-    constructor(chats, chatsSidebar, topbar, users, usersSidebar, navigator) {
+    constructor(chats, chatsSidebar, topbar, textarea, users, usersSidebar, navigator) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
         this.topbar = topbar;
+        this.textarea = textarea;
         this.users = users;
         this.usersSidebar = usersSidebar;
         this.navigator = navigator;
@@ -686,7 +747,7 @@ class Updater {
         this.navigator.handleZeroChats();
     }
     addUser(u) {
-        const user = new User(u, this.navigator);
+        const user = new User(u, this.navigator, this.textarea);
         this.users.set(user.id, user);
         const users = Array.from(this.users.values());
         users.sort((a, b) => {
@@ -749,8 +810,8 @@ class Page {
         this.chatsSidebar.appendTo(this);
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
-        this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.loading);
-        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.navigator);
+        this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.textarea, this.users, this.usersSidebar, this.loading);
+        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.textarea, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
             method: 'GET',

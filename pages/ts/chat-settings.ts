@@ -330,7 +330,7 @@ class ChatSettingsForm extends StructuredForm {
         nameInput.precompile(res.name);
         descriptionInput.precompile(res.description);
         chatToken.token = res.token;
-        tokenExpirationInput.precompile(res.tokenExpiration);
+        tokenExpirationInput.precompile(new Date(res.tokenExpiration).toLocaleDateString('en-ZA'));
         defaultPermissionLevelInput.set(res.defaultPermissionLevel);
         for(const user of res.users)
             usersInput.add(user);

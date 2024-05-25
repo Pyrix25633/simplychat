@@ -1,7 +1,7 @@
 import { PermissionLevel } from "@prisma/client";
 import { Request, Response } from "express";
 import { createChat, doesChatExist, findChat, findChatInfo, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
-import { createMessage, findLastMessageId } from "../database/message";
+import { createMessage, findLast16Messages, findLastMessageId } from "../database/message";
 import { prisma, simplychat } from "../database/prisma";
 import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
 import { generateChatToken } from "../random";
@@ -76,7 +76,7 @@ export async function getChatSettings(req: Request, res: Response): Promise<void
             name: chat.name,
             description: chat.description,
             token: chat.token,
-            tokenExpiration: chat.tokenExpiration != null ? chat.tokenExpiration.toLocaleDateString('en-ZA') : null,
+            tokenExpiration: chat.tokenExpiration,
             defaultPermissionLevel: chat.defaultPermissionLevel,
             logo: chat.logo.toString(),
             users: await findUsersOnChatExcept(chatId, partialUser.id)
@@ -199,6 +199,42 @@ export async function postChatLeave(req: Request, res: Response): Promise<void> 
             await createMessage('@' + partialUser.id + ' left the Chat.', (await simplychat).id, chatId);
             new NoContent().send(res);
         });
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function getChatMessages(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        const beforeMessageId = getOrUndefined(req.query.beforeMessageId, getInt);
+        if(!(await doesChatExist(chatId)))
+            throw new NotFound();
+        if(!(await doesUserOnChatExist(partialUser.id, chatId)))
+            throw new Forbidden();
+        const messages = await findLast16Messages(chatId, beforeMessageId);
+        const response: {
+            id: number;
+            createdAt: Date; 
+            editedAt: Date | null;
+            deletedAt: Date | null;
+            message: string;
+            userId: number;
+        }[] = [];
+        for(const message of messages) {
+            response.push({
+                id: message.id,
+                createdAt: message.createdAt,
+                editedAt: message.editedAt,
+                deletedAt: message.deletedAt,
+                message: message.message.toString(),
+                userId: message.userId
+            });
+        }
+        new Ok({
+            messages: response
+        }).send(res);
     } catch(e: any) {
         handleException(e, res);
     }

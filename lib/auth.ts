@@ -9,10 +9,10 @@ export type AuthTokenPayload = {
 
 export type FindFunction<R> = (id: number) => Promise<R>;
 
-export async function validateJsonWebToken<T extends { token: string; }>(authToken: string, findFunction: FindFunction<T>): Promise<T & { id: number; sessionExpiration: number; }> {
+export async function validateJsonWebToken<T extends { token: string; }>(authToken: string, findFunction: FindFunction<T>): Promise<T & { id: number; sessionExpiration: Date; }> {
     const payload = jwt.verify(authToken, settings.jwt.password) as AuthTokenPayload & { exp: number; };
     const partialUser = await findFunction(payload.userId);
     if(payload.token != partialUser.token)
         throw new Unauthorized();
-    return { id: payload.userId, sessionExpiration: payload.exp, ...partialUser };
+    return { id: payload.userId, sessionExpiration: new Date(payload.exp * 1000), ...partialUser };
 }

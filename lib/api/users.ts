@@ -13,7 +13,7 @@ export async function getUser(req: Request, res: Response): Promise<void> {
             username: userInfo.username,
             status: userInfo.status,
             online: userInfo.online,
-            lastOnline: userInfo.lastOnline.toLocaleString('en-AZ'),
+            lastOnline: userInfo.lastOnline,
             pfp: userInfo.pfp.toString()
         }).send(res);
     } catch(e: any) {

@@ -238,13 +238,13 @@ class User {
     private readonly statusExtended: HTMLSpanElement;
     private readonly at: HTMLImageElement;
 
-    constructor(user: JsonUser, navigator: Navigator) {
+    constructor(user: JsonUser, navigator: Navigator, textarea: Textarea) {
         this.id = user.userId;
         this.permissionLevel = user.permissionLevel;
         this.box = document.createElement('div');
         this.box.classList.add('box', 'user');
         this.box.addEventListener('click', (): void => {
-            navigator.selectUser(this.id); //! FIX
+            navigator.selectUser(this.id);
         });
         this.username = document.createElement('span');
         this.username.classList.add('name');
@@ -269,7 +269,7 @@ class User {
         this.at.src = '/img/at.svg';
         this.at.addEventListener('click', (): void => {
             this.at.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
-            //TODO
+            textarea.atUser(this.id);
         });
         actions.appendChild(this.at);
         this.info.appendChild(this.lastOnline);
@@ -305,7 +305,7 @@ class User {
                 this.updatePpf(res.pfp);
                 this.updateOnline(res.online, res.lastOnline);
             },
-            statusCode: [] //TODO
+            statusCode: defaultStatusCode
         });
     }
 
@@ -516,16 +516,92 @@ class Topbar {
     }
 }
 
+type JsonMessage = {
+    id: number;
+    createdAt: string;
+    editedAt: string | null;
+    deletedAt: string | null;
+    message: string;
+    userId: number;
+};
+
+class Message {
+    private readonly id: number;
+    private readonly userId: number;
+    private readonly box: HTMLDivElement;
+    private readonly pfp: HTMLImageElement;
+    private readonly username: HTMLSpanElement;
+    private readonly createdAt: HTMLSpanElement;
+    private readonly editedAt: HTMLSpanElement;
+    private readonly deletedAt: HTMLSpanElement;
+    private readonly message: HTMLSpanElement;
+    private readonly actions: HTMLDivElement;
+    private readonly edit: HTMLImageElement;
+    private readonly delete: HTMLImageElement;
+
+    constructor(message: JsonMessage) {
+        this.id = message.id;
+        this.userId = message.userId;
+        this.box = document.createElement('div');
+        this.box.classList.add('box', 'message');
+        this.pfp = document.createElement('img');
+        this.pfp.classList.add('message-pfp');
+        this.username = document.createElement('span');
+        this.username.classList.add('message-username');
+        this.createdAt = document.createElement('span');
+        this.createdAt.classList.add('message-meta');
+        setDynamicallyUpdatedDate(this.createdAt, new Date(message.createdAt));
+        this.editedAt = document.createElement('span');
+        this.editedAt.classList.add('message-meta');
+        this.deletedAt = document.createElement('span');
+        this.deletedAt.classList.add('message-meta');
+        this.message = document.createElement('span');
+        this.message.classList.add('message');
+        this.update(message.message, message.editedAt, message.deletedAt);
+        this.actions = document.createElement('div');
+        this.actions.classList.add('container', 'actions');
+        this.edit = document.createElement('img');
+        this.edit.classList.add('button');
+        this.edit.alt = 'Edit';
+        this.edit.src = '/img/edit.svg';
+        this.edit.addEventListener('click', (): void => {
+            this.edit.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+            //TODO
+        });
+        this.delete = document.createElement('img');
+        this.delete.classList.add('button');
+        this.delete.alt = 'Delete';
+        this.delete.src = '/img/delete.svg';
+        this.delete.addEventListener('click', (): void => {
+            this.delete.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+            //TODO
+        });
+    }
+
+    appendTo(messages: Messages): void {
+        //TODO
+    }
+
+    update(message: string, editedAt: string | null, deletedAt: string | null): void {
+        this.message.innerText = message; //TODO
+        if(editedAt != null)
+            setDynamicallyUpdatedDate(this.editedAt, new Date(editedAt));
+        if(deletedAt != null)
+            setDynamicallyUpdatedDate(this.deletedAt, new Date(deletedAt));
+    }
+}
+
 class Messages {
-    private readonly messages: HTMLDivElement;
+    private readonly box: HTMLDivElement;
+    private readonly messages: Map<number, Message> = new Map();
 
     constructor() {
-        this.messages = document.createElement('div');
-        this.messages.classList.add('box', 'messages');
+        this.box = document.createElement('div');
+        this.box.classList.add('box', 'messages');
     }
 
     appendTo(page: Page): void {
-        page.appendMain(this.messages);
+        page.appendMain(this.box);
     }
 }
 
@@ -617,6 +693,15 @@ class Textarea {
         }
     }
 
+    atUser(id: number): void {
+        if(this.textarea.value != '') {
+            const lastChar = this.textarea.value[this.textarea.value.length - 1];
+            if(lastChar != ' ' && lastChar != '\n')
+                this.textarea.value += ' ';
+        }
+        this.textarea.value += '@' + id;
+    }
+
     updateCounter(count: number): void {
         this.counter.innerText = count + '/' + this.max;
         if(count > this.max)
@@ -650,17 +735,19 @@ class Navigator {
     private readonly noChats: NoChats;
     public selectedChatId: number;
     private readonly topbar: Topbar;
+    private readonly textarea: Textarea;
     private readonly users: Map<number, User>;
     public selectedUserId: number;
     private readonly usersSidebar: Sidebar;
     private readonly loading: Loading;
 
-    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, users: Map<number, User>, usersSidebar: Sidebar, loading: Loading) {
+    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, textarea: Textarea, users: Map<number, User>, usersSidebar: Sidebar, loading: Loading) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
         this.noChats = new NoChats();
         this.selectedChatId = 0;
         this.topbar = topbar;
+        this.textarea = textarea;
         this.users = users;
         this.selectedUserId = 0;
         this.usersSidebar = usersSidebar;
@@ -691,7 +778,7 @@ class Navigator {
                     return p;
                 });
                 for(const u of res.users) {
-                    const user = new User(u, this);
+                    const user = new User(u, this, this.textarea);
                     this.users.set(user.id, user);
                     user.appendTo(this.usersSidebar);
                 }
@@ -719,7 +806,7 @@ class Navigator {
         else {
             if(this.chatsSidebar.getNumberOfChilds() == 0) {
                 this.noChats.appendTo(this.chatsSidebar);
-                const user = new User({ userId: userId, permissionLevel: "USER" }, this);
+                const user = new User({ userId: userId, permissionLevel: "USER" }, this, this.textarea);
                 this.usersSidebar.empty();
                 user.appendTo(this.usersSidebar);
                 user.updateSelected(true);
@@ -735,15 +822,17 @@ class Updater {
     private readonly chats: Map<number, Chat>;
     private readonly chatsSidebar: Sidebar;
     private readonly topbar: Topbar;
+    private readonly textarea: Textarea;
     private readonly users: Map<number, User>;
     private readonly usersSidebar: Sidebar;
     private readonly socket: Socket;
     private readonly navigator: Navigator;
 
-    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, users: Map<number, User>, usersSidebar: Sidebar, navigator: Navigator) {
+    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, textarea: Textarea, users: Map<number, User>, usersSidebar: Sidebar, navigator: Navigator) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
         this.topbar = topbar;
+        this.textarea = textarea;
         this.users = users;
         this.usersSidebar = usersSidebar;
         this.navigator = navigator;
@@ -822,7 +911,7 @@ class Updater {
     }
 
     addUser(u: JsonUser): void {
-        const user = new User(u, this.navigator);
+        const user = new User(u, this.navigator, this.textarea);
         this.users.set(user.id, user);
         const users = Array.from(this.users.values());
         users.sort((a: User, b: User): number => {
@@ -903,8 +992,8 @@ class Page {
         this.chatsSidebar.appendTo(this);
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
-        this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.loading);
-        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.users, this.usersSidebar, this.navigator);
+        this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.textarea, this.users, this.usersSidebar, this.loading);
+        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.textarea, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
             method: 'GET',

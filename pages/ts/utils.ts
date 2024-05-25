@@ -168,7 +168,7 @@ export namespace PermissionLevel {
     }
 }
 
-export function setDynamicallyUpdatedDate(span: HTMLSpanElement & { timeout?: NodeJS.Timeout }, date: Date, text: string): void {
+export function setDynamicallyUpdatedDate(span: HTMLSpanElement & { timeout?: NodeJS.Timeout }, date: Date, text: string = '$'): void {
     const minute = 60, hour = minute * 60, day = hour * 24;
     let difference = Math.floor((Date.now() - date.getTime()) / 1000);
     const seconds = difference % minute;
@@ -210,6 +210,6 @@ export function setDynamicallyUpdatedDate(span: HTMLSpanElement & { timeout?: No
     else {
         if(span.timeout != undefined)
             clearTimeout(span.timeout);
-        span.innerText = text.replace('$', date.toLocaleString('en-AZ'));
+        span.innerText = text.replace('$', date.toLocaleString('en-ZA'));
     }
 }

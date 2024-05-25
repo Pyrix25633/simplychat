@@ -299,7 +299,7 @@ class SettingsForm extends StructuredForm {
         statusInput.precompile(res.status);
         passwordInput.precompile('');
         sessionDurationInput.precompile(res.sessionDuration);
-        sessionExpirationInfoSpan.set(new Date(res.sessionExpiration * 1000).toLocaleString('en-ZA'));
+        sessionExpirationInfoSpan.set(new Date(res.sessionExpiration).toLocaleString('en-ZA'));
         tfaInput.precompile(res.tfa);
         compactModeInput.set(res.customization.compactMode);
         condensedFontInput.set(res.customization.condensedFont);
