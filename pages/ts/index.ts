@@ -43,7 +43,7 @@ type JsonChat = {
 
 class Chat {
     public readonly id: number;
-    private permissionLevel: PermissionLevel;
+    public permissionLevel: PermissionLevel;
     public lastMessageId: number;
     private lastReadMessageId: number;
     public readonly box: HTMLDivElement;
@@ -252,7 +252,7 @@ class User {
         this.status.classList.add('description');
         this.pfp = document.createElement('img');
         this.pfp.classList.add('logo');
-        this.pfp.alt = 'Logo';
+        this.pfp.alt = 'Profile Picture';
         this.online = document.createElement('div');
         this.online.classList.add('offline');
         this.info = document.createElement('div');
@@ -526,38 +526,49 @@ type JsonMessage = {
 };
 
 class Message {
-    private readonly id: number;
+    public readonly id: number;
     private readonly userId: number;
     private readonly box: HTMLDivElement;
     private readonly pfp: HTMLImageElement;
     private readonly username: HTMLSpanElement;
+    private readonly created: HTMLDivElement;
     private readonly createdAt: HTMLSpanElement;
+    private readonly edited: HTMLDivElement;
     private readonly editedAt: HTMLSpanElement;
+    private readonly deleted: HTMLDivElement;
     private readonly deletedAt: HTMLSpanElement;
     private readonly message: HTMLSpanElement;
     private readonly actions: HTMLDivElement;
     private readonly edit: HTMLImageElement;
     private readonly delete: HTMLImageElement;
 
-    constructor(message: JsonMessage) {
+    constructor(message: JsonMessage, permissionLevel: PermissionLevel, messages: Messages) {
         this.id = message.id;
         this.userId = message.userId;
         this.box = document.createElement('div');
         this.box.classList.add('box', 'message');
         this.pfp = document.createElement('img');
         this.pfp.classList.add('message-pfp');
+        this.pfp.alt = 'Profile Picture';
         this.username = document.createElement('span');
         this.username.classList.add('message-username');
+        this.created = document.createElement('div');
+        this.created.classList.add('container');
         this.createdAt = document.createElement('span');
         this.createdAt.classList.add('message-meta');
-        setDynamicallyUpdatedDate(this.createdAt, new Date(message.createdAt));
+        this.edited = document.createElement('div');
+        this.edited.classList.add('container');
         this.editedAt = document.createElement('span');
         this.editedAt.classList.add('message-meta');
+        this.deleted = document.createElement('div');
+        this.deleted.classList.add('container');
         this.deletedAt = document.createElement('span');
         this.deletedAt.classList.add('message-meta');
         this.message = document.createElement('span');
-        this.message.classList.add('message');
-        this.update(message.message, message.editedAt, message.deletedAt);
+        this.message.classList.add('message-text');
+        this.message.addEventListener('click', (): void => {
+            messages.selectMessage(this.id);
+        });
         this.actions = document.createElement('div');
         this.actions.classList.add('container', 'actions');
         this.edit = document.createElement('img');
@@ -576,18 +587,96 @@ class Message {
             this.delete.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             //TODO
         });
+        setDynamicallyUpdatedDate(this.createdAt, new Date(message.createdAt));
+        this.updateSelected(false);
+        this.updateMessage(message.message);
+        this.updateEditedAt(message.editedAt);
+        this.updateDeletedAt(message.deletedAt);
+        this.updatePermissionLevel(permissionLevel);
     }
 
-    appendTo(messages: Messages): void {
-        //TODO
+    appendTo(messages: Messages, position: number | undefined = undefined): void {
+        const messageData = document.createElement('div');
+        messageData.classList.add('container', 'message-data');
+        const messageMeta = document.createElement('div');
+        messageMeta.classList.add('container', 'message-meta');
+        const created = document.createElement('img');
+        created.classList.add('message-meta');
+        created.alt = 'Created';
+        created.src = '/img/send.svg';
+        this.created.appendChild(created);
+        this.created.appendChild(this.createdAt);
+        const edited = document.createElement('img');
+        edited.classList.add('message-meta');
+        edited.alt = 'Created';
+        edited.src = '/img/edit.svg';
+        this.edited.appendChild(edited);
+        this.edited.appendChild(this.editedAt);
+        const deleted = document.createElement('img');
+        deleted.classList.add('message-meta');
+        deleted.alt = 'Created';
+        deleted.src = '/img/delete.svg';
+        this.deleted.appendChild(deleted);
+        this.deleted.appendChild(this.deletedAt);
+        messageMeta.appendChild(this.created);
+        messageMeta.appendChild(this.edited);
+        messageMeta.appendChild(this.deleted);
+        messageData.appendChild(this.pfp);
+        messageData.appendChild(this.username);
+        messageData.appendChild(messageMeta);
+        this.actions.appendChild(this.edit);
+        this.actions.appendChild(this.delete);
+        const messageActions = document.createElement('div');
+        messageActions.classList.add('box');
+        messageActions.appendChild(this.message);
+        messageActions.appendChild(this.actions);
+        this.box.appendChild(messageData);
+        this.box.appendChild(messageActions);
+        messages.insertAtPosition(this.box, position);
     }
 
-    update(message: string, editedAt: string | null, deletedAt: string | null): void {
+    updateSelected(selected: boolean): void {
+        if(selected) {
+            this.message.classList.add('selected');
+            this.actions.style.display = '';
+        }
+        else {
+            this.message.classList.remove('selected');
+            this.actions.style.display = 'none';
+        }
+    }
+
+    updateMessage(message: string): void {
         this.message.innerText = message; //TODO
-        if(editedAt != null)
+    }
+    
+    updateEditedAt(editedAt: string | null): void {
+        if(editedAt == null)
+            this.edited.style.display = 'none';
+        else {
+            this.edited.style.display = '';
             setDynamicallyUpdatedDate(this.editedAt, new Date(editedAt));
-        if(deletedAt != null)
+        }
+    }
+
+    updateDeletedAt(deletedAt: string | null): void {
+        if(deletedAt == null)
+            this.deleted.style.display = 'none';
+        else {
+            this.deleted.style.display = '';
             setDynamicallyUpdatedDate(this.deletedAt, new Date(deletedAt));
+        }
+    }
+
+    updatePermissionLevel(permissionLevel: PermissionLevel): void {
+        if(this.userId == userId) {
+            this.edit.style.display = '';
+            this.delete.style.display = '';
+        }
+        else {
+            this.edit.style.display = 'none';
+            this.delete.style.display = (permissionLevel == "ADMINISTRATOR" || permissionLevel == "MODERATOR") ? '' : 'none';
+        }
     }
 }
 
@@ -602,6 +691,53 @@ class Messages {
 
     appendTo(page: Page): void {
         page.appendMain(this.box);
+    }
+
+    loadMessages(chat: Chat): void {
+        $.ajax({
+            url: '/api/chats/' + chat.id + '/messages',
+            method: 'GET',
+            success: (res: Response): void => {
+                for(const m of res.messages) {
+                    const message = new Message(m, chat.permissionLevel, this);
+                    this.messages.set(message.id, message);
+                    message.appendTo(this);
+                }
+            },
+            statusCode: defaultStatusCode
+        });
+    }
+
+    selectMessage(id: number): void {
+        for(const message of this.messages.values())
+            message.updateSelected(message.id == id);
+    }
+
+    appendChild(node: Node): void {
+        this.box.appendChild(node);
+    }
+
+    insertAtPosition(node: Node, position: number | undefined = undefined): void {
+        if(position == undefined || position == this.getNumberOfChilds() - 1)
+            this.appendChild(node);
+        else
+            this.box.insertBefore(node, this.getNthChild(position + 1));
+    }
+
+    removeChild(node: Node): void {
+        this.box.removeChild(node);
+    }
+
+    getNumberOfChilds(): number {
+        return this.box.childNodes.length;
+    }
+
+    getNthChild(position: number): Node {
+        return this.box.childNodes[position];
+    }
+
+    empty(): void {
+        this.box.innerHTML = '';
     }
 }
 
@@ -735,18 +871,21 @@ class Navigator {
     private readonly noChats: NoChats;
     public selectedChatId: number;
     private readonly topbar: Topbar;
+    private readonly messages: Messages;
     private readonly textarea: Textarea;
     private readonly users: Map<number, User>;
     public selectedUserId: number;
     private readonly usersSidebar: Sidebar;
     private readonly loading: Loading;
 
-    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, textarea: Textarea, users: Map<number, User>, usersSidebar: Sidebar, loading: Loading) {
+    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, messages: Messages, textarea: Textarea,
+                users: Map<number, User>, usersSidebar: Sidebar, loading: Loading) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
         this.noChats = new NoChats();
         this.selectedChatId = 0;
         this.topbar = topbar;
+        this.messages = messages;
         this.textarea = textarea;
         this.users = users;
         this.selectedUserId = 0;
@@ -784,6 +923,7 @@ class Navigator {
                 }
                 this.selectUser(userId);
                 reloadAnimations();
+                this.messages.loadMessages(chat);
                 this.loading.show(false);
             },
             statusCode: defaultStatusCode
@@ -992,7 +1132,7 @@ class Page {
         this.chatsSidebar.appendTo(this);
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
-        this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.textarea, this.users, this.usersSidebar, this.loading);
+        this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.messages, this.textarea, this.users, this.usersSidebar, this.loading);
         this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.textarea, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',

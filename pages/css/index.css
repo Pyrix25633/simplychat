@@ -127,6 +127,7 @@ div.messages {
     width: var(--messages-width);
     border-bottom: var(--color-lighter) 2px solid;
     overflow-y: scroll;
+    align-items: start;
 }
 div.messages::-webkit-scrollbar-track, div.messages::-webkit-scrollbar, div.messages::-webkit-scrollbar-thumb {
     display: none;
@@ -247,7 +248,7 @@ img.message-pfp {
 div.message {
     align-items: start;
 }
-div.message-metas {
+div.message-meta {
     display: flex;
     flex-direction: row;
 }
@@ -258,11 +259,15 @@ span.message-username, span.message-text {
 span.message-meta {
     font-size: 10px;
 }
+img.message-meta {
+    height: 14px;
+}
 span.message-text {
     margin-left: 25px !important;
     background-color: var(--color-lighter);
     max-width: var(--message-max-width);
     word-wrap: break-word;
+    cursor: pointer;
 }
 span.user-tag {
     margin-left: 0 !important;
