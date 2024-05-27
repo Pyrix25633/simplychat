@@ -136,3 +136,11 @@ export function getRemovedUsers(raw: any): number[] {
         removedUsers.push(getInt(item));
     return removedUsers;
 }
+
+export function getMessage(raw: any): string {
+    const parsed = getNonEmptyString(raw);
+    let message = '';
+    for(const line of parsed.split('\n'))
+        message += line.trim() + '\n';
+    return message.trim();
+}

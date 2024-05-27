@@ -531,7 +531,7 @@ type JsonMessage = {
 
 class Message {
     public readonly id: number;
-    private readonly userId: number;
+    public readonly userId: number;
     private readonly box: HTMLDivElement;
     private readonly pfp: HTMLImageElement;
     private readonly username: HTMLSpanElement;
@@ -750,6 +750,32 @@ class Messages {
     selectMessage(id: number): void {
         for(const message of this.messages.values())
             message.updateSelected(message.id == id);
+    }
+
+    updateUsername(userId: number, username: string): void {
+        for(const message of this.messages.values()) {
+            if(message.userId == userId)
+                message.updateUsername(username);
+        }
+    }
+
+    updatePfp(userId: number, pfp: string): void {
+        for(const message of this.messages.values()) {
+            if(message.userId == userId)
+                message.updatePfp(pfp);
+        }
+    }
+
+    updatePermissionLevel(userId: number, permissionLevel: PermissionLevel | "REMOVED"): void {
+        for(const message of this.messages.values()) {
+            if(message.userId == userId)
+                message.updatePermissionLevel(permissionLevel);
+        }
+    }
+
+    updateEditDelete(permissionLevel: PermissionLevel): void {
+        for(const message of this.messages.values())
+            message.updateEditDelete(permissionLevel);
     }
 
     appendChild(node: Node): void {
@@ -1003,16 +1029,19 @@ class Updater {
     private readonly chats: Map<number, Chat>;
     private readonly chatsSidebar: Sidebar;
     private readonly topbar: Topbar;
+    private readonly messages: Messages;
     private readonly textarea: Textarea;
     private readonly users: Map<number, User>;
     private readonly usersSidebar: Sidebar;
     private readonly socket: Socket;
     private readonly navigator: Navigator;
 
-    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, textarea: Textarea, users: Map<number, User>, usersSidebar: Sidebar, navigator: Navigator) {
+    constructor(chats: Map<number, Chat>, chatsSidebar: Sidebar, topbar: Topbar, messages: Messages, textarea: Textarea,
+                users: Map<number, User>, usersSidebar: Sidebar, navigator: Navigator) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
         this.topbar = topbar;
+        this.messages = messages;
         this.textarea = textarea;
         this.users = users;
         this.usersSidebar = usersSidebar;
@@ -1035,8 +1064,13 @@ class Updater {
             const chat = this.chats.get(data.chatId);
             if(chat == undefined)
                 return;
-            if(data.userId == 0)
+            if(data.userId == userId)
                 chat.updatePermissionLevel(data.permissionLevel);
+            if(data.chatId == this.navigator.selectedChatId) {
+                this.messages.updatePermissionLevel(data.userId, data.permissionLevel);
+                if(data.userId == userId)
+                    this.messages.updateEditDelete(data.permissionLevel);
+            }
             const user = this.users.get(data.userId);
             if(user != undefined)
                 user.updatePermissionLevel(data.permissionLevel);
@@ -1050,18 +1084,21 @@ class Updater {
                     lastReadMessageId: data.lastReadMessageId
                 });
             }
-            else if(data.chatId == navigator.selectedChatId) {
+            else if(data.chatId == this.navigator.selectedChatId) {
                 this.addUser({
                     userId: data.userId,
                     permissionLevel: data.permissionLevel
                 });
+                this.messages.updatePermissionLevel(data.userId, data.permissionLevel);
             }
         });
         this.socket.on('chat-user-leave', (data: Data): void => {
             if(data.userId == userId)
-                this.removeChat(data.chatId); //TODO: only 1 chat
-            else if(data.chatId == navigator.selectedChatId)
+                this.removeChat(data.chatId);
+            else if(data.chatId == navigator.selectedChatId) {
                 this.removeUser(data.userId);
+                this.messages.updatePermissionLevel(data.userId, "REMOVED");
+            }
         });
         this.socket.on('user-online', (data: Data): void => {
             const user = this.users.get(data.id);
@@ -1070,13 +1107,17 @@ class Updater {
         });
         this.socket.on('user-username-status', (data: Data): void => {
             const user = this.users.get(data.id);
-            if(user != undefined)
-                user.updateUsernameStatus(data.username, data.status);
+            if(user == undefined)
+                return;
+            user.updateUsernameStatus(data.username, data.status);
+            this.messages.updateUsername(data.id, data.username);
         });
         this.socket.on('user-pfp', (data: Data): void => {
             const user = this.users.get(data.id);
-            if(user != undefined)
-                user.updatePpf(data.pfp);
+            if(user == undefined)
+                return;
+            user.updatePpf(data.pfp);
+            this.messages.updatePfp(data.id, data.pfp);
         });
     }
 
@@ -1126,8 +1167,6 @@ class Updater {
         if(this.navigator.selectedUserId == id)
             this.navigator.selectUser(this.users.values().next().value.id);
     }
-
-    
 }
 
 class Loading {
@@ -1174,7 +1213,7 @@ class Page {
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
         this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.messages, this.textarea, this.users, this.usersSidebar, this.loading);
-        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.textarea, this.users, this.usersSidebar, this.navigator);
+        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.messages, this.textarea, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
             method: 'GET',

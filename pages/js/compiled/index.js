@@ -610,6 +610,28 @@ class Messages {
         for (const message of this.messages.values())
             message.updateSelected(message.id == id);
     }
+    updateUsername(userId, username) {
+        for (const message of this.messages.values()) {
+            if (message.userId == userId)
+                message.updateUsername(username);
+        }
+    }
+    updatePfp(userId, pfp) {
+        for (const message of this.messages.values()) {
+            if (message.userId == userId)
+                message.updatePfp(pfp);
+        }
+    }
+    updatePermissionLevel(userId, permissionLevel) {
+        for (const message of this.messages.values()) {
+            if (message.userId == userId)
+                message.updatePermissionLevel(permissionLevel);
+        }
+    }
+    updateEditDelete(permissionLevel) {
+        for (const message of this.messages.values())
+            message.updateEditDelete(permissionLevel);
+    }
     appendChild(node) {
         this.box.appendChild(node);
     }
@@ -824,10 +846,11 @@ class Navigator {
     }
 }
 class Updater {
-    constructor(chats, chatsSidebar, topbar, textarea, users, usersSidebar, navigator) {
+    constructor(chats, chatsSidebar, topbar, messages, textarea, users, usersSidebar, navigator) {
         this.chats = chats;
         this.chatsSidebar = chatsSidebar;
         this.topbar = topbar;
+        this.messages = messages;
         this.textarea = textarea;
         this.users = users;
         this.usersSidebar = usersSidebar;
@@ -850,8 +873,13 @@ class Updater {
             const chat = this.chats.get(data.chatId);
             if (chat == undefined)
                 return;
-            if (data.userId == 0)
+            if (data.userId == userId)
                 chat.updatePermissionLevel(data.permissionLevel);
+            if (data.chatId == this.navigator.selectedChatId) {
+                this.messages.updatePermissionLevel(data.userId, data.permissionLevel);
+                if (data.userId == userId)
+                    this.messages.updateEditDelete(data.permissionLevel);
+            }
             const user = this.users.get(data.userId);
             if (user != undefined)
                 user.updatePermissionLevel(data.permissionLevel);
@@ -865,18 +893,21 @@ class Updater {
                     lastReadMessageId: data.lastReadMessageId
                 });
             }
-            else if (data.chatId == navigator.selectedChatId) {
+            else if (data.chatId == this.navigator.selectedChatId) {
                 this.addUser({
                     userId: data.userId,
                     permissionLevel: data.permissionLevel
                 });
+                this.messages.updatePermissionLevel(data.userId, data.permissionLevel);
             }
         });
         this.socket.on('chat-user-leave', (data) => {
             if (data.userId == userId)
-                this.removeChat(data.chatId); //TODO: only 1 chat
-            else if (data.chatId == navigator.selectedChatId)
+                this.removeChat(data.chatId);
+            else if (data.chatId == navigator.selectedChatId) {
                 this.removeUser(data.userId);
+                this.messages.updatePermissionLevel(data.userId, "REMOVED");
+            }
         });
         this.socket.on('user-online', (data) => {
             const user = this.users.get(data.id);
@@ -885,13 +916,17 @@ class Updater {
         });
         this.socket.on('user-username-status', (data) => {
             const user = this.users.get(data.id);
-            if (user != undefined)
-                user.updateUsernameStatus(data.username, data.status);
+            if (user == undefined)
+                return;
+            user.updateUsernameStatus(data.username, data.status);
+            this.messages.updateUsername(data.id, data.username);
         });
         this.socket.on('user-pfp', (data) => {
             const user = this.users.get(data.id);
-            if (user != undefined)
-                user.updatePpf(data.pfp);
+            if (user == undefined)
+                return;
+            user.updatePpf(data.pfp);
+            this.messages.updatePfp(data.id, data.pfp);
         });
     }
     addChat(c) {
@@ -969,7 +1004,7 @@ class Page {
         this.page.appendChild(this.main);
         this.usersSidebar.appendTo(this);
         this.navigator = new Navigator(this.chats, this.chatsSidebar, this.topbar, this.messages, this.textarea, this.users, this.usersSidebar, this.loading);
-        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.textarea, this.users, this.usersSidebar, this.navigator);
+        this.updater = new Updater(this.chats, this.chatsSidebar, this.topbar, this.messages, this.textarea, this.users, this.usersSidebar, this.navigator);
         $.ajax({
             url: '/api/chats',
             method: 'GET',

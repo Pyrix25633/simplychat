@@ -5,9 +5,9 @@ import { createMessage, findLast16Messages, findLastMessageId } from "../databas
 import { prisma, simplychat } from "../database/prisma";
 import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
 import { generateChatToken } from "../random";
-import { getBase64EncodedImage, getDescription, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
+import { getBase64EncodedImage, getDescription, getMessage, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
 import { getInt, getObject, getOrUndefined } from "../validation/type-validation";
-import { Forbidden, NoContent, NotFound, Ok, handleException } from "../web/response";
+import { Created, Forbidden, NoContent, NotFound, Ok, handleException } from "../web/response";
 import { validateToken } from "./auth";
 
 export async function postChat(req: Request, res: Response): Promise<void> {
@@ -20,7 +20,7 @@ export async function postChat(req: Request, res: Response): Promise<void> {
             const chat = await createChat(name, description);
             await createUserOnChat(partialUser.id, chat.id, PermissionLevel.ADMINISTRATOR);
             await createMessage('@' + partialUser.id + ' created this Chat!', (await simplychat).id, chat.id);
-            new Ok({ id: chat.id }).send(res);
+            new Created({ id: chat.id }).send(res);
         });
     } catch(e: any) {
         handleException(e, res);
@@ -234,6 +234,24 @@ export async function getChatMessages(req: Request, res: Response): Promise<void
         }
         new Ok({
             messages: response
+        }).send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function postChatMessage(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        const body = getObject(req.body);
+        const message = getMessage(body.message);
+        if(!(await doesChatExist(chatId)))
+            throw new NotFound();
+        if(!(await doesUserOnChatExist(partialUser.id, chatId)))
+            throw new Forbidden();
+        new Created({
+            id: (await createMessage(message, partialUser.id, chatId)).id
         }).send(res);
     } catch(e: any) {
         handleException(e, res);

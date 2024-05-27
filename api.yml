@@ -716,7 +716,7 @@ paths:
           description: Unauthorized
         "422":
           description: "Unprocessable Content: chat cannot be created"
-  /chats/{userId}:
+  /chats/{chatId}:
     get:
       tags:
         - chats
@@ -1091,5 +1091,6 @@ paths:
           description: "Forbidden: requesting user is not one of chat's members"
         "404":
           description: "Not Found: no chats found with specified chatId"
+  #TODO: document POST /chats/{chatId}/messages
 servers:
   - url: https://simplychat.ddns.net/api/
