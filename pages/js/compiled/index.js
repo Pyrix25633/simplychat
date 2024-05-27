@@ -229,15 +229,18 @@ class User {
         }
         this.updateSelected(false);
         this.updatePermissionLevel(this.permissionLevel);
-        $.ajax({
-            url: '/api/users/' + this.id,
-            method: 'GET',
-            success: (res) => {
-                this.updateUsernameStatus(res.username, res.status);
-                this.updatePpf(res.pfp);
-                this.updateOnline(res.online, res.lastOnline);
-            },
-            statusCode: defaultStatusCode
+        this.loading = new Promise((resolve) => {
+            $.ajax({
+                url: '/api/users/' + this.id,
+                method: 'GET',
+                success: (res) => {
+                    this.updateUsernameStatus(res.username, res.status);
+                    this.updatePpf(res.pfp);
+                    this.updateOnline(res.online, res.lastOnline);
+                    resolve();
+                },
+                statusCode: defaultStatusCode
+            });
         });
     }
     appendTo(sidebar, position = undefined) {
@@ -419,7 +422,7 @@ class Topbar {
     }
 }
 class Message {
-    constructor(message, permissionLevel, messages) {
+    constructor(message, permissionLevel, messages, user) {
         this.id = message.id;
         this.userId = message.userId;
         this.box = document.createElement('div');
@@ -469,7 +472,10 @@ class Message {
         this.updateMessage(message.message);
         this.updateEditedAt(message.editedAt);
         this.updateDeletedAt(message.deletedAt);
-        this.updatePermissionLevel(permissionLevel);
+        this.updateEditDelete(permissionLevel);
+        this.updateUsername(user.username.innerText);
+        this.updatePfp(user.pfp.src);
+        this.updatePermissionLevel(user.permissionLevel);
     }
     appendTo(messages, position = undefined) {
         const messageData = document.createElement('div');
@@ -503,7 +509,7 @@ class Message {
         this.actions.appendChild(this.edit);
         this.actions.appendChild(this.delete);
         const messageActions = document.createElement('div');
-        messageActions.classList.add('box');
+        messageActions.classList.add('box', 'message-actions');
         messageActions.appendChild(this.message);
         messageActions.appendChild(this.actions);
         this.box.appendChild(messageData);
@@ -539,7 +545,7 @@ class Message {
             setDynamicallyUpdatedDate(this.deletedAt, new Date(deletedAt));
         }
     }
-    updatePermissionLevel(permissionLevel) {
+    updateEditDelete(permissionLevel) {
         if (this.userId == userId) {
             this.edit.style.display = '';
             this.delete.style.display = '';
@@ -549,23 +555,50 @@ class Message {
             this.delete.style.display = (permissionLevel == "ADMINISTRATOR" || permissionLevel == "MODERATOR") ? '' : 'none';
         }
     }
+    updateUsername(username) {
+        this.username.innerText = username;
+    }
+    updatePfp(pfp) {
+        this.pfp.src = pfp;
+    }
+    updatePermissionLevel(permissionLevel) {
+        for (const pl of PermissionLevels)
+            this.username.classList.remove('permission-level-' + pl.toLowerCase());
+        if (permissionLevel != "REMOVED")
+            this.username.classList.remove('permission-level-removed');
+        this.username.classList.add('permission-level-' + permissionLevel.toLowerCase());
+    }
 }
 class Messages {
-    constructor() {
+    constructor(users, textarea) {
         this.messages = new Map();
+        this.removedUsers = new Map();
         this.box = document.createElement('div');
         this.box.classList.add('box', 'messages');
+        this.users = users;
+        this.textarea = textarea;
     }
     appendTo(page) {
         page.appendMain(this.box);
     }
-    loadMessages(chat) {
+    loadMessages(chat, navigator) {
+        this.empty();
+        this.messages.clear();
         $.ajax({
             url: '/api/chats/' + chat.id + '/messages',
             method: 'GET',
-            success: (res) => {
+            success: async (res) => {
                 for (const m of res.messages) {
-                    const message = new Message(m, chat.permissionLevel, this);
+                    let user = this.users.get(m.userId);
+                    if (user == undefined) {
+                        user = this.removedUsers.get(m.userId);
+                        if (user == undefined) {
+                            user = new User({ userId: m.userId, permissionLevel: "REMOVED" }, navigator, this.textarea);
+                            this.removedUsers.set(user.id, user);
+                            await user.loading;
+                        }
+                    }
+                    const message = new Message(m, chat.permissionLevel, this, user);
                     this.messages.set(message.id, message);
                     message.appendTo(this);
                 }
@@ -684,7 +717,7 @@ class Textarea {
             if (lastChar != ' ' && lastChar != '\n')
                 this.textarea.value += ' ';
         }
-        this.textarea.value += '@' + id;
+        this.updateTextarea('@' + id);
     }
     updateCounter(count) {
         this.counter.innerText = count + '/' + this.max;
@@ -738,7 +771,7 @@ class Navigator {
         $.ajax({
             url: '/api/chats/' + id + '/users',
             method: 'GET',
-            success: (res) => {
+            success: async (res) => {
                 res.users.sort((a, b) => {
                     if (a.userId == userId)
                         return -1;
@@ -755,8 +788,10 @@ class Navigator {
                     user.appendTo(this.usersSidebar);
                 }
                 this.selectUser(userId);
+                for (const user of this.users.values())
+                    await user.loading;
                 reloadAnimations();
-                this.messages.loadMessages(chat);
+                this.messages.loadMessages(chat, this);
                 this.loading.show(false);
             },
             statusCode: defaultStatusCode
@@ -925,8 +960,8 @@ class Page {
         this.main.classList.add('box', 'main');
         this.usersSidebar = new Sidebar();
         this.topbar = new Topbar(this.chatsSidebar, this.usersSidebar);
-        this.messages = new Messages();
         this.textarea = new Textarea();
+        this.messages = new Messages(this.users, this.textarea);
         this.topbar.appendTo(this);
         this.messages.appendTo(this);
         this.textarea.appendTo(this);

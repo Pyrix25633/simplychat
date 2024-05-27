@@ -76,12 +76,16 @@ button {
 
 div.messages {
     padding: 5px;
+    gap: 10px;
 }
 div.message {
-    margin-left: 5px;
+    gap: 5px;
 }
 span.message-text {
     padding: 5px;
+}
+div.message-actions {
+    gap: 5px;
 }
 
 div.unread-messages {

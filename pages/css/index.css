@@ -244,7 +244,6 @@ img.message-pfp {
     height: 30px;
     background-color: var(--color-lighter);
 }
-
 div.message {
     align-items: start;
 }
@@ -252,7 +251,6 @@ div.message-meta {
     display: flex;
     flex-direction: row;
 }
-
 span.message-username, span.message-text {
     font-size: 20px;
 }
@@ -263,20 +261,19 @@ img.message-meta {
     height: 14px;
 }
 span.message-text {
-    margin-left: 25px !important;
     background-color: var(--color-lighter);
     max-width: var(--message-max-width);
     word-wrap: break-word;
     cursor: pointer;
+}
+div.message-actions {
+    margin-left: 25px;
 }
 span.user-tag {
     margin-left: 0 !important;
 }
 div.message div.container {
     align-items: end;
-}
-div.message-actions {
-    width: 100%;
 }
 
 div.load-more {
