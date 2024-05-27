@@ -121,14 +121,23 @@ canvas {
     padding: 2px;
 }
 
-@media screen and (max-width: 850px) {
-    div.panel {
-        padding: 15px;
-        margin-left: 2px;
-        margin-right: 2px;
+@media screen and (max-width: 1200px) {
+    div.message-data {
+        gap: 2px;
     }
-
-    div.label-input {
-        gap: 1px;
+    @media screen and (max-width: 850px) {
+        div.panel {
+            padding: 15px;
+            margin-left: 2px;
+            margin-right: 2px;
+        }
+        div.label-input {
+            gap: 1px;
+        }
+        @media screen and (max-width: 800px) {
+            div.message-meta {
+                gap: 1px;
+            }
+        }
     }
 }

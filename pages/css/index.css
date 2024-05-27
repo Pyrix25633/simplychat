@@ -251,6 +251,9 @@ div.message-meta {
     display: flex;
     flex-direction: row;
 }
+div.message-meta div.container {
+    gap: 4px;
+}
 span.message-username, span.message-text {
     font-size: 20px;
 }
@@ -384,6 +387,10 @@ span.emoji {
         }
         img.logo, img.pfp {
             height: 40px;
+        }
+        div.message-meta {
+            flex-direction: column;
+            align-items: start;
         }
         span.message-text, span.user-tag {
             font-size: 17px;
