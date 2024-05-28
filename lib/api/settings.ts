@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { findUser, findUserTokenAndCustomization, findUserTokenAndPasswordHash, updateUserPassword, updateUserPfp, updateUserSettings, updateUserTfaKey } from "../database/user";
+import { sendSecurityNotification } from "../email";
 import { getBase64EncodedImage, getCustomization, getEmail, getSessionDuration, getStatus, getTfaKey, getUsername } from "../validation/semantic-validation";
 import { getNonEmptyString, getObject, getOrNull, getOrUndefined } from "../validation/type-validation";
 import { Forbidden, NoContent, Ok, handleException } from "../web/response";
@@ -41,7 +42,7 @@ export async function patchSettings(req: Request, res: Response): Promise<void> 
         const pfp = getOrUndefined(body.pfp, getBase64EncodedImage);
         const sessionDuration = getSessionDuration(body.sessionDuration);
         const tfaKey = getOrUndefined(body.tfaKey, (raw: any): string | null => { return getOrNull(raw, getTfaKey); });
-        await updateUserSettings(partialUser.id, username, email, status, customization, sessionDuration);
+        const user = await updateUserSettings(partialUser.id, username, email, status, customization, sessionDuration);
         if(password != undefined)
             await updateUserPassword(partialUser.id, password);
         if(pfp != undefined)
@@ -49,6 +50,7 @@ export async function patchSettings(req: Request, res: Response): Promise<void> 
         if(tfaKey !== undefined)
             await updateUserTfaKey(partialUser.id, tfaKey);
         new NoContent().send(res);
+        sendSecurityNotification('settings', user, req);
     } catch(e: any) {
         handleException(e, res);
     }

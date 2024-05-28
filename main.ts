@@ -9,7 +9,7 @@ import https from 'https';
 import path from 'path';
 import { Server } from 'socket.io';
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
-import { getChat, getChatJoin, getChatMessages, getChatSettings, getChatUsers, getChats, patchChatSettings, postChat, postChatJoin, postChatLeave, postChatRegenerateToken } from './lib/api/chats';
+import { getChat, getChatJoin, getChatMessages, getChatSettings, getChatUsers, getChats, patchChatSettings, postChat, postChatJoin, postChatLeave, postChatMessage, postChatRegenerateToken } from './lib/api/chats';
 import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
 import { getSettings, getSettingsCustomization, getSettingsId, patchSettings } from './lib/api/settings';
 import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
@@ -118,6 +118,8 @@ main.get('/api/chats/:chatId/users', getChatUsers);
 main.post('/api/chats/:chatId/leave', postChatLeave);
 
 main.get('/api/chats/:chatId/messages', getChatMessages);
+
+main.post('/api/chats/:chatId/messages', postChatMessage);
 
 // --server-- //
 

@@ -658,6 +658,9 @@ class Textarea {
     constructor() {
         this.max = 2048;
         this.emojiSelectorVisible = false;
+        this.chatId = 0;
+        this.container = document.createElement('div');
+        this.container.classList.add('container', 'textarea');
         this.textarea = document.createElement('textarea');
         this.textarea.autocapitalize = 'none';
         this.textarea.spellcheck = false;
@@ -700,8 +703,6 @@ class Textarea {
         this.showEmojiSelector(false);
     }
     appendTo(page) {
-        const container = document.createElement('div');
-        container.classList.add('container', 'textarea');
         const actionsCounter = document.createElement('div');
         actionsCounter.classList.add('box', 'actions-counter');
         const actions = document.createElement('div');
@@ -711,17 +712,26 @@ class Textarea {
         actionsCounter.appendChild(actions);
         actionsCounter.appendChild(this.counter);
         actionsCounter.appendChild(this.emojiSelector);
-        container.appendChild(this.textarea);
-        container.appendChild(actionsCounter);
-        page.appendMain(container);
+        this.container.appendChild(this.textarea);
+        this.container.appendChild(actionsCounter);
+        page.appendMain(this.container);
+    }
+    setChatId(chatId) {
+        this.chatId = chatId;
+    }
+    show(show) {
+        this.container.style.display = show ? '' : 'none';
+    }
+    getMessage() {
+        let message = '';
+        for (const line of this.textarea.value.split('\n'))
+            message += line.trim() + '\n';
+        return message.trim();
     }
     updateTextarea(ev) {
         if (typeof ev == 'string')
             this.textarea.value += ev;
-        let message = '';
-        for (const line of this.textarea.value.split('\n'))
-            message += line.trim() + '\n';
-        message = message.trim();
+        const message = this.getMessage();
         const chars = message.length;
         const lines = this.textarea.value.split('\n').length;
         this.updateCounter(chars);
@@ -753,6 +763,9 @@ class Textarea {
         this.emojiSelector.style.display = show ? '' : 'none';
     }
     sendMessage() {
+        const message = this.getMessage();
+        if (message.length > this.max)
+            return;
         this.send.animate([
             { transform: 'rotate(0deg)', offset: 0 },
             { transform: 'rotate(-90deg)', offset: 0.2 },
@@ -761,7 +774,16 @@ class Textarea {
             { transform: 'translate(0, 0) rotate(-270deg)', offset: 0.9 },
             { transform: 'rotate(0deg)', offset: 1 }
         ], { duration: 700 });
-        //TODO
+        $.ajax({
+            url: '/api/chats/' + this.chatId + '/messages',
+            method: 'POST',
+            data: JSON.stringify({
+                message: message
+            }),
+            contentType: 'application/json',
+            success: async (res) => { },
+            statusCode: defaultStatusCode
+        });
         this.textarea.value = '';
     }
 }
@@ -786,6 +808,8 @@ class Navigator {
         this.selectedChatId = id;
         this.loading.show(true);
         this.topbar.update(chat);
+        this.textarea.setChatId(id);
+        this.textarea.show(chat.permissionLevel != "VIEWER");
         this.users.clear();
         this.usersSidebar.empty();
         for (const chat of this.chats.values())

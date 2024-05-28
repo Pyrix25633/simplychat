@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
+import { prisma } from "../database/prisma";
 import { createTempUser, deleteTempUser, findTempUser } from "../database/temp-user";
 import { createUserFromTempUser } from "../database/user";
-import { sendEmail } from "../email";
+import { sendVerificationCode } from "../email";
 import { generateVerificationCode } from "../random";
-import { settings } from "../settings";
 import { getEmail, getSixDigitCode, getUsername } from "../validation/semantic-validation";
 import { getNonEmptyString, getObject } from "../validation/type-validation";
 import { Created, UnprocessableContent, handleException } from "../web/response";
@@ -16,15 +16,7 @@ export async function postTempUser(req: Request, res: Response): Promise<void> {
         const password = getNonEmptyString(body.password);
         const verificationCode = generateVerificationCode();
         const tempUser = await createTempUser(username, email, password, verificationCode);
-        sendEmail({
-            to: email,
-            subject: 'Simply Chat Verification Code',
-            text: 'Your Verification Code for Username ' + tempUser.username + ' is ' + tempUser.verificationCode + '.',
-            html: 'Your Verification Code for Username ' + tempUser.username + ' is ' + tempUser.verificationCode + '.<br>' +
-                'Click <a href="' + settings.https.hostname + '/temp-users/' + tempUser.username + '/confirm?verificationCode=' + verificationCode +
-                '">here</a> to confirm your Registration or open <a href="' + settings.https.hostname +
-                '/confirm">this Link</a> and enter Username and Verification Code.'
-        });
+        sendVerificationCode(email, tempUser);
         new Created({username: tempUser.username}).send(res);
     } catch(e: any) {
         handleException(e, res);
@@ -39,9 +31,15 @@ export async function postTempUserConfirm(req: Request, res: Response): Promise<
         const tempUser = await findTempUser(username);
         if(verificationCode != tempUser.verificationCode)
             throw new UnprocessableContent();
-        const user = await createUserFromTempUser(tempUser);
-        await deleteTempUser(tempUser.username);
-        new Created({ userId: user.id }).send(res);
+        await prisma.$transaction(async (): Promise<void> => {
+            try {
+                const user = await createUserFromTempUser(tempUser);
+                await deleteTempUser(tempUser.username);
+                new Created({ userId: user.id }).send(res);
+            } catch(e: any) {
+                throw e;
+            }
+        });
     } catch(e: any) {
         handleException(e, res);
     }

@@ -6,6 +6,7 @@ import qrcode from "qrcode";
 import tfa from "speakeasy";
 import { AuthTokenPayload, FindFunction, validateJsonWebToken } from "../auth";
 import { findUser, findUserToken, findUserTokenAndUsername, findUserWhereUsername, regenerateUserToken } from "../database/user";
+import { sendSecurityNotification } from "../email";
 import { encodeSvgToBase64, generateTfaToken } from "../random";
 import { settings } from "../settings";
 import { getSixDigitCode, getTfaKey, getToken, getUsername } from "../validation/semantic-validation";
@@ -14,7 +15,7 @@ import { NoContent, NotFound, Ok, Unauthorized, UnprocessableContent, handleExce
 
 const pendingTfas: { [index: string]: number; } = {};
 
-function authenticate(user: User, res: Response): void {
+function authenticate(user: User, req: Request, res: Response): void {
     const payload: AuthTokenPayload = {
         userId: user.id,
         token: user.token
@@ -27,6 +28,7 @@ function authenticate(user: User, res: Response): void {
         expires: new Date(Date.now() + (user.sessionDuration * 24 * 60 * 60 * 1000)),
         sameSite: 'strict'
     });
+    sendSecurityNotification('login', user, req);
     new NoContent().send(res);
 }
 
@@ -56,7 +58,7 @@ export async function postLogin(req: Request, res: Response): Promise<void> {
             new Ok({ tfaToken: tfaToken }).send(res);
         }
         else
-            authenticate(user, res);
+            authenticate(user, req, res);
     } catch(e: any) {
         handleException(e, res);
     }
@@ -85,7 +87,7 @@ export async function postLoginTfa(req: Request, res: Response): Promise<void> {
             throw new UnprocessableContent();
         if(!verify(user.tfaKey, tfaCode))
             throw new Unauthorized();
-        authenticate(user, res);
+        authenticate(user, req, res);
     } catch(e: any) {
         handleException(e, res);
     }

@@ -90,12 +90,16 @@ export async function notifyAllUsersOnChat(chatId: number, event: Event, data: D
         if(userSockets == undefined)
             continue;
         let d = data;
-        if(event == 'chat-user-join' && userOnChat.userId == data.userId) {
-            d = {
-                ...data,
-                lastMessageId: await findLastMessageId(chatId),
-                lastReadMessageId: await findUserOnChatLastReadMessageId(data.userId, chatId)
-            };
+        try {
+            if(event == 'chat-user-join' && userOnChat.userId == data.userId) {
+                d = {
+                    ...data,
+                    lastMessageId: await findLastMessageId(chatId),
+                    lastReadMessageId: await findUserOnChatLastReadMessageId(data.userId, chatId)
+                };
+            }
+        } catch(e: any) {
+            console.error('Unexpected Error: ', e);
         }
         for(const userSocket of userSockets)
             userSocket.emit(event, d);

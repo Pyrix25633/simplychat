@@ -1043,7 +1043,7 @@ paths:
         - chats
       summary: Gets last 16 messages from a chat
       description: Returns 16 messages before beforeMessageId if specified
-      operationId: chats/[chatId]/messages
+      operationId: chats/[chatId]/messages(get)
       parameters:
         - in: path
           name: chatId
@@ -1091,6 +1091,43 @@ paths:
           description: "Forbidden: requesting user is not one of chat's members"
         "404":
           description: "Not Found: no chats found with specified chatId"
-  #TODO: document POST /chats/{chatId}/messages
+    post:
+      tags:
+        - chats
+      summary: Creates a new message
+      description: Used by the user to send a message in the specified chat
+      operationId: chats/[chatId]/messages(post)
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+            $ref: "#/components/schemas/id"
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  $ref: "#/components/schemas/message"
+      responses:
+        "201":
+          description: Message created succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: "#/components/schemas/id"
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: requesting user cannot send messages in this chat"
+        "404":
+          description: "Not Found: no chats found with specified chatId"
+        "422":
+          description: "Unprocessable Content: user cannot be created"
 servers:
   - url: https://simplychat.ddns.net/api/

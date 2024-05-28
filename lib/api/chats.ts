@@ -1,9 +1,9 @@
-import { PermissionLevel } from "@prisma/client";
+import { PermissionLevel, Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import { createChat, doesChatExist, findChat, findChatInfo, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
 import { createMessage, findLast16Messages, findLastMessageId } from "../database/message";
 import { prisma, simplychat } from "../database/prisma";
-import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
+import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, isUserOnChatNotViewer, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
 import { generateChatToken } from "../random";
 import { getBase64EncodedImage, getDescription, getMessage, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
 import { getInt, getObject, getOrUndefined } from "../validation/type-validation";
@@ -17,11 +17,15 @@ export async function postChat(req: Request, res: Response): Promise<void> {
         const name = getName(body.name);
         const description = getDescription(body.description);
         await prisma.$transaction(async (): Promise<void> => {
-            const chat = await createChat(name, description);
-            await createUserOnChat(partialUser.id, chat.id, PermissionLevel.ADMINISTRATOR);
-            await createMessage('@' + partialUser.id + ' created this Chat!', (await simplychat).id, chat.id);
-            new Created({ id: chat.id }).send(res);
-        });
+            try {
+                const chat = await createChat(name, description);
+                await createMessage('@' + partialUser.id + ' created this Chat!', (await simplychat).id, chat.id);
+                await createUserOnChat(partialUser.id, chat.id, PermissionLevel.ADMINISTRATOR);
+                new Created({ id: chat.id }).send(res);
+            } catch(e: any) {
+                throw e;
+            }
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadUncommitted });
     } catch(e: any) {
         handleException(e, res);
     }
@@ -56,8 +60,12 @@ export async function postChatJoin(req: Request, res: Response): Promise<void> {
         if(token != chat.token || (chat.tokenExpiration != null && chat.tokenExpiration < new Date()))
             throw new Forbidden();
         await prisma.$transaction(async (): Promise<void> => {
-            await createUserOnChat(partialUser.id, chat.id, chat.defaultPermissionLevel);
-            await createMessage('Welcome @' + partialUser.id + '!', (await simplychat).id, chat.id);
+            try {
+                await createUserOnChat(partialUser.id, chat.id, chat.defaultPermissionLevel);
+                await createMessage('Welcome @' + partialUser.id + '!', (await simplychat).id, chat.id);
+            } catch(e: any) {
+                throw e;
+            }
         });
         new NoContent().send(res);
     } catch(e: any) {
@@ -103,16 +111,20 @@ export async function patchChatSettings(req: Request, res: Response): Promise<vo
         const modifiedUsers = getModifiedUsers(body.modifiedUsers);
         const removedUsers = getRemovedUsers(body.removedUsers);
         await prisma.$transaction(async (): Promise<void> => {
-            await updateChatSettings(chatId, name, description, tokenExpiration, defaultPermissionLevel);
-            if(logo != undefined)
-                await updateChatLogo(chatId, logo);
-            for(const modifiedUser of modifiedUsers)
-                await updateUserOnChatPermissionLevel(modifiedUser.userId, chatId, modifiedUser.permissionLevel);
-            for(const removedUser of removedUsers) {
-                await deleteUserOnChat(removedUser, chatId);
-                await createMessage('@' + partialUser.id + ' removed @' + removedUser + '.', (await simplychat).id, chatId);
+            try {
+                await updateChatSettings(chatId, name, description, tokenExpiration, defaultPermissionLevel);
+                if(logo != undefined)
+                    await updateChatLogo(chatId, logo);
+                for(const modifiedUser of modifiedUsers)
+                    await updateUserOnChatPermissionLevel(modifiedUser.userId, chatId, modifiedUser.permissionLevel);
+                for(const removedUser of removedUsers) {
+                    await deleteUserOnChat(removedUser, chatId);
+                    await createMessage('@' + partialUser.id + ' removed @' + removedUser + '.', (await simplychat).id, chatId);
+                }
+                new NoContent().send(res);
+            } catch(e: any) {
+                throw e;
             }
-            new NoContent().send(res);
         });
     } catch(e: any) {
         handleException(e, res);
@@ -195,9 +207,13 @@ export async function postChatLeave(req: Request, res: Response): Promise<void> 
         if(!(await doesUserOnChatExist(partialUser.id, chatId)))
             throw new Forbidden();
         await prisma.$transaction(async (): Promise<void> => {
-            await deleteUserOnChat(partialUser.id, chatId);
-            await createMessage('@' + partialUser.id + ' left the Chat.', (await simplychat).id, chatId);
-            new NoContent().send(res);
+            try {
+                await deleteUserOnChat(partialUser.id, chatId);
+                await createMessage('@' + partialUser.id + ' left the Chat.', (await simplychat).id, chatId);
+                new NoContent().send(res);
+            } catch(e: any) {
+                throw e;
+            }
         });
     } catch(e: any) {
         handleException(e, res);
@@ -248,7 +264,7 @@ export async function postChatMessage(req: Request, res: Response): Promise<void
         const message = getMessage(body.message);
         if(!(await doesChatExist(chatId)))
             throw new NotFound();
-        if(!(await doesUserOnChatExist(partialUser.id, chatId)))
+        if(!(await isUserOnChatNotViewer(partialUser.id, chatId)))
             throw new Forbidden();
         new Created({
             id: (await createMessage(message, partialUser.id, chatId)).id

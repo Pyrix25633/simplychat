@@ -3,8 +3,10 @@ import { Response } from "express";
 export function handleException(e: any, res: Response) {
     if(e instanceof HttpResponse)
         e.send(res);
-    else
+    else {
+        console.error('Unexpected Internal Server Error: ', e);
         new InternalServerError().send(res);
+    }
 }
 
 export type Json = {

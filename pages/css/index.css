@@ -125,7 +125,6 @@ div.main {
 div.messages {
     height: 100%;
     width: var(--messages-width);
-    border-bottom: var(--color-lighter) 2px solid;
     overflow-y: scroll;
     align-items: start;
 }
@@ -234,6 +233,7 @@ textarea::-webkit-scrollbar-track, textarea::-webkit-scrollbar, textarea::-webki
 
 div.textarea {
     position: relative;
+    border-top: var(--color-lighter) 2px solid;
 }
 
 span.counter {

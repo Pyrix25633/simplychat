@@ -99,7 +99,7 @@ div.unread-messages span {
 }
 
 div.textarea {
-    margin: 5px 0;
+    padding: 5px;
     gap: 5px;
 }
 textarea {
