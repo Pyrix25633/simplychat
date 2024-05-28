@@ -5,7 +5,7 @@ import { Auth, PermissionLevel, PermissionLevels, RequireNonNull, Response, defa
 declare function io(): Socket;
 type Event = 'user-online' | 'user-username-status' | 'user-pfp' |
     'chat-user-join' | 'chat-user-leave' | 'chat-name-description' | 'chat-logo' | 'chat-user-permission-level' |
-    'message-new' | 'message-edit' | 'message-delete' | 'mark-as-read' |
+    'chat-message-send' | 'chat-message-edit' | 'chat-message-delete' | 'chat-mark-as-read' |
     'connect';
 type Data = { [index: string]: any; };
 type Socket = {
@@ -804,6 +804,14 @@ class Messages {
     empty(): void {
         this.box.innerHTML = '';
     }
+
+    values(): IterableIterator<Message> {
+        return this.messages.values();
+    }
+
+    set(key: number, value: Message): void {
+        this.messages.set(key, value);
+    }
 }
 
 class Textarea {
@@ -1128,6 +1136,18 @@ class Updater {
                 this.messages.updatePermissionLevel(data.userId, "REMOVED");
             }
         });
+        this.socket.on('chat-message-send', (data: Data): void => {
+            if(data.chatId == navigator.selectedChatId) 
+                this.addMessage({
+                    id: data.id,
+                    chatId: data.chatId,
+                    userId: data.userId,
+                    message: data.message,
+                    createdAt: data.createdAt,
+                    editedAt: null,
+                    deletedAt: null
+                });
+        });
         this.socket.on('user-online', (data: Data): void => {
             const user = this.users.get(data.id);
             if(user != undefined)
@@ -1173,6 +1193,20 @@ class Updater {
             return p;
         });
         user.appendTo(this.usersSidebar, users.indexOf(user));
+    }
+
+    addMessage(m: JsonMessage & { chatId: number }): void {
+        const user = this.users.get(m.userId);
+        const chat = this.chats.get(m.chatId);
+        if(user == undefined || chat == undefined)
+            return;
+        const message = new Message(m, chat.permissionLevel, this.messages, user);
+        this.messages.set(message.id, message);
+        const messages = Array.from(this.messages.values());
+        messages.sort((a: Message, b: Message): number => {
+            return a.id - b.id;
+        });
+        message.appendTo(this.messages, messages.indexOf(message));
     }
 
     removeChat(id: number): void {

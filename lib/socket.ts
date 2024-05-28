@@ -10,7 +10,7 @@ import { getNonEmptyString, getObject } from "./validation/type-validation";
 type Data = { [index: string]: any; };
 type Event = 'user-online' | 'user-username-status' | 'user-pfp' |
     'chat-user-join' | 'chat-user-leave' | 'chat-name-description' | 'chat-logo' | 'chat-user-permission-level' |
-    'message-new' | 'message-edit' | 'message-delete' | 'mark-as-read' |
+    'chat-message-send' | 'chat-message-edit' | 'chat-message-delete' | 'chat-mark-as-read' |
     'status-resources' | 'status-database';
 
 const mainSockets: Map<number, Socket[]> = new Map();

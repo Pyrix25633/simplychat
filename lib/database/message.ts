@@ -12,7 +12,7 @@ export async function createMessage(messageText: string, userId: number, chatId:
                 chatId: chatId
             }
         });
-        notifyAllUsersOnChat(chatId, 'message-new', {
+        notifyAllUsersOnChat(chatId, 'chat-message-send', {
             id: message.id,
             chatId: chatId,
             userId: userId,

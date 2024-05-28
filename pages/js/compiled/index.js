@@ -653,6 +653,12 @@ class Messages {
     empty() {
         this.box.innerHTML = '';
     }
+    values() {
+        return this.messages.values();
+    }
+    set(key, value) {
+        this.messages.set(key, value);
+    }
 }
 class Textarea {
     constructor() {
@@ -933,6 +939,18 @@ class Updater {
                 this.messages.updatePermissionLevel(data.userId, "REMOVED");
             }
         });
+        this.socket.on('chat-message-send', (data) => {
+            if (data.chatId == navigator.selectedChatId)
+                this.addMessage({
+                    id: data.id,
+                    chatId: data.chatId,
+                    userId: data.userId,
+                    message: data.message,
+                    createdAt: data.createdAt,
+                    editedAt: null,
+                    deletedAt: null
+                });
+        });
         this.socket.on('user-online', (data) => {
             const user = this.users.get(data.id);
             if (user != undefined)
@@ -978,6 +996,19 @@ class Updater {
             return p;
         });
         user.appendTo(this.usersSidebar, users.indexOf(user));
+    }
+    addMessage(m) {
+        const user = this.users.get(m.userId);
+        const chat = this.chats.get(m.chatId);
+        if (user == undefined || chat == undefined)
+            return;
+        const message = new Message(m, chat.permissionLevel, this.messages, user);
+        this.messages.set(message.id, message);
+        const messages = Array.from(this.messages.values());
+        messages.sort((a, b) => {
+            return a.id - b.id;
+        });
+        message.appendTo(this.messages, messages.indexOf(message));
     }
     removeChat(id) {
         const chat = this.chats.get(id);
