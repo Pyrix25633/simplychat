@@ -191,8 +191,3 @@ main.get('/status', (req: Request, res: Response): void => {
 main.get('/error', (req: Request, res: Response): void => {
     res.sendFile(path.resolve(__dirname, './pages/error.html'));
 })
-
-//// tests ////
-
-//if(settings.tests.run)
-    //runTests();

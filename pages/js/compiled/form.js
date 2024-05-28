@@ -1,4 +1,4 @@
-import { RequireNonNull, defaultStatusCode } from './utils.js';
+import { RequireNonNull, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from './utils.js';
 export class Form {
     constructor(id, url, method, elements, submitButton, success, statusCode, wrapperId = undefined) {
         this.valid = false;
@@ -412,6 +412,7 @@ export class ImageInput extends InputElement {
         this.input.type = 'file';
         this.input.style.display = 'none';
         this.changeImg.addEventListener('click', () => {
+            this.changeImg.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             this.input.click();
         });
         this.input.addEventListener('change', () => {

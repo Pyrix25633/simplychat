@@ -1,4 +1,4 @@
-import { RequireNonNull, StatusCode, Success, defaultStatusCode } from './utils.js';
+import { RequireNonNull, StatusCode, Success, defaultStatusCode, imageButtonAnimationKeyframes, imageButtonAnimationOptions } from './utils.js';
 
 type JsonObject = { [index: string]: any; };
 
@@ -509,6 +509,7 @@ export class ImageInput extends InputElement<string> {
         this.input.type = 'file';
         this.input.style.display = 'none';
         this.changeImg.addEventListener('click', (): void => {
+            this.changeImg.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             this.input.click();
         });
         this.input.addEventListener('change', (): void => {

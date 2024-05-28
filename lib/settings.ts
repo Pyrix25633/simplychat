@@ -51,12 +51,5 @@ export const settings = {
         'chat-mark-as-read': true,
         'status-resources': true,
         'status-database': true
-    },
-    tests: {
-        run: false,
-        static: false,
-        pages: false,
-        api: false,
-        database: "test"
     }
 };

@@ -422,7 +422,8 @@ class Topbar {
     }
 }
 class Message {
-    constructor(message, permissionLevel, messages, user) {
+    constructor(message, permissionLevel, messages, textarea, user) {
+        this.messageText = '';
         this.id = message.id;
         this.userId = message.userId;
         this.box = document.createElement('div');
@@ -457,7 +458,8 @@ class Message {
         this.edit.src = '/img/edit.svg';
         this.edit.addEventListener('click', () => {
             this.edit.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
-            //TODO
+            textarea.updateTextarea(this.messageText);
+            textarea.editingMessageId = this.id;
         });
         this.delete = document.createElement('img');
         this.delete.classList.add('button');
@@ -465,7 +467,12 @@ class Message {
         this.delete.src = '/img/delete.svg';
         this.delete.addEventListener('click', () => {
             this.delete.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
-            //TODO
+            $.ajax({
+                url: '/api/chats/' + textarea.chatId + '/message/' + this.id,
+                method: 'DELETE',
+                success: async (res) => { },
+                statusCode: defaultStatusCode
+            });
         });
         setDynamicallyUpdatedDate(this.createdAt, new Date(message.createdAt));
         this.updateSelected(false);
@@ -527,6 +534,7 @@ class Message {
         }
     }
     updateMessage(message) {
+        this.messageText = message;
         this.message.innerText = message; //TODO
     }
     updateEditedAt(editedAt) {
@@ -598,7 +606,7 @@ class Messages {
                             await user.loading;
                         }
                     }
-                    const message = new Message(m, chat.permissionLevel, this, user);
+                    const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
                     this.messages.set(message.id, message);
                     message.appendTo(this);
                 }
@@ -665,6 +673,7 @@ class Textarea {
         this.max = 2048;
         this.emojiSelectorVisible = false;
         this.chatId = 0;
+        this.editingMessageId = undefined;
         this.container = document.createElement('div');
         this.container.classList.add('container', 'textarea');
         this.textarea = document.createElement('textarea');
@@ -722,9 +731,6 @@ class Textarea {
         this.container.appendChild(actionsCounter);
         page.appendMain(this.container);
     }
-    setChatId(chatId) {
-        this.chatId = chatId;
-    }
     show(show) {
         this.container.style.display = show ? '' : 'none';
     }
@@ -780,16 +786,31 @@ class Textarea {
             { transform: 'translate(0, 0) rotate(-270deg)', offset: 0.9 },
             { transform: 'rotate(0deg)', offset: 1 }
         ], { duration: 700 });
-        $.ajax({
-            url: '/api/chats/' + this.chatId + '/messages',
-            method: 'POST',
-            data: JSON.stringify({
-                message: message
-            }),
-            contentType: 'application/json',
-            success: async (res) => { },
-            statusCode: defaultStatusCode
-        });
+        if (this.editingMessageId == undefined) {
+            $.ajax({
+                url: '/api/chats/' + this.chatId + '/messages',
+                method: 'POST',
+                data: JSON.stringify({
+                    message: message
+                }),
+                contentType: 'application/json',
+                success: async (res) => { },
+                statusCode: defaultStatusCode
+            });
+        }
+        else {
+            $.ajax({
+                url: '/api/chats/' + this.chatId + '/message/' + this.editingMessageId,
+                method: 'PATCH',
+                data: JSON.stringify({
+                    message: message
+                }),
+                contentType: 'application/json',
+                success: async (res) => { },
+                statusCode: defaultStatusCode
+            });
+            this.editingMessageId = undefined;
+        }
         this.textarea.value = '';
     }
 }
@@ -814,7 +835,7 @@ class Navigator {
         this.selectedChatId = id;
         this.loading.show(true);
         this.topbar.update(chat);
-        this.textarea.setChatId(id);
+        this.textarea.chatId = id;
         this.textarea.show(chat.permissionLevel != "VIEWER");
         this.users.clear();
         this.usersSidebar.empty();
@@ -1002,7 +1023,7 @@ class Updater {
         const chat = this.chats.get(m.chatId);
         if (user == undefined || chat == undefined)
             return;
-        const message = new Message(m, chat.permissionLevel, this.messages, user);
+        const message = new Message(m, chat.permissionLevel, this.messages, this.textarea, user);
         this.messages.set(message.id, message);
         const messages = Array.from(this.messages.values());
         messages.sort((a, b) => {

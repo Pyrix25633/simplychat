@@ -1,4 +1,6 @@
 import { PermissionLevel } from "@prisma/client";
+import imageSize from "image-size";
+import { ISizeCalculationResult } from "image-size/dist/types/interface";
 import { Customization } from "../database/user";
 import { BadRequest } from "../web/response";
 import { getArray, getBoolean, getInt, getNonEmptyString, getObject } from "./type-validation";
@@ -54,7 +56,13 @@ export function getCustomization(raw: any): Customization {
 
 export function getBase64EncodedImage(raw: any): Buffer {
     const parsed = getNonEmptyString(raw);
-    if(!parsed.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,.+$/))
+    const match = parsed.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,(.+)$/);
+    if(match == null)
+        throw new BadRequest();
+    const dimensions: ISizeCalculationResult = imageSize(Buffer.from(match[1], 'base64'));
+    if(dimensions.width != dimensions.height || dimensions.width == undefined)
+        throw new BadRequest();
+    if(dimensions.width < 8 || dimensions.width > 512)
         throw new BadRequest();
     return Buffer.from(parsed);
 }
