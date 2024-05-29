@@ -1,9 +1,9 @@
 import { PermissionLevel, Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import { createChat, doesChatExist, findChat, findChatInfo, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
-import { createMessage, findLast16Messages, findLastMessageId } from "../database/message";
+import { createMessage, deleteMessage, findLast16Messages, findLastMessageId, findMessageChatIdUserIdAndDeletedAt, updateMessage } from "../database/message";
 import { prisma, simplychat } from "../database/prisma";
-import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, isUserOnChatNotViewer, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
+import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, isUserOnChatAdministratorOrModerator, isUserOnChatNotViewer, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
 import { generateChatToken } from "../random";
 import { getBase64EncodedImage, getDescription, getMessage, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
 import { getInt, getObject, getOrUndefined } from "../validation/type-validation";
@@ -269,6 +269,44 @@ export async function postChatMessage(req: Request, res: Response): Promise<void
         new Created({
             id: (await createMessage(message, partialUser.id, chatId)).id
         }).send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function patchChatMessage(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        const messageId = getInt(req.params.messageId);
+        const body = getObject(req.body);
+        const message = getMessage(body.message);
+        const partialMessage = await findMessageChatIdUserIdAndDeletedAt(messageId);
+        if(partialMessage.chatId != chatId)
+            throw new NotFound();
+        if(partialMessage.userId != partialUser.id || partialMessage.deletedAt != null)
+            throw new Forbidden();
+        await updateMessage(messageId, message);
+        new NoContent().send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function deleteChatMessage(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        const messageId = getInt(req.params.messageId);
+        const partialMessage = await findMessageChatIdUserIdAndDeletedAt(messageId);
+        if(partialMessage.chatId != chatId)
+            throw new NotFound();
+        if(partialMessage.deletedAt != null)
+            throw new Forbidden();
+        if(partialMessage.userId != partialUser.id && !isUserOnChatAdministratorOrModerator(partialUser.id, chatId))
+            throw new Forbidden();
+        await deleteMessage(messageId, 'Message deleted by @' + partialUser.id + '.');
+        new NoContent().send(res);
     } catch(e: any) {
         handleException(e, res);
     }

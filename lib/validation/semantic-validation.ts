@@ -64,7 +64,7 @@ export function getBase64EncodedImage(raw: any): Buffer {
         throw new BadRequest();
     if(dimensions.width < 8 || dimensions.width > 512)
         throw new BadRequest();
-    return Buffer.from(parsed);
+    return Buffer.from(parsed, 'base64');
 }
 
 export function getSessionDuration(raw: any): number {

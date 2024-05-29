@@ -550,6 +550,8 @@ class Message {
             this.deleted.style.display = 'none';
         else {
             this.deleted.style.display = '';
+            this.edit.style.display = 'none';
+            this.delete.style.display = 'none';
             setDynamicallyUpdatedDate(this.deletedAt, new Date(deletedAt));
         }
     }

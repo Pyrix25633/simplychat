@@ -32,37 +32,30 @@ export async function countUsersOnChat(chatId: number): Promise<number> {
 }
 
 export async function isUserOnChatAdministrator(userId: number, chatId: number): Promise<boolean> {
-    const partialUserOnChat: { permissionLevel: PermissionLevel; } | null = await prisma.usersOnChats.findUnique({
-        select: {
-            permissionLevel: true
-        },
-        where: {
-            chatId_userId: {
-                chatId: chatId,
-                userId: userId
-            }
-        }
-    });
-    if(partialUserOnChat == null)
+    try {
+        const permissionLevel = await findUserOnChatPermissionLevel(userId, chatId);
+        return permissionLevel == PermissionLevel.ADMINISTRATOR;
+    } catch(e: any) {
         return false;
-    return partialUserOnChat.permissionLevel == PermissionLevel.ADMINISTRATOR;
+    }
 }
 
 export async function isUserOnChatNotViewer(userId: number, chatId: number): Promise<boolean> {
-    const partialUserOnChat: { permissionLevel: PermissionLevel; } | null = await prisma.usersOnChats.findUnique({
-        select: {
-            permissionLevel: true
-        },
-        where: {
-            chatId_userId: {
-                chatId: chatId,
-                userId: userId
-            }
-        }
-    });
-    if(partialUserOnChat == null)
+    try {
+        const permissionLevel = await findUserOnChatPermissionLevel(userId, chatId);
+        return permissionLevel != PermissionLevel.VIEWER;
+    } catch(e: any) {
         return false;
-    return partialUserOnChat.permissionLevel != PermissionLevel.VIEWER;
+    }
+}
+
+export async function isUserOnChatAdministratorOrModerator(userId: number, chatId: number): Promise<boolean> {
+    try {
+        const permissionLevel = await findUserOnChatPermissionLevel(userId, chatId);
+        return permissionLevel == PermissionLevel.ADMINISTRATOR || permissionLevel == PermissionLevel.MODERATOR;
+    } catch(e: any) {
+        return false;
+    }
 }
 
 export async function findUsersOnChat(chatId: number): Promise<{ userId: number; permissionLevel: PermissionLevel; }[]> {
