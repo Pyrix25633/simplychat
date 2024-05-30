@@ -236,7 +236,7 @@ class User {
     private readonly info: HTMLDivElement;
     private readonly lastOnline: HTMLSpanElement;
     private readonly statusExtended: HTMLSpanElement;
-    private readonly at: HTMLImageElement;
+    private readonly tag: HTMLImageElement;
     public readonly loading: Promise<void>;
 
     constructor(user: JsonUser, navigator: Navigator, textarea: Textarea) {
@@ -264,15 +264,15 @@ class User {
         this.statusExtended.classList.add('status-extended');
         const actions = document.createElement('div');
         actions.classList.add('container', 'actions');
-        this.at = document.createElement('img');
-        this.at.classList.add('button');
-        this.at.alt = 'At';
-        this.at.src = '/img/at.svg';
-        this.at.addEventListener('click', (): void => {
-            this.at.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
-            textarea.atUser(this.id);
+        this.tag = document.createElement('img');
+        this.tag.classList.add('button');
+        this.tag.alt = 'At';
+        this.tag.src = '/img/at.svg';
+        this.tag.addEventListener('click', (): void => {
+            this.tag.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
+            textarea.tagUser(this.id);
         });
-        actions.appendChild(this.at);
+        actions.appendChild(this.tag);
         this.info.appendChild(this.lastOnline);
         this.info.appendChild(this.statusExtended);
         this.info.appendChild(actions);
@@ -545,6 +545,7 @@ class Message {
     private readonly actions: HTMLDivElement;
     private readonly edit: HTMLImageElement;
     private readonly delete: HTMLImageElement;
+    private readonly messages: Messages;
     private messageText: string = '';
 
     constructor(message: JsonMessage, permissionLevel: PermissionLevel, messages: Messages, textarea: Textarea, user: User) {
@@ -598,6 +599,7 @@ class Message {
                 statusCode: defaultStatusCode
             });
         });
+        this.messages = messages;
         setDynamicallyUpdatedDate(this.createdAt, new Date(message.createdAt));
         this.updateSelected(false);
         this.updateMessage(message.message);
@@ -660,9 +662,19 @@ class Message {
         }
     }
 
-    updateMessage(message: string): void {
+    async updateMessage(message: string): Promise<void> {
         this.messageText = message;
-        this.message.innerText = message; //TODO
+        const regExp = /@(\d{1,9})/g;
+        for(let match = regExp.exec(message); match != null; match = regExp.exec(message)) {
+            const userId =  parseInt(match[1]);
+            const span = document.createElement('span');
+            span.classList.add('tag', 'tag-' + userId);
+            const user = await this.messages.getUser(userId);
+            span.innerText = '@' + user.username.innerText;
+            span.classList.add('permission-level-' + user.permissionLevel.toLowerCase());
+            message = message.replace('@' + userId, span.outerHTML);
+        }
+        this.message.innerHTML = message;
     }
     
     updateEditedAt(editedAt: string | null): void {
@@ -711,6 +723,21 @@ class Message {
             this.username.classList.remove('permission-level-removed');
         this.username.classList.add('permission-level-' + permissionLevel.toLowerCase());
     }
+
+    updateTagsUsername(userId: number, username: string): void {
+        for(const tag of document.getElementsByClassName('tag-' + userId) as HTMLCollectionOf<HTMLSpanElement>)
+            tag.innerText = username;
+    }
+
+    updateTagsPermissionLevel(userId: number, permissionLevel: PermissionLevel | "REMOVED"): void {
+        for(const tag of document.getElementsByClassName('tag-' + userId) as HTMLCollectionOf<HTMLSpanElement>) {
+            for(const pl of PermissionLevels)
+                tag.classList.remove('permission-level-' + pl.toLowerCase());
+            if(permissionLevel != "REMOVED")
+                tag.classList.remove('permission-level-removed');
+            tag.classList.add('permission-level-' + permissionLevel.toLowerCase());
+        }
+    }
 }
 
 class Messages {
@@ -719,6 +746,7 @@ class Messages {
     private readonly users: Map<number, User>;
     private readonly removedUsers: Map<number, User> = new Map();
     private readonly textarea: Textarea;
+    private navigator: Navigator | undefined = undefined;
 
     constructor(users: Map<number, User>, textarea: Textarea) {
         this.box = document.createElement('div');
@@ -732,6 +760,7 @@ class Messages {
     }
 
     loadMessages(chat: Chat, navigator: Navigator): void {
+        this.navigator = navigator;
         this.empty();
         this.messages.clear();
         $.ajax({
@@ -739,15 +768,7 @@ class Messages {
             method: 'GET',
             success: async (res: Response): Promise<void> => {
                 for(const m of res.messages) {
-                    let user = this.users.get(m.userId);
-                    if(user == undefined) {
-                        user = this.removedUsers.get(m.userId);
-                        if(user == undefined) {
-                            user = new User({ userId: m.userId, permissionLevel: "REMOVED" }, navigator, this.textarea);
-                            this.removedUsers.set(user.id, user);
-                            await user.loading;
-                        }
-                    }
+                    const user = await this.getUser(m.userId);
                     const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
                     this.messages.set(message.id, message);
                     message.appendTo(this);
@@ -764,6 +785,7 @@ class Messages {
 
     updateUsername(userId: number, username: string): void {
         for(const message of this.messages.values()) {
+            message.updateTagsUsername(userId, username);
             if(message.userId == userId)
                 message.updateUsername(username);
         }
@@ -778,6 +800,7 @@ class Messages {
 
     updatePermissionLevel(userId: number, permissionLevel: PermissionLevel | "REMOVED"): void {
         for(const message of this.messages.values()) {
+            message.updateTagsPermissionLevel(userId, permissionLevel);
             if(message.userId == userId)
                 message.updatePermissionLevel(permissionLevel);
         }
@@ -825,6 +848,21 @@ class Messages {
 
     get(key: number): Message | undefined {
         return this.messages.get(key);
+    }
+
+    async getUser(id: number): Promise<User> {
+        let user = this.users.get(id);
+        if(user == undefined) {
+            user = this.removedUsers.get(id);
+            if(user == undefined) {
+                if(this.navigator == undefined)
+                    throw new Error('this.navigator is undefined');
+                user = new User({ userId: id, permissionLevel: "REMOVED" }, this.navigator, this.textarea);
+                this.removedUsers.set(user.id, user);
+                await user.loading;
+            }
+        }
+        return user;
     }
 }
 
@@ -927,7 +965,7 @@ class Textarea {
         }
     }
 
-    atUser(id: number): void {
+    tagUser(id: number): void {
         if(this.textarea.value != '') {
             const lastChar = this.textarea.value[this.textarea.value.length - 1];
             if(lastChar != ' ' && lastChar != '\n')

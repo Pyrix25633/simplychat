@@ -30,15 +30,19 @@ export function sendVerificationCode(email: string, tempUser: TempUser): void {
     });
 }
 
-export function sendSecurityNotification(type: 'settings' | 'login', user: User, req: Request): void {
+export function sendSecurityNotification(type: 'login' | 'settings', user: User, req: Request): void {
+    const loginSettingsLine = type == 'login' ?
+        ('A new Login to your Simply Chat Account (' + user.username + ') has been detected!\n') :
+        ('Your Account (' + user.username + ') Settings have been modified!\n');
+    const tfaLine = user.tfaKey == null ?
+        'We recommend that you turn on Two Factor Authentication!\n' :
+        'Two Factor Authentication is already active!\n';
     sendEmail({
         to: user.email,
         subject: 'Simply Chat Security Notification',
-        text: type == 'login' ?
-            'A new Login to your Simply Chat Account (' + user.username + ') has been detected!\n' :
-            'Your Account (' + user.username + ') Settings have been modified!\n' +
+        text: loginSettingsLine +
             'If it was you, you don\'t need to do anything. If not, you should take action.\n' +
-            user.tfaKey == null ? 'We recommend that you turn on Two Factor Authentication!\n' : 'Two Factor Authentication is already active!\n' +
+            tfaLine +
             'User Agent: ' + req.headers['user-agent'] + '\nIP Address: ' + req.ip
     });
 }

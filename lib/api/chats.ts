@@ -19,7 +19,7 @@ export async function postChat(req: Request, res: Response): Promise<void> {
         await prisma.$transaction(async (): Promise<void> => {
             try {
                 const chat = await createChat(name, description);
-                await createMessage('@' + partialUser.id + ' created this Chat!', (await simplychat).id, chat.id);
+                await createMessage('@' + partialUser.id + ' created the Chat!', (await simplychat).id, chat.id);
                 await createUserOnChat(partialUser.id, chat.id, PermissionLevel.ADMINISTRATOR);
                 new Created({ id: chat.id }).send(res);
             } catch(e: any) {
