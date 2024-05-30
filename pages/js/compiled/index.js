@@ -468,7 +468,7 @@ class Message {
         this.delete.addEventListener('click', () => {
             this.delete.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
             $.ajax({
-                url: '/api/chats/' + textarea.chatId + '/message/' + this.id,
+                url: '/api/chats/' + textarea.chatId + '/messages/' + this.id,
                 method: 'DELETE',
                 success: async (res) => { },
                 statusCode: defaultStatusCode
@@ -669,6 +669,9 @@ class Messages {
     set(key, value) {
         this.messages.set(key, value);
     }
+    get(key) {
+        return this.messages.get(key);
+    }
 }
 class Textarea {
     constructor() {
@@ -802,7 +805,7 @@ class Textarea {
         }
         else {
             $.ajax({
-                url: '/api/chats/' + this.chatId + '/message/' + this.editingMessageId,
+                url: '/api/chats/' + this.chatId + '/messages/' + this.editingMessageId,
                 method: 'PATCH',
                 data: JSON.stringify({
                     message: message
@@ -963,7 +966,7 @@ class Updater {
             }
         });
         this.socket.on('chat-message-send', (data) => {
-            if (data.chatId == navigator.selectedChatId)
+            if (data.chatId == navigator.selectedChatId) {
                 this.addMessage({
                     id: data.id,
                     chatId: data.chatId,
@@ -973,6 +976,25 @@ class Updater {
                     editedAt: null,
                     deletedAt: null
                 });
+            }
+        });
+        this.socket.on('chat-message-edit', (data) => {
+            if (data.chatId != navigator.selectedChatId)
+                return;
+            const message = messages.get(data.id);
+            if (message == undefined)
+                return;
+            message.updateMessage(data.message);
+            message.updateEditedAt(data.editedAt);
+        });
+        this.socket.on('chat-message-delete', (data) => {
+            if (data.chatId != navigator.selectedChatId)
+                return;
+            const message = messages.get(data.id);
+            if (message == undefined)
+                return;
+            message.updateMessage(data.message);
+            message.updateDeletedAt(data.deletedAt);
         });
         this.socket.on('user-online', (data) => {
             const user = this.users.get(data.id);

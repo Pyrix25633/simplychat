@@ -1128,6 +1128,71 @@ paths:
         "404":
           description: "Not Found: no chats found with specified chatId"
         "422":
-          description: "Unprocessable Content: user cannot be created"
+          description: "Unprocessable Content: message cannot be created"
+  /chats/{chatId}/messages/{messageId}:
+    patch:
+      tags:
+        - chats
+      summary: Modifies a message
+      description: Used by the user to edit a message
+      operationId: chats/[chatId]/messages/[messageId](patch)
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+            $ref: "#/components/schemas/id"
+          required: true
+        - in: path
+          name: messageId
+          schema:
+            $ref: "#/components/schemas/id"
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  $ref: "#/components/schemas/message"
+      responses:
+        "204":
+          description: Message edited successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: requesting user cannot modify this message because is not the sender or because the message has been deleted"
+        "404":
+          description: "Not Found: no chats found with specified chatId or no messages found with specified messageId"
+        "422":
+          description: "Unprocessable Content: message cannot be updated"
+    delete:
+      tags:
+        - chats
+      summary: Sets a message as deleted
+      description: Used by the user to delete a message
+      operationId: chats/[chatId]/messages/[messageId](delete)
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+            $ref: "#/components/schemas/id"
+          required: true
+        - in: path
+          name: messageId
+          schema:
+            $ref: "#/components/schemas/id"
+          required: true
+      responses:
+        "204":
+          description: Message edited successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: "Forbidden: requesting user cannot delete this message because is not the sender, a moderator or an administrator, or because the message has already been deleted"
+        "404":
+          description: "Not Found: no chats found with specified chatId or no messages found with specified messageId"
+        "422":
+          description: "Unprocessable Content: message cannot be deleted"
 servers:
   - url: https://simplychat.ddns.net/api/
