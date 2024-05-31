@@ -319,7 +319,7 @@ class Sidebar {
         if (position == undefined || position == this.getNumberOfChilds() - 1)
             this.appendChild(node);
         else
-            this.sidebar.insertBefore(node, this.getNthChild(position + 1));
+            this.sidebar.insertBefore(node, this.getNthChild(position));
     }
     removeChild(node) {
         this.sidebar.removeChild(node);
@@ -621,6 +621,20 @@ class Messages {
         this.navigator = undefined;
         this.box = document.createElement('div');
         this.box.classList.add('box', 'messages');
+        this.loadMore = document.createElement('div');
+        this.loadMore.classList.add('load-more');
+        const button = document.createElement('button');
+        button.innerText = 'Load More';
+        const icon = document.createElement('img');
+        icon.classList.add('button');
+        icon.alt = 'Load More';
+        icon.src = '/img/load-more.svg';
+        button.appendChild(icon);
+        button.addEventListener('click', () => {
+            this.loadMoreMessages();
+        });
+        this.loadMore.appendChild(button);
+        this.appendChild(this.loadMore);
         this.users = users;
         this.textarea = textarea;
     }
@@ -640,6 +654,31 @@ class Messages {
                     const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
                     this.messages.set(message.id, message);
                     message.appendTo(this);
+                }
+            },
+            statusCode: defaultStatusCode
+        });
+    }
+    loadMoreMessages() {
+        if (this.navigator == undefined)
+            return;
+        const chat = this.navigator.getSelectedChat();
+        const beforeMessageId = this.toOrderedArray()[0].id;
+        $.ajax({
+            url: '/api/chats/' + chat.id + '/messages',
+            data: { beforeMessageId: beforeMessageId },
+            method: 'GET',
+            success: async (res) => {
+                for (const m of res.messages) {
+                    const user = await this.getUser(m.userId);
+                    const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
+                    this.messages.set(message.id, message);
+                }
+                const messages = this.toOrderedArray();
+                for (const m of res.messages) {
+                    const message = this.messages.get(m.id);
+                    if (message != undefined)
+                        message.appendTo(this, messages.indexOf(message));
                 }
             },
             statusCode: defaultStatusCode
@@ -677,13 +716,20 @@ class Messages {
         this.box.appendChild(node);
     }
     insertAtPosition(node, position = undefined) {
+        if (node != this.loadMore)
+            this.removeChild(this.loadMore);
         if (position == undefined || position == this.getNumberOfChilds() - 1)
             this.appendChild(node);
         else
-            this.box.insertBefore(node, this.getNthChild(position + 1));
+            this.box.insertBefore(node, this.getNthChild(position));
+        if (node != this.loadMore)
+            this.insertAtPosition(this.loadMore, 0);
     }
     removeChild(node) {
-        this.box.removeChild(node);
+        try {
+            this.box.removeChild(node);
+        }
+        catch (_) { }
     }
     getNumberOfChilds() {
         return this.box.childNodes.length;
@@ -694,8 +740,12 @@ class Messages {
     empty() {
         this.box.innerHTML = '';
     }
-    values() {
-        return this.messages.values();
+    toOrderedArray() {
+        const messages = Array.from(this.messages.values());
+        messages.sort((a, b) => {
+            return a.id - b.id;
+        });
+        return messages;
     }
     set(key, value) {
         this.messages.set(key, value);
@@ -798,7 +848,7 @@ class Textarea {
         const lines = this.textarea.value.split('\n').length;
         this.updateCounter(chars);
         this.textarea.rows = lines < 2 ? 2 : (lines > 6 ? 6 : lines);
-        if (typeof ev != 'string' && ev.code == 'Enter' && !ev.shiftKey && ev.type == 'keydown') {
+        if (typeof ev != 'string' && ev.code == 'Enter' && !ev.shiftKey) {
             if (ev.type == 'keydown')
                 this.sendMessage();
             else
@@ -946,6 +996,12 @@ class Navigator {
                 this.loading.show(false);
             }
         }
+    }
+    getSelectedChat() {
+        const chat = this.chats.get(this.selectedChatId);
+        if (chat == undefined)
+            throw new Error('this.selectedChatId is undefined');
+        return chat;
     }
 }
 class Updater {
@@ -1106,10 +1162,7 @@ class Updater {
             return;
         const message = new Message(m, chat.permissionLevel, this.messages, this.textarea, user);
         this.messages.set(message.id, message);
-        const messages = Array.from(this.messages.values());
-        messages.sort((a, b) => {
-            return a.id - b.id;
-        });
+        const messages = this.messages.toOrderedArray();
         message.appendTo(this.messages, messages.indexOf(message));
     }
     removeChat(id) {

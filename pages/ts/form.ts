@@ -95,9 +95,8 @@ export class Button implements FormAppendable {
     }
 
     appendTo(formOrSection: Form | InputSection) {
-        if(this.inFooter) {
+        if(this.inFooter)
             formOrSection.appendChild(this.button);
-        }
         else {
             const div = document.createElement('div');
             div.classList.add('container');

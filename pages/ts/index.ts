@@ -401,7 +401,7 @@ class Sidebar {
         if(position == undefined || position == this.getNumberOfChilds() - 1)
             this.appendChild(node);
         else
-            this.sidebar.insertBefore(node, this.getNthChild(position + 1));
+            this.sidebar.insertBefore(node, this.getNthChild(position));
     }
 
     removeChild(node: Node): void {
@@ -753,8 +753,9 @@ class Message {
     }
 }
 
-class Messages {
+class Messages { //TODO: automatic scrolling, 'unread messages' bookmark
     private readonly box: HTMLDivElement;
+    private readonly loadMore: HTMLDivElement;
     private readonly messages: Map<number, Message> = new Map();
     private readonly users: Map<number, User>;
     private readonly removedUsers: Map<number, User> = new Map();
@@ -764,6 +765,20 @@ class Messages {
     constructor(users: Map<number, User>, textarea: Textarea) {
         this.box = document.createElement('div');
         this.box.classList.add('box', 'messages');
+        this.loadMore = document.createElement('div');
+        this.loadMore.classList.add('load-more');
+        const button = document.createElement('button');
+        button.innerText = 'Load More';
+        const icon = document.createElement('img');
+        icon.classList.add('button');
+        icon.alt = 'Load More';
+        icon.src = '/img/load-more.svg';
+        button.appendChild(icon);
+        button.addEventListener('click', (): void => {
+            this.loadMoreMessages();
+        });
+        this.loadMore.appendChild(button);
+        this.appendChild(this.loadMore);
         this.users = users;
         this.textarea = textarea;
     }
@@ -785,6 +800,32 @@ class Messages {
                     const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
                     this.messages.set(message.id, message);
                     message.appendTo(this);
+                }
+            },
+            statusCode: defaultStatusCode
+        });
+    }
+
+    loadMoreMessages(): void {
+        if(this.navigator == undefined)
+            return;
+        const chat = this.navigator.getSelectedChat();
+        const beforeMessageId = this.toOrderedArray()[0].id;
+        $.ajax({
+            url: '/api/chats/' + chat.id + '/messages',
+            data: { beforeMessageId: beforeMessageId },
+            method: 'GET',
+            success: async (res: Response): Promise<void> => {
+                for(const m of res.messages) {
+                    const user = await this.getUser(m.userId);
+                    const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
+                    this.messages.set(message.id, message);
+                }
+                const messages = this.toOrderedArray();
+                for(const m of res.messages) {
+                    const message = this.messages.get(m.id);
+                    if(message != undefined)
+                        message.appendTo(this, messages.indexOf(message));
                 }
             },
             statusCode: defaultStatusCode
@@ -829,14 +870,20 @@ class Messages {
     }
 
     insertAtPosition(node: Node, position: number | undefined = undefined): void {
+        if(node != this.loadMore)
+            this.removeChild(this.loadMore);
         if(position == undefined || position == this.getNumberOfChilds() - 1)
             this.appendChild(node);
         else
-            this.box.insertBefore(node, this.getNthChild(position + 1));
+            this.box.insertBefore(node, this.getNthChild(position));
+        if(node != this.loadMore)
+            this.insertAtPosition(this.loadMore, 0);
     }
 
     removeChild(node: Node): void {
-        this.box.removeChild(node);
+        try {
+            this.box.removeChild(node);
+        } catch(_: any) {}
     }
 
     getNumberOfChilds(): number {
@@ -851,8 +898,12 @@ class Messages {
         this.box.innerHTML = '';
     }
 
-    values(): IterableIterator<Message> {
-        return this.messages.values();
+    toOrderedArray(): Message[] {
+        const messages = Array.from(this.messages.values());
+        messages.sort((a: Message, b: Message): number => {
+            return a.id - b.id;
+        });
+        return messages;
     }
 
     set(key: number, value: Message): void {
@@ -970,7 +1021,7 @@ class Textarea {
         const lines = this.textarea.value.split('\n').length;
         this.updateCounter(chars);
         this.textarea.rows = lines < 2 ? 2 : (lines > 6 ? 6 : lines);
-        if(typeof ev != 'string' && ev.code == 'Enter' && !ev.shiftKey && ev.type == 'keydown') {
+        if(typeof ev != 'string' && ev.code == 'Enter' && !ev.shiftKey) {
             if(ev.type == 'keydown')
                 this.sendMessage();
             else
@@ -1137,6 +1188,13 @@ class Navigator {
                 this.loading.show(false);
             }
         }
+    }
+
+    getSelectedChat(): Chat {
+        const chat = this.chats.get(this.selectedChatId);
+        if(chat == undefined)
+            throw new Error('this.selectedChatId is undefined');
+        return chat;
     }
 }
 
@@ -1310,10 +1368,7 @@ class Updater {
             return;
         const message = new Message(m, chat.permissionLevel, this.messages, this.textarea, user);
         this.messages.set(message.id, message);
-        const messages = Array.from(this.messages.values());
-        messages.sort((a: Message, b: Message): number => {
-            return a.id - b.id;
-        });
+        const messages = this.messages.toOrderedArray();
         message.appendTo(this.messages, messages.indexOf(message));
     }
 
