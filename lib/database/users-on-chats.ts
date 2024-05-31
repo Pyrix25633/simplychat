@@ -186,3 +186,23 @@ export async function findUserOnChatLastReadMessageId(userId: number, chatId: nu
         throw new NotFound();
     return partialUserOnChat.lastReadMessageId ?? 0;
 }
+
+export async function updateUserOnChatLastReadMessageId(userId: number, chatId: number, lastReadMessageId: number): Promise<UsersOnChats> {
+    try {
+        const userOnChat = await prisma.usersOnChats.update({
+            data: {
+                lastReadMessageId: lastReadMessageId
+            },
+            where: {
+                chatId_userId: {
+                    chatId: chatId,
+                    userId: userId
+                }
+            }
+        });
+        notifyMainUser(userId, 'chat-mark-as-read', { chatId: chatId, lastReadMessageId: lastReadMessageId });
+        return userOnChat;
+    } catch(e: any) {
+        throw new UnprocessableContent();
+    }
+}

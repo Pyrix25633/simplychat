@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { createChat, doesChatExist, findChat, findChatInfo, updateChatLogo, updateChatSettings, updateChatToken } from "../database/chat";
 import { createMessage, deleteMessage, findLast16Messages, findLastMessageId, findMessageChatIdUserIdAndDeletedAt, updateMessage } from "../database/message";
 import { prisma, simplychat } from "../database/prisma";
-import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, isUserOnChatAdministratorOrModerator, isUserOnChatNotViewer, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
+import { countUsersOnChat, createUserOnChat, deleteUserOnChat, doesUserOnChatExist, findUserOnChats, findUsersOnChat, findUsersOnChatExcept, isUserOnChatAdministrator, isUserOnChatAdministratorOrModerator, isUserOnChatNotViewer, updateUserOnChatLastReadMessageId, updateUserOnChatPermissionLevel } from "../database/users-on-chats";
 import { generateChatToken } from "../random";
 import { getBase64EncodedImage, getDescription, getMessage, getModifiedUsers, getName, getPermissionLevel, getRemovedUsers, getToken, getTokenExpiration } from "../validation/semantic-validation";
 import { getInt, getObject, getOrUndefined } from "../validation/type-validation";
@@ -261,14 +261,22 @@ export async function postChatMessage(req: Request, res: Response): Promise<void
         const partialUser = await validateToken(req);
         const chatId = getInt(req.params.chatId);
         const body = getObject(req.body);
-        const message = getMessage(body.message);
+        const messageText = getMessage(body.message);
         if(!(await doesChatExist(chatId)))
             throw new NotFound();
         if(!(await isUserOnChatNotViewer(partialUser.id, chatId)))
             throw new Forbidden();
-        new Created({
-            id: (await createMessage(message, partialUser.id, chatId)).id
-        }).send(res);
+        await prisma.$transaction(async (): Promise<void> => {
+            try {
+                const message = await createMessage(messageText, partialUser.id, chatId);
+                await updateUserOnChatLastReadMessageId(partialUser.id, chatId, message.id);
+                new Created({
+                    id: message.id
+                }).send(res);
+            } catch(e: any) {
+                throw e;
+            }
+        });
     } catch(e: any) {
         handleException(e, res);
     }
@@ -280,13 +288,13 @@ export async function patchChatMessage(req: Request, res: Response): Promise<voi
         const chatId = getInt(req.params.chatId);
         const messageId = getInt(req.params.messageId);
         const body = getObject(req.body);
-        const message = getMessage(body.message);
+        const messageText = getMessage(body.message);
         const partialMessage = await findMessageChatIdUserIdAndDeletedAt(messageId);
         if(partialMessage.chatId != chatId)
             throw new NotFound();
         if(partialMessage.userId != partialUser.id || partialMessage.deletedAt != null)
             throw new Forbidden();
-        await updateMessage(messageId, message);
+        await updateMessage(messageId, messageText);
         new NoContent().send(res);
     } catch(e: any) {
         handleException(e, res);
@@ -306,6 +314,20 @@ export async function deleteChatMessage(req: Request, res: Response): Promise<vo
         if(partialMessage.userId != partialUser.id && !isUserOnChatAdministratorOrModerator(partialUser.id, chatId))
             throw new Forbidden();
         await deleteMessage(messageId, 'Message deleted by @' + partialUser.id + '.');
+        new NoContent().send(res);
+    } catch(e: any) {
+        handleException(e, res);
+    }
+}
+
+export async function postChatMarkAsRead(req: Request, res: Response): Promise<void> {
+    try {
+        const partialUser = await validateToken(req);
+        const chatId = getInt(req.params.chatId);
+        if(!(await doesUserOnChatExist(partialUser.id, chatId)))
+            throw new Forbidden();
+        const lastReadMessageId = await findLastMessageId(chatId);
+        await updateUserOnChatLastReadMessageId(partialUser.id, chatId, lastReadMessageId);
         new NoContent().send(res);
     } catch(e: any) {
         handleException(e, res);

@@ -68,14 +68,19 @@ class Chat {
         this.markAsRead.src = '/img/mark-as-read.svg';
         this.markAsRead.addEventListener('click', () => {
             this.markAsRead.animate(imageButtonAnimationKeyframes, imageButtonAnimationOptions);
-            //TODO
+            $.ajax({
+                url: '/api/chats/' + this.id + '/mark-as-read',
+                method: 'POST',
+                success: (res) => { },
+                statusCode: defaultStatusCode
+            });
         });
         this.actions.appendChild(this.leave);
         this.actions.appendChild(this.settings);
         this.actions.appendChild(this.markAsRead);
         this.topbar = topbar;
         this.updateSelected(false);
-        this.updateRead(this.lastMessageId, this.lastReadMessageId);
+        this.updateRead();
         this.updatePermissionLevel(this.permissionLevel);
         $.ajax({
             url: '/api/chats/' + this.id,
@@ -129,13 +134,19 @@ class Chat {
         if (this.topbar.id == this.id)
             this.topbar.update(this);
     }
-    updateRead(lastMessageId, lastReadMessageId) {
+    updateLastMessageId(lastMessageId) {
         this.lastMessageId = lastMessageId;
+        this.updateRead();
+    }
+    updateLastReadMessageId(lastReadMessageId) {
         this.lastReadMessageId = lastReadMessageId;
-        if (lastMessageId < lastReadMessageId)
-            this.read.classList.replace('unread', 'read');
-        else
+        this.updateRead();
+    }
+    updateRead() {
+        if (this.lastMessageId > this.lastReadMessageId)
             this.read.classList.replace('read', 'unread');
+        else
+            this.read.classList.replace('unread', 'read');
     }
 }
 class NoChats {
@@ -868,6 +879,8 @@ class Navigator {
         this.loading = loading;
     }
     selectChat(id) {
+        if (this.selectedChatId == id)
+            return;
         const chat = this.chats.get(id);
         if (chat == undefined)
             return;
@@ -1000,6 +1013,10 @@ class Updater {
             }
         });
         this.socket.on('chat-message-send', (data) => {
+            const chat = this.chats.get(data.chatId);
+            if (chat == undefined)
+                return;
+            chat.updateLastMessageId(data.id);
             if (data.chatId == navigator.selectedChatId) {
                 this.addMessage({
                     id: data.id,
@@ -1029,6 +1046,12 @@ class Updater {
                 return;
             message.updateMessage(data.message);
             message.updateDeletedAt(data.deletedAt);
+        });
+        this.socket.on('chat-mark-as-read', (data) => {
+            const chat = this.chats.get(data.chatId);
+            if (chat == undefined)
+                return;
+            chat.updateLastReadMessageId(data.lastReadMessageId);
         });
         this.socket.on('user-online', (data) => {
             const user = this.users.get(data.id);

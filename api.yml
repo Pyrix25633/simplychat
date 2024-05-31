@@ -1104,6 +1104,7 @@ paths:
             $ref: "#/components/schemas/id"
           required: true
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -1111,6 +1112,8 @@ paths:
               properties:
                 message:
                   $ref: "#/components/schemas/message"
+              required:
+                - message
       responses:
         "201":
           description: Message created succesfully
@@ -1121,6 +1124,8 @@ paths:
                 properties:
                   id:
                     $ref: "#/components/schemas/id"
+        "400":
+          description: Bad Request
         "401":
           description: Unauthorized
         "403":
@@ -1148,6 +1153,7 @@ paths:
             $ref: "#/components/schemas/id"
           required: true
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -1155,9 +1161,13 @@ paths:
               properties:
                 message:
                   $ref: "#/components/schemas/message"
+              required:
+                - message
       responses:
         "204":
           description: Message edited successfully
+        "400":
+          description: Bad Request
         "401":
           description: Unauthorized
         "403":
@@ -1186,6 +1196,8 @@ paths:
       responses:
         "204":
           description: Message edited successfully
+        "400":
+          description: Bad Request
         "401":
           description: Unauthorized
         "403":
@@ -1194,5 +1206,31 @@ paths:
           description: "Not Found: no chats found with specified chatId or no messages found with specified messageId"
         "422":
           description: "Unprocessable Content: message cannot be deleted"
+  /chats/{chatId}/mark-as-read:
+    post:
+      tags:
+        - chats
+      summary: Marks all messages as read
+      description: Used by the user to mark all messages as read
+      operationId: chats/[chatId]/mark-as-read
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+            $ref: "#/components/schemas/id"
+          required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description:  "Forbidden: requesting user is not one of chat's members"
+        "404":
+          description: "Not Found: no chats found with specified chatId"
+        "422":
+          description: "Unprocessable Content: chat cannot be marked as read"
 servers:
   - url: https://simplychat.ddns.net/api/
