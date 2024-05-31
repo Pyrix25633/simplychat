@@ -285,11 +285,12 @@ div.load-more {
     width: 100%;
 }
 
-div#unread-messages {
+div.unread-messages {
+    width: 100%;
     border-bottom: 1px solid var(--color-simplychat);
     text-align: center;
 }
-div#unread-messages span {
+div.unread-messages span {
     color: var(--color-simplychat);
     background-color: var(--color-background);
 }

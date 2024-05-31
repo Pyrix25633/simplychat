@@ -89,9 +89,8 @@ div.message-actions {
 }
 
 div.unread-messages {
-    width: calc(100% - 4px);
     height: 15px;
-    margin: 0 2px 15px 2px;
+    margin-bottom: 15px;
 }
 div.unread-messages span {
     line-height: 30px;

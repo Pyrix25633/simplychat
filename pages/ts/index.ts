@@ -45,7 +45,7 @@ class Chat {
     public readonly id: number;
     public permissionLevel: PermissionLevel;
     public lastMessageId: number;
-    private lastReadMessageId: number;
+    public lastReadMessageId: number;
     public readonly box: HTMLDivElement;
     public readonly name: HTMLSpanElement;
     public readonly description: HTMLSpanElement;
@@ -398,7 +398,7 @@ class Sidebar {
     }
 
     insertAtPosition(node: Node, position: number | undefined = undefined): void {
-        if(position == undefined || position == this.getNumberOfChilds() - 1)
+        if(position == undefined || position == this.getNumberOfChilds())
             this.appendChild(node);
         else
             this.sidebar.insertBefore(node, this.getNthChild(position));
@@ -753,9 +753,10 @@ class Message {
     }
 }
 
-class Messages { //TODO: automatic scrolling, 'unread messages' bookmark
+class Messages { //TODO: automatic scrolling
     private readonly box: HTMLDivElement;
     private readonly loadMore: HTMLDivElement;
+    private readonly unreadMessages: HTMLDivElement;
     private readonly messages: Map<number, Message> = new Map();
     private readonly users: Map<number, User>;
     private readonly removedUsers: Map<number, User> = new Map();
@@ -779,6 +780,11 @@ class Messages { //TODO: automatic scrolling, 'unread messages' bookmark
         });
         this.loadMore.appendChild(button);
         this.appendChild(this.loadMore);
+        this.unreadMessages = document.createElement('div');
+        this.unreadMessages.classList.add('unread-messages');
+        const span = document.createElement('span');
+        span.innerText = 'Unread Messages';
+        this.unreadMessages.appendChild(span);
         this.users = users;
         this.textarea = textarea;
     }
@@ -795,12 +801,14 @@ class Messages { //TODO: automatic scrolling, 'unread messages' bookmark
             url: '/api/chats/' + chat.id + '/messages',
             method: 'GET',
             success: async (res: Response): Promise<void> => {
+                this.beforeInsert();
                 for(const m of res.messages) {
                     const user = await this.getUser(m.userId);
                     const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
                     this.messages.set(message.id, message);
                     message.appendTo(this);
                 }
+                this.afterInsert();
             },
             statusCode: defaultStatusCode
         });
@@ -822,14 +830,40 @@ class Messages { //TODO: automatic scrolling, 'unread messages' bookmark
                     this.messages.set(message.id, message);
                 }
                 const messages = this.toOrderedArray();
+                this.beforeInsert();
                 for(const m of res.messages) {
                     const message = this.messages.get(m.id);
                     if(message != undefined)
                         message.appendTo(this, messages.indexOf(message));
                 }
+                this.afterInsert();
             },
             statusCode: defaultStatusCode
         });
+    }
+
+    updateUnreadMessages(): void {
+        if(this.navigator == undefined)
+            return;
+        const chat = this.navigator.getSelectedChat();
+        this.removeChild(this.unreadMessages);
+        if(chat.lastMessageId > chat.lastReadMessageId) {
+            const message = this.messages.get(chat.lastReadMessageId);
+            if(message == undefined)
+                this.insertAtPosition(this.unreadMessages, 0);
+            else
+                this.insertAtPosition(this.unreadMessages, this.toOrderedArray().indexOf(message) + 1);
+        }
+    }
+
+    beforeInsert(): void {
+        this.removeChild(this.loadMore);
+        this.removeChild(this.unreadMessages);
+    }
+
+    afterInsert(): void {
+        this.updateUnreadMessages();
+        this.insertAtPosition(this.loadMore, 0);
     }
 
     selectMessage(id: number): void {
@@ -870,14 +904,10 @@ class Messages { //TODO: automatic scrolling, 'unread messages' bookmark
     }
 
     insertAtPosition(node: Node, position: number | undefined = undefined): void {
-        if(node != this.loadMore)
-            this.removeChild(this.loadMore);
-        if(position == undefined || position == this.getNumberOfChilds() - 1)
+        if(position == undefined || position == this.getNumberOfChilds())
             this.appendChild(node);
         else
             this.box.insertBefore(node, this.getNthChild(position));
-        if(node != this.loadMore)
-            this.insertAtPosition(this.loadMore, 0);
     }
 
     removeChild(node: Node): void {
@@ -1313,6 +1343,7 @@ class Updater {
             if(chat == undefined)
                 return;
             chat.updateLastReadMessageId(data.lastReadMessageId);
+            this.messages.updateUnreadMessages();
         });
         this.socket.on('user-online', (data: Data): void => {
             const user = this.users.get(data.id);
@@ -1369,7 +1400,9 @@ class Updater {
         const message = new Message(m, chat.permissionLevel, this.messages, this.textarea, user);
         this.messages.set(message.id, message);
         const messages = this.messages.toOrderedArray();
+        this.messages.beforeInsert();
         message.appendTo(this.messages, messages.indexOf(message));
+        this.messages.afterInsert();
     }
 
     removeChat(id: number): void {

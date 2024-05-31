@@ -316,7 +316,7 @@ class Sidebar {
         this.sidebar.appendChild(node);
     }
     insertAtPosition(node, position = undefined) {
-        if (position == undefined || position == this.getNumberOfChilds() - 1)
+        if (position == undefined || position == this.getNumberOfChilds())
             this.appendChild(node);
         else
             this.sidebar.insertBefore(node, this.getNthChild(position));
@@ -635,6 +635,11 @@ class Messages {
         });
         this.loadMore.appendChild(button);
         this.appendChild(this.loadMore);
+        this.unreadMessages = document.createElement('div');
+        this.unreadMessages.classList.add('unread-messages');
+        const span = document.createElement('span');
+        span.innerText = 'Unread Messages';
+        this.unreadMessages.appendChild(span);
         this.users = users;
         this.textarea = textarea;
     }
@@ -649,12 +654,14 @@ class Messages {
             url: '/api/chats/' + chat.id + '/messages',
             method: 'GET',
             success: async (res) => {
+                this.beforeInsert();
                 for (const m of res.messages) {
                     const user = await this.getUser(m.userId);
                     const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
                     this.messages.set(message.id, message);
                     message.appendTo(this);
                 }
+                this.afterInsert();
             },
             statusCode: defaultStatusCode
         });
@@ -675,14 +682,37 @@ class Messages {
                     this.messages.set(message.id, message);
                 }
                 const messages = this.toOrderedArray();
+                this.beforeInsert();
                 for (const m of res.messages) {
                     const message = this.messages.get(m.id);
                     if (message != undefined)
                         message.appendTo(this, messages.indexOf(message));
                 }
+                this.afterInsert();
             },
             statusCode: defaultStatusCode
         });
+    }
+    updateUnreadMessages() {
+        if (this.navigator == undefined)
+            return;
+        const chat = this.navigator.getSelectedChat();
+        this.removeChild(this.unreadMessages);
+        if (chat.lastMessageId > chat.lastReadMessageId) {
+            const message = this.messages.get(chat.lastReadMessageId);
+            if (message == undefined)
+                this.insertAtPosition(this.unreadMessages, 0);
+            else
+                this.insertAtPosition(this.unreadMessages, this.toOrderedArray().indexOf(message) + 1);
+        }
+    }
+    beforeInsert() {
+        this.removeChild(this.loadMore);
+        this.removeChild(this.unreadMessages);
+    }
+    afterInsert() {
+        this.updateUnreadMessages();
+        this.insertAtPosition(this.loadMore, 0);
     }
     selectMessage(id) {
         for (const message of this.messages.values())
@@ -716,14 +746,10 @@ class Messages {
         this.box.appendChild(node);
     }
     insertAtPosition(node, position = undefined) {
-        if (node != this.loadMore)
-            this.removeChild(this.loadMore);
-        if (position == undefined || position == this.getNumberOfChilds() - 1)
+        if (position == undefined || position == this.getNumberOfChilds())
             this.appendChild(node);
         else
             this.box.insertBefore(node, this.getNthChild(position));
-        if (node != this.loadMore)
-            this.insertAtPosition(this.loadMore, 0);
     }
     removeChild(node) {
         try {
@@ -1108,6 +1134,7 @@ class Updater {
             if (chat == undefined)
                 return;
             chat.updateLastReadMessageId(data.lastReadMessageId);
+            this.messages.updateUnreadMessages();
         });
         this.socket.on('user-online', (data) => {
             const user = this.users.get(data.id);
@@ -1163,7 +1190,9 @@ class Updater {
         const message = new Message(m, chat.permissionLevel, this.messages, this.textarea, user);
         this.messages.set(message.id, message);
         const messages = this.messages.toOrderedArray();
+        this.messages.beforeInsert();
         message.appendTo(this.messages, messages.indexOf(message));
+        this.messages.afterInsert();
     }
     removeChat(id) {
         const chat = this.chats.get(id);
