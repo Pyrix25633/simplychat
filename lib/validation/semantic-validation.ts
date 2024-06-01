@@ -59,7 +59,7 @@ export function getBase64EncodedImage(raw: any): Buffer {
     const match = parsed.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,(.+)$/);
     if(match == null)
         throw new BadRequest();
-    const dimensions: ISizeCalculationResult = imageSize(Buffer.from(match[1]));
+    const dimensions: ISizeCalculationResult = imageSize(Buffer.from(match[1], 'base64'));
     if(dimensions.width != dimensions.height || dimensions.width == undefined)
         throw new BadRequest();
     if(dimensions.width < 8 || dimensions.width > 512)
