@@ -139,7 +139,7 @@ server.listen(settings.https.port, (): void => {
     console.log('Server listening on Port ' + settings.https.port);
 });
 upgradeMain.all('*', (req, res): void => {
-    res.redirect(301, 'https://' + req.hostname + (settings.production ? '' : ':' + settings.https.port));
+    res.redirect(301, 'https://' + req.hostname + (settings.production ? '' : (':' + settings.https.port)));
 });
 const upgradeServer = http.createServer(upgradeMain);
 upgradeServer.listen(settings.https.upgradePort, (): void => {

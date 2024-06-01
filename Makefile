@@ -4,14 +4,9 @@ default:
 > systemctl is-active --quiet mysql || systemctl start mysql
 > npm start
 
-install:
-> npm install
-> mkdir pfps
-> touch pfps/test.svg
-> mkdir chatLogos
-> touch chatLogos/test.svg
-> cp settings/template.json settings/settings.json
-> nano settings/settings.json
+almalinux:
+> systemctl is-active --quiet mysqld || systemctl start mysqld
+> npm start
 
 compile-pages:
 > cd pages && npx tsc -w
@@ -29,4 +24,3 @@ generate-selfsigned-certificate:
 forward-ports:
 > sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 4443
 > sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
-> sudo su -c 'iptables-save > /etc/iptables/iptables.rules'
