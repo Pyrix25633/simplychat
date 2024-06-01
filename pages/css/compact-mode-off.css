@@ -2,7 +2,7 @@
     --sidebars-height: calc(100dvh - 10px);
     --topbar-width: calc(100vw - 277px*2 - 10px);
     --marquee-big-width: calc(var(--topbar-width) - 70px - 5px);
-    --messages-width: calc(100% - 10px);
+    --messages-width: calc(100% - 20px);
     --message-max-width: calc(var(--topbar-width) - 100px);
     --textarea-width: calc(var(--topbar-width) - 70px);
     --topbar-mobile-width: calc(100vw - 10px);
@@ -75,7 +75,7 @@ button {
 }
 
 div.messages {
-    padding: 5px;
+    padding: 10px;
     gap: 10px;
 }
 div.message {

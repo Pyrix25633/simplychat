@@ -687,7 +687,7 @@ class Message {
             span.classList.add('permission-level-' + user.permissionLevel.toLowerCase());
             message = message.replace('@' + userId, span.outerHTML);
         }
-        this.message.innerHTML = message;
+        this.message.innerHTML = message.replace(/\n/g, document.createElement('br').outerHTML);
     }
     
     updateEditedAt(editedAt: string | null): void {

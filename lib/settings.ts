@@ -51,5 +51,6 @@ export const settings = {
         'chat-mark-as-read': true,
         'status-resources': true,
         'status-database': true
-    }
+    },
+    production: false
 };
