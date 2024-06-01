@@ -8,6 +8,11 @@ info:
   license:
     name: GPL-3.0
     url: https://www.gnu.org/licenses/gpl-3.0.en.html
+servers:
+  - url: https://simplychat.ddns.net/api/
+  - url: https://simplychat.my.to/api/
+  - url: https://simplychat.us.to/api/
+  - url: https://simplychat.8bit.ca/api/
 tags:
   - name: feedbacks
     description: Handles form feedbacks
@@ -1232,5 +1237,3 @@ paths:
           description: "Not Found: no chats found with specified chatId"
         "422":
           description: "Unprocessable Content: chat cannot be marked as read"
-servers:
-  - url: https://simplychat.ddns.net/api/

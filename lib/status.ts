@@ -39,10 +39,11 @@ function sendResourcesStatus(): void {
             const swapMatch = lines[2].match(/(\d+.\d) total.* (\d+.\d) used/);
             if(cpuMatch == null || ramMatch == null || swapMatch == null)
                 return;
+            const swapTotal = parseFloat(swapMatch[1]);
             const resourcesStatus = {
                 cpu: 100 - parseFloat(cpuMatch[1]),
                 ram: 100 * parseFloat(ramMatch[2]) / parseFloat(ramMatch[1]),
-                swap: 100 * parseFloat(swapMatch[2]) / parseFloat(swapMatch[1])
+                swap: 100 * parseFloat(swapMatch[2]) / (swapTotal == 0 ? 1 : swapTotal)
             };
             resourcesStatuses.push(resourcesStatus);
             resourcesStatuses.shift();

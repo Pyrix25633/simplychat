@@ -834,7 +834,7 @@ class Textarea {
     constructor() {
         this.max = 2048;
         this.emojiSelectorVisible = false;
-        this.chatId = 0;
+        this.chatId = undefined;
         this.editingMessageId = undefined;
         this.container = document.createElement('div');
         this.container.classList.add('container', 'textarea');
@@ -937,6 +937,8 @@ class Textarea {
         this.emojiSelector.style.display = show ? '' : 'none';
     }
     sendMessage() {
+        if (this.chatId == undefined)
+            return;
         const message = this.getMessage();
         if (message.length > this.max)
             return;

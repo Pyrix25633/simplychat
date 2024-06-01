@@ -24,8 +24,8 @@ export function sendVerificationCode(email: string, tempUser: TempUser): void {
         subject: 'Simply Chat Verification Code',
         text: 'Your Verification Code for Username ' + tempUser.username + ' is ' + tempUser.verificationCode + '.',
         html: 'Your Verification Code for Username ' + tempUser.username + ' is ' + tempUser.verificationCode + '.<br>' +
-            'Click <a href="' + settings.https.hostname + '/temp-users/' + tempUser.username + '/confirm?verificationCode=' + tempUser.verificationCode +
-            '">here</a> to confirm your Registration or open <a href="' + settings.https.hostname +
+            'Click <a href=https://"' + settings.https.hostname + '/temp-users/' + tempUser.username + '/confirm?verificationCode=' + tempUser.verificationCode +
+            '">here</a> to confirm your Registration or open <a href=https://"' + settings.https.hostname +
             '/confirm">this Link</a> and enter Username and Verification Code.'
     });
 }

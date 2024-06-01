@@ -15,7 +15,11 @@ fix-mysql:
 > sudo chown -R mysql:mysql /var/lib/mysql /var/run/mysqld
 
 generate-certificate:
+> sudo iptables -t nat -F
 > sudo certbot certonly --standalone
+> sudo cp /etc/letsencrypt/live/simplychat.ddns.net/fullchain.pem ./certs/cert.pem
+> sudo cp /etc/letsencrypt/live/simplychat.ddns.net/privkey.pem ./certs/key.pem
+> make forward-ports
 
 generate-selfsigned-certificate:
 > mkdir -p ./certs

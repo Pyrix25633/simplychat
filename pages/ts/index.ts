@@ -1009,7 +1009,7 @@ class Textarea {
     private readonly counter: HTMLSpanElement;
     private readonly emojiSelector: HTMLDivElement;
     private emojiSelectorVisible: boolean = false;
-    public chatId: number = 0;
+    public chatId: number | undefined = undefined;
     public editingMessageId: number | undefined = undefined;
 
     constructor() {
@@ -1122,6 +1122,8 @@ class Textarea {
     }
 
     sendMessage(): void {
+        if(this.chatId == undefined)
+            return;
         const message = this.getMessage();
         if(message.length > this.max)
             return;
