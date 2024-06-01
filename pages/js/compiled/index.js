@@ -578,7 +578,11 @@ class Message {
         }
     }
     updateEditDelete(permissionLevel) {
-        if (this.userId == userId) {
+        if (this.deletedAt.innerText != '') {
+            this.edit.style.display = 'none';
+            this.delete.style.display = 'none';
+        }
+        else if (this.userId == userId) {
             this.edit.style.display = '';
             this.delete.style.display = '';
         }
@@ -662,6 +666,7 @@ class Messages {
                     message.appendTo(this);
                 }
                 this.afterInsert();
+                this.scrollToUnread();
             },
             statusCode: defaultStatusCode
         });
@@ -676,6 +681,8 @@ class Messages {
             data: { beforeMessageId: beforeMessageId },
             method: 'GET',
             success: async (res) => {
+                const scrolledToBottom = this.isScrolledToBottom();
+                const scrolledToUnread = this.isScrolledToUnread();
                 for (const m of res.messages) {
                     const user = await this.getUser(m.userId);
                     const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
@@ -689,6 +696,10 @@ class Messages {
                         message.appendTo(this, messages.indexOf(message));
                 }
                 this.afterInsert();
+                if (scrolledToBottom)
+                    this.scrollToBottom();
+                else if (scrolledToUnread)
+                    this.scrollToUnread();
             },
             statusCode: defaultStatusCode
         });
@@ -750,6 +761,7 @@ class Messages {
             this.appendChild(node);
         else
             this.box.insertBefore(node, this.getNthChild(position));
+        this.isScrolledToBottom();
     }
     removeChild(node) {
         try {
@@ -792,6 +804,30 @@ class Messages {
             }
         }
         return user;
+    }
+    isScrolledToBottom() {
+        return this.box.scrollTop >= this.box.scrollHeight - (this.box.clientHeight * 1.1);
+    }
+    scrollToBottom() {
+        this.box.scrollTo(0, this.box.scrollHeight - this.box.clientHeight);
+    }
+    isScrolledToUnread() {
+        const childNodes = Array.from(this.box.childNodes);
+        if (!childNodes.includes(this.unreadMessages))
+            return this.isScrolledToBottom();
+        let scroll = this.unreadMessages.offsetTop - this.unreadMessages.clientHeight * 4;
+        const maxScroll = this.box.scrollHeight - this.box.clientHeight;
+        if (scroll > maxScroll)
+            scroll = maxScroll;
+        return this.unreadMessages.scrollTop == scroll;
+    }
+    scrollToUnread() {
+        const childNodes = Array.from(this.box.childNodes);
+        if (!childNodes.includes(this.unreadMessages)) {
+            this.scrollToBottom();
+            return;
+        }
+        this.box.scrollTo(0, this.unreadMessages.offsetTop - this.unreadMessages.clientHeight * 4);
     }
 }
 class Textarea {
@@ -1183,6 +1219,8 @@ class Updater {
         user.appendTo(this.usersSidebar, users.indexOf(user));
     }
     addMessage(m) {
+        const scrolledToBottom = this.messages.isScrolledToBottom();
+        const scrolledToUnread = this.messages.isScrolledToUnread();
         const user = this.users.get(m.userId);
         const chat = this.chats.get(m.chatId);
         if (user == undefined || chat == undefined)
@@ -1193,6 +1231,10 @@ class Updater {
         this.messages.beforeInsert();
         message.appendTo(this.messages, messages.indexOf(message));
         this.messages.afterInsert();
+        if (scrolledToBottom)
+            this.messages.scrollToBottom();
+        else if (scrolledToUnread)
+            this.messages.scrollToUnread();
     }
     removeChat(id) {
         const chat = this.chats.get(id);

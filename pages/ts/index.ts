@@ -711,7 +711,11 @@ class Message {
     }
 
     updateEditDelete(permissionLevel: PermissionLevel): void {
-        if(this.userId == userId) {
+        if(this.deletedAt.innerText != '') {
+            this.edit.style.display = 'none';
+            this.delete.style.display = 'none';
+        }
+        else if(this.userId == userId) {
             this.edit.style.display = '';
             this.delete.style.display = '';
         }
@@ -753,7 +757,7 @@ class Message {
     }
 }
 
-class Messages { //TODO: automatic scrolling
+class Messages {
     private readonly box: HTMLDivElement;
     private readonly loadMore: HTMLDivElement;
     private readonly unreadMessages: HTMLDivElement;
@@ -809,6 +813,7 @@ class Messages { //TODO: automatic scrolling
                     message.appendTo(this);
                 }
                 this.afterInsert();
+                this.scrollToUnread();
             },
             statusCode: defaultStatusCode
         });
@@ -824,6 +829,8 @@ class Messages { //TODO: automatic scrolling
             data: { beforeMessageId: beforeMessageId },
             method: 'GET',
             success: async (res: Response): Promise<void> => {
+                const scrolledToBottom = this.isScrolledToBottom();
+                const scrolledToUnread = this.isScrolledToUnread();
                 for(const m of res.messages) {
                     const user = await this.getUser(m.userId);
                     const message = new Message(m, chat.permissionLevel, this, this.textarea, user);
@@ -837,6 +844,10 @@ class Messages { //TODO: automatic scrolling
                         message.appendTo(this, messages.indexOf(message));
                 }
                 this.afterInsert();
+                if(scrolledToBottom)
+                    this.scrollToBottom();
+                else if(scrolledToUnread)
+                    this.scrollToUnread();
             },
             statusCode: defaultStatusCode
         });
@@ -908,6 +919,7 @@ class Messages { //TODO: automatic scrolling
             this.appendChild(node);
         else
             this.box.insertBefore(node, this.getNthChild(position));
+        this.isScrolledToBottom();
     }
 
     removeChild(node: Node): void {
@@ -957,6 +969,34 @@ class Messages { //TODO: automatic scrolling
             }
         }
         return user;
+    }
+
+    isScrolledToBottom(): boolean {
+        return this.box.scrollTop >= this.box.scrollHeight - (this.box.clientHeight * 1.1);
+    }
+
+    scrollToBottom(): void {
+        this.box.scrollTo(0, this.box.scrollHeight - this.box.clientHeight);
+    }
+
+    isScrolledToUnread(): boolean {
+        const childNodes = Array.from(this.box.childNodes);
+        if(!childNodes.includes(this.unreadMessages))
+            return this.isScrolledToBottom();
+        let scroll = this.unreadMessages.offsetTop - this.unreadMessages.clientHeight * 4;
+        const maxScroll = this.box.scrollHeight - this.box.clientHeight;
+        if(scroll > maxScroll)
+            scroll = maxScroll;
+        return this.unreadMessages.scrollTop == scroll;
+    }
+
+    scrollToUnread(): void {
+        const childNodes = Array.from(this.box.childNodes);
+        if(!childNodes.includes(this.unreadMessages)) {
+            this.scrollToBottom();
+            return;
+        }
+        this.box.scrollTo(0, this.unreadMessages.offsetTop - this.unreadMessages.clientHeight * 4);
     }
 }
 
@@ -1393,6 +1433,8 @@ class Updater {
     }
 
     addMessage(m: JsonMessage & { chatId: number }): void {
+        const scrolledToBottom = this.messages.isScrolledToBottom();
+        const scrolledToUnread = this.messages.isScrolledToUnread();
         const user = this.users.get(m.userId);
         const chat = this.chats.get(m.chatId);
         if(user == undefined || chat == undefined)
@@ -1403,6 +1445,10 @@ class Updater {
         this.messages.beforeInsert();
         message.appendTo(this.messages, messages.indexOf(message));
         this.messages.afterInsert();
+        if(scrolledToBottom)
+            this.messages.scrollToBottom();
+        else if(scrolledToUnread)
+            this.messages.scrollToUnread();
     }
 
     removeChat(id: number): void {
