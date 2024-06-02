@@ -317,7 +317,7 @@ class ChatSettingsForm extends StructuredForm {
             new UsersSection()
         ], new Button('Save', '/img/save.svg', true), (res: Response): void => {
             window.location.href = '/';
-        }, []/**/, undefined, true);
+        }, defaultStatusCode, undefined, true);
     }
 
     async getUrl(): Promise<string> {
@@ -330,7 +330,7 @@ class ChatSettingsForm extends StructuredForm {
         nameInput.precompile(res.name);
         descriptionInput.precompile(res.description);
         chatToken.token = res.token;
-        tokenExpirationInput.precompile(new Date(res.tokenExpiration).toLocaleDateString('en-ZA'));
+        tokenExpirationInput.precompile(res.tokenExpiration != null ? new Date(res.tokenExpiration).toLocaleDateString('en-ZA') : null);
         defaultPermissionLevelInput.set(res.defaultPermissionLevel);
         for(const user of res.users)
             usersInput.add(user);

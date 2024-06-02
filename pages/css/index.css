@@ -275,9 +275,6 @@ div.message-actions {
 span.user-tag {
     margin-left: 0 !important;
 }
-div.message div.container {
-    align-items: end;
-}
 
 div.load-more {
     display: flex;
