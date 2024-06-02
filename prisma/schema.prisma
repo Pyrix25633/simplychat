@@ -26,7 +26,7 @@ model User {
   tfaKey          String?        @db.Char(52)
   online          Boolean        @default(false)
   lastOnline      DateTime       @default(now())
-  pfp             Bytes          @db.Blob
+  pfp             Bytes          @db.MediumBlob
   chats           UsersOnChats[]
   messages        Message[]
 }
@@ -50,7 +50,7 @@ model Chat {
   token                  String          @db.VarChar(128)
   tokenExpiration        DateTime?
   defaultPermissionLevel PermissionLevel @default(USER)
-  logo                   Bytes           @db.Blob
+  logo                   Bytes           @db.MediumBlob
   users                  UsersOnChats[]
   messages               Message[]
 }
