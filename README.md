@@ -18,7 +18,7 @@ Frontend made with:
 - CSS
 - AJAX
 - Socket.io
-- Chart.io
+- Chart.js
 
 ## Installation Process
 
