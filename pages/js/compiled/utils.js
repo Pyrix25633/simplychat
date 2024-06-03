@@ -1,11 +1,13 @@
 function navigateToErrorPage(req) {
     window.location.href = '/error?code=' + req.status + '&message=' + req.statusText;
 }
+export const pendingActionKey = 'pendingAction';
 export const defaultStatusCode = {
     400: (req) => {
         navigateToErrorPage(req);
     },
     401: () => {
+        localStorage.setItem(pendingActionKey, window.location.pathname);
         window.location.href = '/login';
     },
     403: (req) => {
@@ -60,8 +62,10 @@ export class Auth {
                 success: (res) => {
                     if (res.valid)
                         resolve();
-                    else
+                    else {
+                        localStorage.setItem(pendingActionKey, window.location.pathname);
                         window.location.href = '/login';
+                    }
                 },
                 statusCode: defaultStatusCode
             });
@@ -69,6 +73,7 @@ export class Auth {
     }
 }
 Auth._name = 'simplychat-auth';
+const cachedCustomizationKey = 'cachedCustomization';
 export class Customization {
     constructor(json) {
         var _a, _b, _c, _d;
@@ -79,7 +84,7 @@ export class Customization {
     }
     static loadCached() {
         var _a;
-        return new Customization(JSON.parse((_a = localStorage.getItem('cachedCustomization')) !== null && _a !== void 0 ? _a : 'null'));
+        return new Customization(JSON.parse((_a = localStorage.getItem(cachedCustomizationKey)) !== null && _a !== void 0 ? _a : 'null'));
     }
     static async get() {
         return new Promise((resolve) => {
@@ -94,7 +99,7 @@ export class Customization {
         });
     }
     cache() {
-        localStorage.setItem('cachedCustomization', JSON.stringify(this));
+        localStorage.setItem(cachedCustomizationKey, JSON.stringify(this));
     }
 }
 export class CssManager {

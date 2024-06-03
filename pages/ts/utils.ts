@@ -6,11 +6,14 @@ function navigateToErrorPage(req: JQueryXHR): void {
     window.location.href = '/error?code=' + req.status + '&message=' + req.statusText;
 }
 
+export const pendingActionKey = 'pendingAction';
+
 export const defaultStatusCode: StatusCode = {
     400: (req: JQueryXHR): void => {
         navigateToErrorPage(req);
     },
     401: (): void => {
+        localStorage.setItem(pendingActionKey, window.location.pathname);
         window.location.href = '/login';
     },
     403: (req: JQueryXHR): void => {
@@ -70,14 +73,18 @@ export class Auth {
                 success: (res: {valid: boolean}) => {
                     if(res.valid)
                         resolve();
-                    else
+                    else {
+                        localStorage.setItem(pendingActionKey, window.location.pathname);
                         window.location.href = '/login';
+                    }
                 },
                 statusCode: defaultStatusCode
             });
         });
     }
 }
+
+const cachedCustomizationKey = 'cachedCustomization';
 
 export class Customization {
     readonly compactMode: boolean;
@@ -93,7 +100,7 @@ export class Customization {
     }
 
     static loadCached(): Customization {
-        return new Customization(JSON.parse(localStorage.getItem('cachedCustomization') ?? 'null'));
+        return new Customization(JSON.parse(localStorage.getItem(cachedCustomizationKey) ?? 'null'));
     }
 
     static async get(): Promise<Customization> {
@@ -110,7 +117,7 @@ export class Customization {
     }
 
     cache(): void {
-        localStorage.setItem('cachedCustomization', JSON.stringify(this));
+        localStorage.setItem(cachedCustomizationKey, JSON.stringify(this));
     }
 }
 

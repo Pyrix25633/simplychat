@@ -1,5 +1,5 @@
 import { ApiFeedbackInput, Button, Form, Input, PasswordInput } from './form.js';
-import { defaultStatusCode } from './utils.js';
+import { defaultStatusCode, pendingActionKey } from './utils.js';
 const usernameInput = new ApiFeedbackInput('username', 'text', 'Username:', 'Input Username', '/api/feedbacks/login-username');
 const passwordInput = new PasswordInput();
 const loginStatusCode = Object.assign({}, defaultStatusCode);
@@ -10,6 +10,15 @@ loginStatusCode[404] = () => {
     passwordInput.setError(true, 'No Users found with specified Username!');
 };
 let loginResponse = undefined;
+function navigateToPendingActionOrIndex() {
+    const pendingAction = localStorage.getItem(pendingActionKey);
+    if (pendingAction != null) {
+        localStorage.removeItem(pendingActionKey);
+        window.location.href = pendingAction;
+    }
+    else
+        window.location.href = '/';
+}
 class LoginForm extends Form {
     constructor() {
         super('login-form', '/api/auth/login', 'POST', [
@@ -21,7 +30,7 @@ class LoginForm extends Form {
                 this.show(false);
             }
             else
-                window.location.href = '/';
+                navigateToPendingActionOrIndex();
         }, loginStatusCode, 'username-password');
     }
 }
@@ -62,7 +71,7 @@ class LoginTfaForm extends Form {
         super('login-tfa-form', '/api/auth/login-tfa', 'POST', [
             tfaCodeInput
         ], new Button('Verify', '/img/confirm.svg'), () => {
-            window.location.href = '/';
+            navigateToPendingActionOrIndex();
         }, loginTfaStatusCode, 'tfa');
     }
     async getData() {
