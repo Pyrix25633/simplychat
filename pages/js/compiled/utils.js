@@ -49,7 +49,7 @@ export class RequireNonNull {
 }
 export class Auth {
     static getCookie() {
-        const match = document.cookie.match(new RegExp(Auth._name + "=(.+)"));
+        const match = document.cookie.match(new RegExp(Auth._name + "=(.+?)(?:;|$)"));
         if (match == null)
             throw new Error('Auth Cookie not found!');
         return match[1];

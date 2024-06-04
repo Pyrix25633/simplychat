@@ -93,6 +93,7 @@ class Chat {
         });
     }
     appendTo(sidebar, position = undefined) {
+        this.box.innerHTML = '';
         const logoMarquee = document.createElement('div');
         logoMarquee.classList.add('container', 'logo-marquee');
         const logoRead = document.createElement('div');
@@ -255,19 +256,20 @@ class User {
         });
     }
     appendTo(sidebar, position = undefined) {
-        const logoMarquee = document.createElement('div');
-        logoMarquee.classList.add('container', 'logo-marquee');
-        const logoRead = document.createElement('div');
-        logoRead.classList.add('logo');
-        logoRead.appendChild(this.pfp);
-        logoRead.appendChild(this.online);
+        this.box.innerHTML = '';
+        const pfpMarquee = document.createElement('div');
+        pfpMarquee.classList.add('container', 'pfp-marquee');
+        const pfpOnline = document.createElement('div');
+        pfpOnline.classList.add('pfp');
+        pfpOnline.appendChild(this.pfp);
+        pfpOnline.appendChild(this.online);
         const marquee = document.createElement('div');
         marquee.classList.add('box', 'marquee');
         marquee.appendChild(this.username);
         marquee.appendChild(this.status);
-        logoMarquee.appendChild(logoRead);
-        logoMarquee.appendChild(marquee);
-        this.box.appendChild(logoMarquee);
+        pfpMarquee.appendChild(pfpOnline);
+        pfpMarquee.appendChild(marquee);
+        this.box.appendChild(pfpMarquee);
         this.box.appendChild(this.info);
         sidebar.insertAtPosition(this.box, position);
     }
@@ -1102,10 +1104,24 @@ class Updater {
                 this.messages.updatePermissionLevel(data.userId, data.permissionLevel);
                 if (data.userId == userId)
                     this.messages.updateEditDelete(data.permissionLevel);
-            }
-            const user = this.users.get(data.userId);
-            if (user != undefined)
+                const user = this.users.get(data.userId);
+                if (user == undefined)
+                    return;
                 user.updatePermissionLevel(data.permissionLevel);
+                const users = Array.from(this.users.values());
+                users.sort((a, b) => {
+                    if (a.id == userId)
+                        return -1;
+                    if (b.id == userId)
+                        return 1;
+                    const p = PermissionLevel.compare(a.permissionLevel, b.permissionLevel);
+                    if (p == 0)
+                        return a.id - b.id;
+                    return p;
+                });
+                this.usersSidebar.removeChild(user.box);
+                user.appendTo(this.usersSidebar, users.indexOf(user));
+            }
         });
         this.socket.on('chat-user-join', (data) => {
             if (data.userId == userId) {
@@ -1133,11 +1149,19 @@ class Updater {
             }
         });
         this.socket.on('chat-message-send', (data) => {
+            console.log(data);
             const chat = this.chats.get(data.chatId);
             if (chat == undefined)
                 return;
             chat.updateLastMessageId(data.id);
+            const chats = Array.from(this.chats.values());
+            chats.sort((a, b) => {
+                return b.lastMessageId - a.lastMessageId;
+            });
+            this.chatsSidebar.removeChild(chat.box);
+            chat.appendTo(this.chatsSidebar, chats.indexOf(chat));
             if (data.chatId == navigator.selectedChatId) {
+                console.log('here');
                 this.addMessage({
                     id: data.id,
                     chatId: data.chatId,
