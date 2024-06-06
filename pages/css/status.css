@@ -27,10 +27,8 @@ div.chart {
     }
 }
 @media screen and (min-width: 851px) {
-    div.panel:not(:first-child) {
+    div.panel {
         margin-left: 0 !important;
-    }
-    div.panel:not(:last-child) {
         margin-right: 0 !important;
     }
 }
