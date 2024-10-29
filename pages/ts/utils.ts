@@ -56,10 +56,10 @@ export class RequireNonNull {
 }
 
 export class Auth {
-    public static readonly _name = 'simplychat-auth';
+    public static readonly cookieName = 'simplychat-auth';
 
     static getCookie(): string {
-        const match = document.cookie.match(new RegExp(Auth._name + "=(.+?)(?:;|$)"));
+        const match = document.cookie.match(new RegExp(Auth.cookieName + "=(.+?)(?:;|$)"));
         if(match == null)
             throw new Error('Auth Cookie not found!');
         return match[1];

@@ -6,21 +6,21 @@ export class NameInput extends Input<string> {
     }
 
     async parse(): Promise<string | undefined> {
-        const status = this.getInputValue();
-        if(status == this.precompiledValue) {
-            this.precompile(status);
-            return status;
+        const name = this.getInputValue();
+        if(name == this.precompiledValue) {
+            this.precompile(name);
+            return name;
         }
-        if(status.length < 3) {
+        if(name.length < 3) {
             this.setError(true, 'Chat Name too short!');
             return undefined;
         }
-        if(status.length > 64) {
+        if(name.length > 64) {
             this.setError(true, 'Chat Name too long!');
             return undefined;
         }
         this.setError(false, 'Valid Chat Name');
-        return status;
+        return name;
     }
 }
 
@@ -30,20 +30,20 @@ export class DescriptionInput extends Input<string> {
     }
 
     async parse(): Promise<string | undefined> {
-        const status = this.getInputValue();
-        if(status == this.precompiledValue) {
-            this.precompile(status);
-            return status;
+        const description = this.getInputValue();
+        if(description == this.precompiledValue) {
+            this.precompile(description);
+            return description;
         }
-        if(status.length < 3) {
+        if(description.length < 3) {
             this.setError(true, 'Chat Description too short!');
             return undefined;
         }
-        if(status.length > 128) {
+        if(description.length > 128) {
             this.setError(true, 'Chat Description too long!');
             return undefined;
         }
         this.setError(false, 'Valid Chat Description');
-        return status;
+        return description;
     }
 }
