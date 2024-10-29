@@ -3,27 +3,27 @@ import imageSize from "image-size";
 import { ISizeCalculationResult } from "image-size/dist/types/interface";
 import { Customization } from "../database/user";
 import { BadRequest } from "../web/response";
-import { getArray, getBoolean, getInt, getNonEmptyString, getObject } from "./type-validation";
+import { getArray, getBoolean, getInt, getNonEmptyString, getObject, getString } from "./type-validation";
 
 const usernameRegex = /^(?:\w|-| ){3,32}$/;
 const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 export function getUsername(raw: any): string {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     if(parsed.match(usernameRegex))
         return parsed;
     throw new BadRequest();
 }
 
 export function getEmail(raw: any): string {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     if(parsed.match(emailRegex))
         return parsed;
     throw new BadRequest();
 }
 
 export function getStatus(raw: any): string {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     if(parsed.length < 3 || parsed.length > 64)
         throw new BadRequest();
     return parsed;
@@ -37,7 +37,7 @@ export function getSixDigitCode(raw: any): number {
 }
 
 export function getToken(raw: any): string {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     if(parsed.length != 128)
         throw new BadRequest();
     return parsed;
@@ -55,7 +55,7 @@ export function getCustomization(raw: any): Customization {
 }
 
 export function getBase64EncodedImage(raw: any): Buffer {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     const match = parsed.match(/^data:image\/(?:svg\+xml|png|jpeg|gif);base64,(.+)$/);
     if(match == null)
         throw new BadRequest();
@@ -75,21 +75,21 @@ export function getSessionDuration(raw: any): number {
 }
 
 export function getTfaKey(raw: any): string {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     if(!parsed.match(/^\w{52}$/))
         throw new BadRequest();
     return parsed;
 }
 
 export function getName(raw: any): string {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     if(parsed.length < 3 || parsed.length > 64)
         throw new BadRequest();
     return parsed;
 }
 
 export function getDescription(raw: any): string {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     if(parsed.length < 3 || parsed.length > 128)
         throw new BadRequest();
     return parsed;
@@ -98,7 +98,7 @@ export function getDescription(raw: any): string {
 export function getTokenExpiration(raw: any): Date | null {
     if(raw === null)
         return null;
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     if(!parsed.match(/\d{4}\/\d{1,2}\/\d{1,2}/))
         throw new BadRequest();
     const tokenExpiration = new Date(parsed);
@@ -108,7 +108,7 @@ export function getTokenExpiration(raw: any): Date | null {
 }
 
 export function getPermissionLevel(raw: any): PermissionLevel {
-    const parsed = getNonEmptyString(raw);
+    const parsed = getString(raw);
     for(const permissionLevel of Object.values(PermissionLevel)) {
         if(permissionLevel == parsed)
             return permissionLevel;
@@ -147,6 +147,8 @@ export function getRemovedUsers(raw: any): number[] {
 
 export function getMessage(raw: any): string {
     const parsed = getNonEmptyString(raw);
+    if(parsed.length > 2048)
+        throw new BadRequest();
     let message = '';
     for(const line of parsed.split('\n'))
         message += line.trim() + '\n';
