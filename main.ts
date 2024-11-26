@@ -7,7 +7,6 @@ import helmet from 'helmet';
 import http from 'http';
 import https from 'https';
 import path from 'path';
-import { Server } from 'socket.io';
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
 import { deleteChatMessage, getChat, getChatJoin, getChatMessages, getChatSettings, getChatUsers, getChats, patchChatMessage, patchChatSettings, postChat, postChatJoin, postChatLeave, postChatMarkAsRead, postChatMessage, postChatRegenerateToken } from './lib/api/chats';
 import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
@@ -15,7 +14,6 @@ import { getSettings, getSettingsCustomization, getSettingsId, patchSettings } f
 import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
 import { getUser } from './lib/api/users';
 import { settings } from './lib/settings';
-import { onConnect } from './lib/socket';
 
 const main: Express = express();
 const upgradeMain: Express = express();
@@ -129,26 +127,31 @@ main.post('/api/chats/:chatId/mark-as-read', postChatMarkAsRead);
 
 // --server-- //
 
-const options = {
-    key: fs.readFileSync(path.resolve(__dirname, settings.https.key)),
-    cert: fs.readFileSync(path.resolve(__dirname, settings.https.cert)),
-    passphrase: settings.https.passphrase
-};
-const server = https.createServer(options, main);
-server.listen(settings.https.port, (): void => {
-    console.log('Server listening on Port ' + settings.https.port);
-});
-upgradeMain.all('*', (req, res): void => {
-    const port = settings.production ? '' : (':' + settings.https.port);
-    res.redirect(301, 'https://' + req.hostname + port + req.url);
-});
-const upgradeServer = http.createServer(upgradeMain);
-upgradeServer.listen(settings.https.upgradePort, (): void => {
-    console.log('Upgrade Server listening on Port ' + settings.https.upgradePort);
-});
-
-const io = new Server(server);
-io.on('connect', onConnect);
+if(settings.https.port != null) {
+    const options = {
+        key: fs.readFileSync(path.resolve(__dirname, settings.https.key)),
+        cert: fs.readFileSync(path.resolve(__dirname, settings.https.cert)),
+        passphrase: settings.https.passphrase
+    };
+    const server = https.createServer(options, main);
+    server.listen(settings.https.port, (): void => {
+        console.log('Server listening on Port ' + settings.https.port);
+    });
+    upgradeMain.all('*', (req, res): void => {
+        const port = settings.production ? '' : (':' + settings.https.port);
+        res.redirect(301, 'https://' + req.hostname + port + req.url);
+    });
+    const upgradeServer = http.createServer(upgradeMain);
+    upgradeServer.listen(settings.https.upgradePort, (): void => {
+        console.log('Upgrade Server listening on Port ' + settings.https.upgradePort);
+    });
+}
+else {
+    const server = http.createServer(main);
+    server.listen(settings.https.upgradePort, (): void => {
+        console.log('Server listening on Port ' + settings.https.upgradePort);
+    });
+}
 
 // --pages-- //
 
