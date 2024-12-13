@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import http from 'http';
 import https from 'https';
 import path from 'path';
+import { Server } from 'socket.io';
 import { getTfaGenerateKey, getTfaValidateCode, getValidateToken, postLogin, postLoginTfa, postLogout, postRegenerateToken } from './lib/api/auth';
 import { deleteChatMessage, getChat, getChatJoin, getChatMessages, getChatSettings, getChatUsers, getChats, patchChatMessage, patchChatSettings, postChat, postChatJoin, postChatLeave, postChatMarkAsRead, postChatMessage, postChatRegenerateToken } from './lib/api/chats';
 import { getConfirmUsernameFeedback, getLoginUsernameFeedback, getRegisterEmailFeedback, getRegisterUsernameFeedback } from './lib/api/feedbacks';
@@ -14,6 +15,7 @@ import { getSettings, getSettingsCustomization, getSettingsId, patchSettings } f
 import { postTempUser, postTempUserConfirm } from './lib/api/temp-users';
 import { getUser } from './lib/api/users';
 import { settings } from './lib/settings';
+import { onConnect } from './lib/socket';
 
 const main: Express = express();
 const upgradeMain: Express = express();
@@ -145,12 +147,16 @@ if(settings.https.port != null) {
     upgradeServer.listen(settings.https.upgradePort, (): void => {
         console.log('Upgrade Server listening on Port ' + settings.https.upgradePort);
     });
+    const io = new Server(server);
+    io.on('connect', onConnect);
 }
 else {
     const server = http.createServer(main);
     server.listen(settings.https.upgradePort, (): void => {
         console.log('Server listening on Port ' + settings.https.upgradePort);
     });
+    const io = new Server(server);
+    io.on('connect', onConnect);
 }
 
 // --pages-- //
